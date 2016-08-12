@@ -1,5 +1,5 @@
 # gosmpp
-Smpp client library for Go, porting from [Java OpenSMPP Library](https://github.com/OpenSmpp/opensmpp). 
+Golang Smpp (3.4) Client Library, porting from [Java OpenSMPP Library](https://github.com/OpenSmpp/opensmpp). 
 
 Although in alpha stage, this library is tested well with several SMSC simulators and may be in production (if I have oppotunity) before release:
 - [smpp-smsc-simulator](http://www.voldrich.net/2015/01/11/smpp-smsc-simulator/): simulates a SMSC server – server which accepts SMS messages and handles its delivery to the mobile phone.
