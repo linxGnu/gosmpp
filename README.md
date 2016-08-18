@@ -15,6 +15,36 @@ Please refer to [Communication Test Case](https://github.com/linxGnu/gosmpp/blob
 
 TODO: more sample codes and test cases added in next minor version
 
+## Supported PDUs
+
+- [x] bind_transmitter
+- [x] bind_transmitter_resp
+- [x] bind_receiver
+- [x] bind_receiver_resp
+- [x] bind_transceiver
+- [x] bind_transceiver_resp
+- [x] outbind
+- [x] unbind
+- [x] unbind_resp
+- [x] submit_sm
+- [x] submit_sm_resp
+- [x] submit_sm_multi
+- [x] submit_sm_multi_resp
+- [x] data_sm
+- [x] data_sm_resp
+- [x] deliver_sm
+- [x] deliver_sm_resp
+- [x] query_sm
+- [x] query_sm_resp
+- [x] cancel_sm
+- [x] cancel_sm_resp
+- [x] replace_sm
+- [x] replace_sm_resp
+- [x] enquire_link
+- [x] enquire_link_resp
+- [ ] alert_notification
+- [x] generic_nack
+
 ## Contributing
 Please issue me for things gone wrong or:
 
