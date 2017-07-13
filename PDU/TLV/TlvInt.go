@@ -45,7 +45,7 @@ func (c *TLVInt) GetValueData() (b *Utils.ByteBuffer, er *Exception.Exception) {
 		return nil, er
 	}
 
-	buf := Utils.NewBufferDefault()
+	buf := Utils.NewBuffer(make([]byte, 0, 8))
 	return buf, buf.Write_Int(val)
 }
 

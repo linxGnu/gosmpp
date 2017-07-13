@@ -76,9 +76,9 @@ func (c *DestinationAddress) SetData(buf *Utils.ByteBuffer) *Exception.Exception
 
 func (c *DestinationAddress) GetData() (*Utils.ByteBuffer, *Exception.Exception) {
 	if c.HasValue() {
-		buf := Utils.NewBufferDefault()
-		err := buf.Write_Byte(c.destFlag)
-		if err != nil {
+		buf := Utils.NewBuffer(make([]byte, 0, 16))
+
+		if err := buf.Write_Byte(c.destFlag); err != nil {
 			return nil, err
 		}
 

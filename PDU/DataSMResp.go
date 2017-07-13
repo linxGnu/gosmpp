@@ -73,7 +73,7 @@ func (c *DataSMResp) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception,
 
 	source = c.This.(IPDU)
 
-	buf = Utils.NewBufferDefault()
+	buf = Utils.NewBuffer(make([]byte, 0, 16))
 	err = buf.Write_CString(c.GetMessageId())
 
 	return

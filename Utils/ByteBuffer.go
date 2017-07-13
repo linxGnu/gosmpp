@@ -19,13 +19,10 @@ type ByteBuffer struct {
 	*bytes.Buffer
 }
 
-func NewBufferDefault() *ByteBuffer {
-	return &ByteBuffer{&bytes.Buffer{}}
-}
-
+// NewBuffer create new buffer from preallocated buffer array
 func NewBuffer(inp []byte) *ByteBuffer {
 	if inp == nil {
-		return NewBufferDefault()
+		return &ByteBuffer{bytes.NewBuffer([]byte{})}
 	}
 
 	return &ByteBuffer{bytes.NewBuffer(inp)}

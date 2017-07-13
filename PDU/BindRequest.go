@@ -116,8 +116,8 @@ func (c *BindRequest) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception
 		return
 	}
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(len(c.systemId) + 1 + len(c.password) + 1 + len(c.systemType) + 1 + Utils.SZ_BYTE + dat.Len())
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.systemId)+1+len(c.password)+1+len(c.systemType)+1+Utils.SZ_BYTE+dat.Len()))
+
 	buf.Write_CString(c.systemId)
 	buf.Write_CString(c.password)
 	buf.Write_CString(c.systemType)

@@ -187,26 +187,24 @@ func (c *PDU) GetData() (buf *Utils.ByteBuffer, err *Exception.Exception, source
 	body, err, _ := source.GetBody()
 	if err != nil {
 		return
-	}
-	if body == nil {
-		body = Utils.NewBufferDefault()
+	} else if body == nil {
+		body = Utils.NewBuffer([]byte{})
 	}
 
 	opbody, err := c.GetOptionalBody()
 	if err != nil {
 		return
-	}
-	if opbody == nil {
-		opbody = Utils.NewBufferDefault()
+	} else if opbody == nil {
+		opbody = Utils.NewBuffer([]byte{})
 	}
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(body.Len() + opbody.Len())
+	buf = Utils.NewBuffer(make([]byte, 0, body.Len()+opbody.Len()))
 
 	buf.Write_Buffer(body)
 	buf.Write_Buffer(opbody)
 
 	c.SetCommandLength(int32(buf.Len()) + Data.PDU_HEADER_SIZE)
+
 	pduBuf, err := c.GetHeader()
 	if err != nil {
 		return
@@ -312,8 +310,8 @@ func (c *PDU) GetOptionalBody() (res *Utils.ByteBuffer, err *Exception.Exception
 		return nil, err
 	}
 
-	optBody := Utils.NewBufferDefault()
-	optBody.Grow(dat1.Len() + dat2.Len())
+	optBody := Utils.NewBuffer(make([]byte, 0, dat1.Len()+dat2.Len()))
+
 	optBody.Write_Buffer(dat1)
 	optBody.Write_Buffer(dat2)
 
@@ -328,7 +326,7 @@ func (c *PDU) GetOptionalBodyBuffer(optionalParams []TLV.ITLV) (res *Utils.ByteB
 		}
 	}()
 
-	optBody := Utils.NewBufferDefault()
+	optBody := Utils.NewBuffer(make([]byte, 0, 64))
 
 	if optionalParams == nil {
 		return optBody, nil

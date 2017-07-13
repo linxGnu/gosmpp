@@ -110,7 +110,7 @@ func (c *ByteDataList) GetCount() int {
 }
 
 func (c *ByteDataList) GetData() (*Utils.ByteBuffer, *Exception.Exception) {
-	buf := Utils.NewBufferDefault()
+	buf := Utils.NewBuffer([]byte{})
 
 	numberValues := c.GetCount()
 	switch int(c.LengthOfSize) {

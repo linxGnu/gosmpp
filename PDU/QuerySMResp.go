@@ -96,8 +96,7 @@ func (c *QuerySMResp) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception
 	source = c.This.(IPDU)
 	err = nil
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(len(c.GetMessageId()) + 1 + len(c.GetFinalDate()) + 1 + (Utils.SZ_BYTE << 1))
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetMessageId())+1+len(c.GetFinalDate())+1+(Utils.SZ_BYTE<<1)))
 
 	buf.Write_CString(c.GetMessageId())
 	buf.Write_CString(c.GetFinalDate())

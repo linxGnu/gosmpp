@@ -73,7 +73,7 @@ func (c *BindResponse) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exceptio
 
 	source = c.This.(IPDU)
 
-	buf = Utils.NewBufferDefault()
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetSystemId())<<1+1))
 	err = buf.Write_CString(c.GetSystemId())
 
 	return

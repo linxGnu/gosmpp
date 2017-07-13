@@ -101,8 +101,7 @@ func (c *Address) SetData(bb *Utils.ByteBuffer) (err *Exception.Exception) {
 }
 
 func (c *Address) GetData() (result *Utils.ByteBuffer, err *Exception.Exception) {
-	bb := Utils.NewBufferDefault()
-	bb.Grow(len(c.Address) + 1 + (Utils.SZ_BYTE << 1))
+	bb := Utils.NewBuffer(make([]byte, 0, len(c.Address)<<1+1+(Utils.SZ_BYTE<<1)))
 
 	bb.Write_UnsafeByte(c.Ton)
 	bb.Write_UnsafeByte(c.Npi)

@@ -12,18 +12,23 @@ import (
 	"github.com/linxGnu/gosmpp/PDU"
 )
 
+const (
+	testSMSCAddr = "localhost"
+	testSMSCPort = 34567
+)
+
 var session *gosmpp.Session
 
 // TestBindingSMSC test binding connection with SMSC
 func TestBindingSMSC(t *testing.T) {
-	// connection, err := gosmpp.NewTCPIPConnectionWithAddrPort("localhost", 34567)
-	connection, err := gosmpp.NewTCPIPConnectionWithAddrPort("localhost", 2775)
+	connection, err := gosmpp.NewTCPIPConnectionWithAddrPort(testSMSCAddr, testSMSCPort)
 	if err != nil {
+		t.Error(err)
 		t.Fail()
 		return
 	}
 
-	request := PDU.NewBindTransciever()
+	request := PDU.NewBindTransceiver()
 	request.SetSystemId("smppclient1")
 	request.SetPassword("password")
 	request.SetSystemType("CMT")
@@ -35,26 +40,44 @@ func TestBindingSMSC(t *testing.T) {
 
 	resp, e := session.BindWithListener(request, listener)
 	if e != nil || resp.GetCommandStatus() != 0 {
+		t.Error(e)
 		t.Fail()
 		return
 	}
-	fmt.Println("Binding done!")
 
 	resp, e = session.Unbind()
 	if e != nil {
+		t.Error(e)
+		t.Fail()
+		return
+	}
+}
+
+// TestSubmitSMSC test submit to SMSC
+func TestSubmitSMSC(t *testing.T) {
+	connection, err := gosmpp.NewTCPIPConnectionWithAddrPort(testSMSCAddr, testSMSCPort)
+	if err != nil {
+		t.Error(err)
 		t.Fail()
 		return
 	}
 
-	time.Sleep(3 * time.Second)
+	request := PDU.NewBindTransceiver()
+	request.SetSystemId("smppclient1")
+	request.SetPassword("password")
+	request.SetSystemType("CMT")
 
-	resp, e = session.BindWithListener(request, listener)
+	session = gosmpp.NewSessionWithConnection(connection)
+	session.EnableStateChecking()
+
+	listener := &TestPDUListener{}
+
+	resp, e := session.BindWithListener(request, listener)
 	if e != nil || resp.GetCommandStatus() != 0 {
-		fmt.Println(e)
+		t.Error(e)
 		t.Fail()
 		return
 	}
-	fmt.Println("ReBinding done!")
 
 	// Test submit
 	submit := PDU.NewSubmitSM()
@@ -73,16 +96,16 @@ func TestBindingSMSC(t *testing.T) {
 	submit.SetReplaceIfPresentFlag(0)
 	submit.SetEsmClass(0)
 	submit.SetSequenceNumber(10)
-	_, e = session.Submit(submit)
-	time.Sleep(5 * time.Second)
 
-	if e != nil {
+	if _, e = session.Submit(submit); e != nil {
 		t.Errorf(e.Error.Error())
 		t.Fail()
 		return
 	}
-	fmt.Println("Done submit content:", "Biết đâu mà đợi")
 
+	fmt.Println("Waiting 15 seconds to receive submitSMResp from SMSC or deliverSM")
+	time.Sleep(15 * time.Second)
+	fmt.Println("Done")
 }
 
 type TestPDUListener struct {
@@ -90,6 +113,9 @@ type TestPDUListener struct {
 
 func (c *TestPDUListener) HandleEvent(event *gosmpp.ServerPDUEvent) *Exception.Exception {
 	switch event.GetPDU().(type) {
+	case *PDU.SubmitSMResp:
+		t := event.GetPDU().(*PDU.SubmitSMResp)
+		fmt.Println("SUBMIT SM RESP", t.GetMessageId())
 	case *PDU.DeliverSM:
 		t := event.GetPDU().(*PDU.DeliverSM)
 

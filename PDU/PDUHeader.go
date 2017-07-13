@@ -49,8 +49,7 @@ func (c *PDUHeader) GetData() (res *Utils.ByteBuffer, err *Exception.Exception) 
 		}
 	}()
 
-	buf := Utils.NewBufferDefault()
-	buf.Grow(Utils.SZ_INT * 4)
+	buf := Utils.NewBuffer(make([]byte, 0, Utils.SZ_INT*4))
 
 	buf.Write_UnsafeInt(c.CommandLength)
 	buf.Write_UnsafeInt(c.CommandId)

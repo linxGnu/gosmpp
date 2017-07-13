@@ -37,6 +37,7 @@ type TCPIPConnection struct {
 	lock              sync.RWMutex
 }
 
+// NewTCPIPConnection new tcp ip connection
 func NewTCPIPConnection() *TCPIPConnection {
 	a := &TCPIPConnection{}
 	a.SetDefault()
@@ -47,23 +48,11 @@ func NewTCPIPConnection() *TCPIPConnection {
 	a.ioBufferSize = DFLT_IO_BUF_SIZE
 	a.maxReceiveSize = DFLT_MAX_RECEIVE_SIZE
 	a.socketFactory = &SocketFactory{}
-	// a.serverSocketFactory = NewServerSocketFactory()
 
 	return a
 }
 
-// func NewTCPIPConnectionWithPort(port int) (*TCPIPConnection, error) {
-// 	if port < int(Data.MIN_VALUE_PORT) || port > int(Data.MAX_VALUE_PORT) {
-// 		return nil, errors.New("TCPIPConnection: server port is invalid")
-// 	}
-//
-// 	a := NewTCPIPConnection()
-// 	a.port = port
-// 	a.connType = CONN_SERVER
-//
-// 	return a, nil
-// }
-
+// NewTCPIPConnectionWithAddrPort new tcp/ip connection with addr and port
 func NewTCPIPConnectionWithAddrPort(addr string, port int) (*TCPIPConnection, error) {
 	if port < int(Data.MIN_VALUE_PORT) || port > int(Data.MAX_VALUE_PORT) {
 		return nil, errors.New("TCPIPConnection: connection port is invalid")
@@ -83,6 +72,7 @@ func NewTCPIPConnectionWithAddrPort(addr string, port int) (*TCPIPConnection, er
 	return a, nil
 }
 
+// NewTCPIPConnectionWithSocket new tcp/ip connection with preallocated socket. Useful for tls enabled connection.
 func NewTCPIPConnectionWithSocket(soc *net.TCPConn) (*TCPIPConnection, error) {
 	if soc == nil || soc.RemoteAddr() == nil {
 		return nil, errors.New("TCPIPConnection: socket init is nil")
@@ -110,6 +100,7 @@ func NewTCPIPConnectionWithSocket(soc *net.TCPConn) (*TCPIPConnection, error) {
 	return a, nil
 }
 
+// Open connection
 func (c *TCPIPConnection) Open() *Exception.Exception {
 	if !c.IsOpened() {
 		if c.connType == CONN_CLIENT {
@@ -131,6 +122,7 @@ func (c *TCPIPConnection) Open() *Exception.Exception {
 	return nil
 }
 
+// Close connection
 func (c *TCPIPConnection) Close() *Exception.Exception {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -155,6 +147,7 @@ func (c *TCPIPConnection) Close() *Exception.Exception {
 	return nil
 }
 
+// Send buffered data
 func (c *TCPIPConnection) Send(data *Utils.ByteBuffer) (err *Exception.Exception) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -188,6 +181,7 @@ func (c *TCPIPConnection) Send(data *Utils.ByteBuffer) (err *Exception.Exception
 	return nil
 }
 
+// Receive message from connection in form of buffer
 func (c *TCPIPConnection) Receive() (result *Utils.ByteBuffer, err *Exception.Exception) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -241,21 +235,25 @@ func (c *TCPIPConnection) Receive() (result *Utils.ByteBuffer, err *Exception.Ex
 	return nil, nil
 }
 
+// SetReceiveBufferSize set buffer size for receiving message over socket
 func (c *TCPIPConnection) SetReceiveBufferSize(size int) {
 	c.receiveBufferSize = size
 	c.receiveBuffer = make([]byte, size)
 }
 
+// SetIOBufferSize set io buffer size
 func (c *TCPIPConnection) SetIOBufferSize(size int) {
 	if !c.IsOpened() {
 		c.ioBufferSize = size
 	}
 }
 
+// SetMaxReceiveSize set max length of message allowed to receive over socket
 func (c *TCPIPConnection) SetMaxReceiveSize(size int) {
 	c.maxReceiveSize = size
 }
 
+// IsOpened check if connection is opened
 func (c *TCPIPConnection) IsOpened() bool {
 	c.lock.RLock()
 	defer c.lock.RUnlock()

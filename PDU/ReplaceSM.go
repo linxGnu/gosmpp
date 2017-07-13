@@ -139,8 +139,7 @@ func (c *ReplaceSM) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception, 
 		return
 	}
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(len(c.GetMessageId()) + 1 + dat.Len() + len(c.GetScheduleDeliveryTime()) + 1 + len(c.GetValidityPeriod()) + 1 + Utils.SZ_BYTE*3 + shortMessage.Len())
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetMessageId())+1+dat.Len()+len(c.GetScheduleDeliveryTime())+1+len(c.GetValidityPeriod())+1+Utils.SZ_BYTE*3+shortMessage.Len()))
 
 	buf.Write_CString(c.GetMessageId())
 	buf.Write_Buffer(dat)

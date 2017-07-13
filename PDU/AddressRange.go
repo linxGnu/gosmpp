@@ -59,6 +59,20 @@ func (c *AddressRange) SetAddressRange(addr string) *Exception.Exception {
 	return nil
 }
 
+func (c *AddressRange) GetAddressRangeWithEncoding(enc Data.Encoding) (string, *Exception.Exception) {
+	bytes, err := enc.Encode(c.AddressRange)
+	if err != nil {
+		return "", Exception.UnsupportedEncodingException
+	}
+
+	res, err := enc.Decode(bytes)
+	if err != nil {
+		return "", Exception.UnsupportedEncodingException
+	}
+
+	return res, nil
+}
+
 func (c *AddressRange) SetData(bb *Utils.ByteBuffer) (err *Exception.Exception) {
 	if bb == nil || bb.Buffer == nil {
 		return Exception.NewExceptionFromStr("AddressRange: buffer is nil")
@@ -77,8 +91,7 @@ func (c *AddressRange) SetData(bb *Utils.ByteBuffer) (err *Exception.Exception) 
 }
 
 func (c *AddressRange) GetData() (result *Utils.ByteBuffer, err *Exception.Exception) {
-	bb := Utils.NewBufferDefault()
-	bb.Grow(len(c.AddressRange) + 1 + (Utils.SZ_BYTE << 1))
+	bb := Utils.NewBuffer(make([]byte, 0, len(c.AddressRange)<<1+1+(Utils.SZ_BYTE<<1)))
 
 	bb.Write_UnsafeByte(c.Ton)
 	bb.Write_UnsafeByte(c.Npi)

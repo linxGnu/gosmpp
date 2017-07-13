@@ -21,7 +21,7 @@ var t_bite byte = 0x1f
 var t_short int16 = 666
 
 func TestAppendByte0(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 6))
 	buffer.Write_Byte(t_bite)
 
 	expected := []byte{t_bite}
@@ -31,7 +31,7 @@ func TestAppendByte0(t *testing.T) {
 }
 
 func TestAppendShort0(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_Short(t_short)
 
 	expected := []byte{0x02, 0x9a}
@@ -41,7 +41,7 @@ func TestAppendShort0(t *testing.T) {
 }
 
 func TestAppendInt0(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 5))
 	buffer.Write_Int(666)
 
 	expected := []byte{NULL, NULL, 0x02, 0x9a}
@@ -51,7 +51,7 @@ func TestAppendInt0(t *testing.T) {
 }
 
 func TestAppendCString0(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_CString(ABC)
 
 	expected := []byte{A, B, C, NULL}
@@ -61,7 +61,7 @@ func TestAppendCString0(t *testing.T) {
 }
 
 func TestAppendString(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_String(ABC)
 
 	expected := []byte{A, B, C}
@@ -71,7 +71,7 @@ func TestAppendString(t *testing.T) {
 }
 
 func TestAppendCStringWithNULL(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_CString("")
 
 	expected := []byte{NULL}
@@ -81,7 +81,7 @@ func TestAppendCStringWithNULL(t *testing.T) {
 }
 
 func TestAppendBytesWithNull(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	err := buffer.Write_Bytes(nil)
 
 	if err == nil {
@@ -90,7 +90,7 @@ func TestAppendBytesWithNull(t *testing.T) {
 }
 
 func TestAppendBytes(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_Bytes([]byte{A, B, C})
 
 	expected := []byte{A, B, C}
@@ -100,7 +100,7 @@ func TestAppendBytes(t *testing.T) {
 }
 
 func TestRemoveByte(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_Bytes([]byte{A, B, C})
 
 	bite, err := buffer.Read_Byte()
@@ -110,7 +110,7 @@ func TestRemoveByte(t *testing.T) {
 }
 
 func TestRemoveByteNegative(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_Bytes([]byte{A, B, C})
 
 	_, err := buffer.Read_Bytes(-10)
@@ -120,7 +120,7 @@ func TestRemoveByteNegative(t *testing.T) {
 }
 
 func TestRemoveByteNotEnough(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_Bytes([]byte{A})
 
 	_, err := buffer.Read_Short()
@@ -130,7 +130,7 @@ func TestRemoveByteNotEnough(t *testing.T) {
 }
 
 func TestRemoveShort(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 4))
 	buffer.Write_Bytes([]byte{0x01, 0x02, 0x03, 0x04})
 
 	res, err := buffer.Read_Short()
@@ -140,7 +140,7 @@ func TestRemoveShort(t *testing.T) {
 }
 
 func TestRemoveInt(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 19))
 	buffer.Write_Bytes([]byte{0x01, 0x02, 0x03, 0x04})
 
 	res, err := buffer.Read_Int()
@@ -150,7 +150,7 @@ func TestRemoveInt(t *testing.T) {
 }
 
 func TestReadInt(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 21))
 	buffer.Write_Bytes([]byte{0x01, 0x02, 0x03, 0x04, 0x05})
 
 	res, err := buffer.Read_Int()
@@ -160,7 +160,7 @@ func TestReadInt(t *testing.T) {
 }
 
 func TestRemoveCStringWithoutTerminator(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_Bytes([]byte{0x01, 0x02, 0x03, 0x04, 0x05})
 
 	_, err := buffer.Read_CString()
@@ -170,7 +170,7 @@ func TestRemoveCStringWithoutTerminator(t *testing.T) {
 }
 
 func TestRemoveCString(t *testing.T) {
-	buffer := Utils.NewBufferDefault()
+	buffer := Utils.NewBuffer(make([]byte, 0, 0))
 	buffer.Write_Bytes([]byte{A, B, NULL, C, NULL})
 
 	res, err := buffer.Read_CString()

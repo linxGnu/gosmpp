@@ -45,7 +45,7 @@ func (c *TLVShort) GetValueData() (b *Utils.ByteBuffer, er *Exception.Exception)
 		return nil, er
 	}
 
-	buf := Utils.NewBufferDefault()
+	buf := Utils.NewBuffer(make([]byte, 0, 2))
 	return buf, buf.Write_Short(val)
 }
 

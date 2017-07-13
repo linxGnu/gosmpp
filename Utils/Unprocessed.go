@@ -11,7 +11,7 @@ type Unprocessed struct {
 
 func NewUnprocessed() *Unprocessed {
 	a := &Unprocessed{}
-	a.unprocessed = NewBufferDefault()
+	a.unprocessed = NewBuffer([]byte{})
 	a.expected = 0
 	a.lastTimeReceived = 0
 	a.hasUnprocessed = false

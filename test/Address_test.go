@@ -59,6 +59,18 @@ func TestGetAddressWithEncoding(t *testing.T) {
 	}
 }
 
+func TestGetAddressRangeWithEncoding(t *testing.T) {
+	address := PDU.NewAddressRange()
+	address.SetAddressRange("ABCDE")
+
+	enc := Data.ENC_UTF16_BE
+	st, err := address.GetAddressRangeWithEncoding(enc)
+
+	if err != nil || st != "\x41\x42\x43\x44\x45" {
+		t.Fail()
+	}
+}
+
 func TestGetData(t *testing.T) {
 	for _, ton := range TONS {
 		for _, npi := range NPIS {

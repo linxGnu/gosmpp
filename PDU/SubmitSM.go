@@ -291,8 +291,7 @@ func (c *SubmitSM) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception, s
 		return
 	}
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(len(c.GetServiceType()) + 1 + src.Len() + des.Len() + 3*Utils.SZ_BYTE + len(c.GetScheduleDeliveryTime()) + 1 + len(c.GetValidityPeriod()) + 1 + 5*Utils.SZ_BYTE + shortMessage.Len())
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetServiceType())+1+src.Len()+des.Len()+3*Utils.SZ_BYTE+len(c.GetScheduleDeliveryTime())+1+len(c.GetValidityPeriod())+1+5*Utils.SZ_BYTE+shortMessage.Len()))
 
 	buf.Write_CString(c.GetServiceType())
 	buf.Write_Buffer(src)

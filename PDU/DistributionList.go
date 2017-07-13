@@ -50,7 +50,7 @@ func (c *DistributionList) SetData(buf *Utils.ByteBuffer) *Exception.Exception {
 }
 
 func (c *DistributionList) GetData() (*Utils.ByteBuffer, *Exception.Exception) {
-	buf := Utils.NewBufferDefault()
+	buf := Utils.NewBuffer(make([]byte, 0, 32))
 	return buf, buf.Write_CString(c.GetDlName())
 }
 

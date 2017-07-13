@@ -77,8 +77,7 @@ func (c *SubmitMultiSMResp) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exc
 		return
 	}
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(len(c.GetMessageId()) + 1 + dat.Len())
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetMessageId())+1+dat.Len()))
 
 	buf.Write_CString(c.GetMessageId())
 	err = buf.Write_Buffer(dat)

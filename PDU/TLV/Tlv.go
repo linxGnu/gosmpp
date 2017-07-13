@@ -131,8 +131,7 @@ func (c *TLV) GetData() (*Utils.ByteBuffer, *Exception.Exception) {
 			return nil, err
 		}
 
-		tmp := Utils.NewBufferDefault()
-		tmp.Grow(Utils.SZ_SHORT*2 + valueData.Len())
+		tmp := Utils.NewBuffer(make([]byte, 0, Utils.SZ_SHORT*2+valueData.Len()))
 		tmp.Write_UnsafeShort(c.Tag)
 		tmp.Write_UnsafeShort(Common.EncodeUnsignedFromInt(count))
 		err = tmp.Write_Buffer(valueData)

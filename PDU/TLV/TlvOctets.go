@@ -65,7 +65,7 @@ func (c *TLVOctets) GetValueData() (*Utils.ByteBuffer, *Exception.Exception) {
 		return nil, err
 	}
 
-	buf := Utils.NewBufferDefault()
+	buf := Utils.NewBuffer(make([]byte, 0, 16))
 	return buf, buf.Write_Buffer(val)
 }
 

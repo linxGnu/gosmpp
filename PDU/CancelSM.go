@@ -102,8 +102,7 @@ func (c *CancelSM) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception, s
 		return
 	}
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(len(c.GetServiceType()) + 1 + len(c.GetMessageId()) + 1 + src.Len() + des.Len())
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetServiceType())+1+len(c.GetMessageId())+1+src.Len()+des.Len()))
 
 	buf.Write_CString(c.GetServiceType())
 	buf.Write_CString(c.GetMessageId())

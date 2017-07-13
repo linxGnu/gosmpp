@@ -79,12 +79,11 @@ func (c *QuerySM) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception, so
 		return
 	}
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(len(c.GetMessageId()) + 1 + addr.Len())
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetMessageId())+1+addr.Len()))
 
 	buf.Write_CString(c.GetMessageId())
-
 	err = buf.Write_Buffer(addr)
+
 	return
 }
 

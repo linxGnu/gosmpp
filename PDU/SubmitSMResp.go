@@ -69,7 +69,7 @@ func (c *SubmitSMResp) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exceptio
 
 	source = c.This.(IPDU)
 
-	buf = Utils.NewBufferDefault()
+	buf = Utils.NewBuffer(make([]byte, 0, 16))
 
 	if c.GetCommandStatus() == 0 {
 		err1 := buf.Write_CString(c.GetMessageId())

@@ -84,8 +84,7 @@ func (c *Outbind) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception, so
 
 	source = c.This.(IPDU)
 
-	buf = Utils.NewBufferDefault()
-	buf.Grow(len(c.GetSystemId()) + 1 + len(c.GetPassword()) + 1)
+	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetSystemId())+1+len(c.GetPassword())+1))
 
 	buf.Write_CString(c.GetSystemId())
 	err = buf.Write_CString(c.GetPassword())
