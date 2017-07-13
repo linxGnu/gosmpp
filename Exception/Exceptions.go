@@ -79,3 +79,5 @@ var TimeoutException *Exception = &Exception{errors.New("TimeoutException"), Dat
 var NotSynchronousException *Exception = &Exception{errors.New("NotSynchronousException"), Data.ESME_RUNKNOWNERR, -2785891348929001265}
 
 var WrongSessionStateException *Exception = &Exception{errors.New("WrongSessionStateException"), Data.ESME_RUNKNOWNERR, 7296414687928430713}
+
+var ConnectionClosingDueToError *Exception = &Exception{errors.New("Closing connection because of IOException receive via TCPIPConnection"), 0, 0}

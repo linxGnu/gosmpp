@@ -212,11 +212,12 @@ func (c *TCPIPConnection) Receive() (result *Utils.ByteBuffer, err *Exception.Ex
 
 			if e != nil {
 				if nerr, ok := e.(net.Error); ok && nerr.Timeout() {
+					fmt.Println(e)
 					break
 				}
 
 				c.Close()
-				return nil, Exception.NewExceptionFromStr("Closing connection because of IOException receive via TCPIPConnection")
+				return nil, Exception.ConnectionClosingDueToError
 			}
 
 			if bytesRead > 0 {
