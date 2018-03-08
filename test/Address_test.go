@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/linxGnu/gosmpp/Data"
-	"github.com/linxGnu/gosmpp/PDU"
+	"github.com/tsocial/gosmpp/Data"
+	"github.com/tsocial/gosmpp/PDU"
 )
 
 var TONS []byte = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}

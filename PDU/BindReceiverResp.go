@@ -1,6 +1,6 @@
 package PDU
 
-import "github.com/linxGnu/gosmpp/Data"
+import "github.com/tsocial/gosmpp/Data"
 
 type BindReceiverResp struct {
 	BindResponse
