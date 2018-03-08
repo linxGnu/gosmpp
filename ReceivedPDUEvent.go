@@ -1,6 +1,6 @@
 package gosmpp
 
-import "github.com/linxGnu/gosmpp/PDU"
+import "github.com/tsocial/gosmpp/PDU"
 
 type ReceivedPDUEvent struct {
 	serialVersionUID int64
