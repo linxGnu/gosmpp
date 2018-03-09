@@ -1,7 +1,6 @@
 package Data
 
 import (
-	gsm7bit "github.com/xlab/at/pdu"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/unicode"
@@ -30,11 +29,11 @@ type ENC_GSM7BIT_s struct {
 }
 
 func (c ENC_GSM7BIT_s) Encode(str string) ([]byte, error) {
-	return gsm7bit.Encode7Bit(str), nil
+	return Encode7Bit(str), nil
 }
 
 func (c ENC_GSM7BIT_s) Decode(data []byte) (string, error) {
-	return gsm7bit.Decode7Bit(data)
+	return Decode7Bit(data)
 }
 
 // ENC_ASCII_s ..
