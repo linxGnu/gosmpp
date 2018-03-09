@@ -7,8 +7,9 @@ import (
 	"github.com/linxGnu/gosmpp/Utils"
 )
 
-var defaultMaxAddressLength int32 = Data.SM_ADDR_LEN
+var defaultMaxAddressLength = Data.SM_ADDR_LEN
 
+// Address smpp address of src and dst
 type Address struct {
 	Common.ByteData
 	Ton              byte
@@ -17,6 +18,7 @@ type Address struct {
 	MaxAddressLength int32
 }
 
+// NewAddress create new address with default max length
 func NewAddress() *Address {
 	res := &Address{}
 	res.Construct()
@@ -24,6 +26,7 @@ func NewAddress() *Address {
 	return res
 }
 
+// NewAddressWithAddr create new address
 func NewAddressWithAddr(addr string) (*Address, *Exception.Exception) {
 	res := NewAddress()
 
@@ -35,6 +38,7 @@ func NewAddressWithAddr(addr string) (*Address, *Exception.Exception) {
 	return res, nil
 }
 
+// NewAddressWithMaxLength create new address, set max length in C of address
 func NewAddressWithMaxLength(len int32) *Address {
 	addr := NewAddress()
 	addr.MaxAddressLength = len

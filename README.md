@@ -5,6 +5,9 @@ This library is tested well with several SMSC simulators:
 - [smpp-smsc-simulator](http://www.voldrich.net/2015/01/11/smpp-smsc-simulator/): simulates a SMSC server – server which accepts SMS messages and handles its delivery to the mobile phone.
 - [SMPPSim](http://www.seleniumsoftware.com/downloads.html): a SMPP SMSC simulation tool, designed to help you test your SMPP based application. SMPPSim is free of charge and open source.
 
+gosmpp has run well in production now:
+- [My friend](https://github.com/tanlinhnd) at [traithivang.vn](http://traithivang.vn/) has used gosmpp as client to SMSC of Vietnamobile, a telecommunications company in Vietnam, without any problems for months.
+
 ## Installation
 ```
 go get -u github.com/linxGnu/gosmpp
