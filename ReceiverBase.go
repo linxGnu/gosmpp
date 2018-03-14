@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/linxGnu/gosmpp/Data"
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/PDU"
-	"github.com/linxGnu/gosmpp/Utils"
+	"github.com/tsocial/gosmpp/Data"
+	"github.com/tsocial/gosmpp/Exception"
+	"github.com/tsocial/gosmpp/PDU"
+	"github.com/tsocial/gosmpp/Utils"
 )
 
 type IReceiver interface {

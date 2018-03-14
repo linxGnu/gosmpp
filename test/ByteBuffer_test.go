@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/linxGnu/gosmpp/Utils"
+	"github.com/tsocial/gosmpp/Utils"
 )
 
 const (

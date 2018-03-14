@@ -1,6 +1,6 @@
 package gosmpp
 
-import "github.com/linxGnu/gosmpp/Exception"
+import "github.com/tsocial/gosmpp/Exception"
 
 type ServerPDUEventListener interface {
 	HandleEvent(event *ServerPDUEvent) *Exception.Exception

@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/linxGnu/gosmpp"
-	"github.com/linxGnu/gosmpp/Data"
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/PDU"
+	"github.com/tsocial/gosmpp"
+	"github.com/tsocial/gosmpp/Data"
+	"github.com/tsocial/gosmpp/Exception"
+	"github.com/tsocial/gosmpp/PDU"
 )
 
 const (

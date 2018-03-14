@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linxGnu/gosmpp/Data"
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/Utils"
+	"github.com/tsocial/gosmpp/Data"
+	"github.com/tsocial/gosmpp/Exception"
+	"github.com/tsocial/gosmpp/Utils"
 )
 
 const (
@@ -134,13 +134,19 @@ func (c *TCPIPConnection) Close() *Exception.Exception {
 		}()
 
 		if c.socket != nil {
-			fmt.Fprintf(os.Stdout, "Closing connection to "+c.GetAddress()+"\n")
+			if GoSmppConfig.trace {
+				fmt.Fprintf(os.Stdout, "Closing connection to "+c.GetAddress()+"\n")
+			}
 			err := c.socket.Close()
 			if err != nil {
-				fmt.Fprintf(os.Stdout, "Connection closed error: "+err.Error()+"\n")
+				if GoSmppConfig.trace {
+					fmt.Fprintf(os.Stdout, "Connection closed error: "+err.Error()+"\n")
+				}
 				return Exception.NewException(err)
 			}
-			fmt.Fprintf(os.Stdout, "Connection closed successfully")
+			if GoSmppConfig.trace {
+				fmt.Fprintf(os.Stdout, "Connection closed successfully")
+			}
 		}
 	}
 
@@ -212,7 +218,9 @@ func (c *TCPIPConnection) Receive() (result *Utils.ByteBuffer, err *Exception.Ex
 
 			if e != nil {
 				if nerr, ok := e.(net.Error); ok && nerr.Timeout() {
-					fmt.Println(e)
+					if GoSmppConfig.trace {
+						fmt.Println(e)
+					}
 					break
 				}
 

@@ -1,9 +1,9 @@
 package PDU
 
 import (
-	"github.com/linxGnu/gosmpp/Data"
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/Utils"
+	"github.com/tsocial/gosmpp/Data"
+	"github.com/tsocial/gosmpp/Exception"
+	"github.com/tsocial/gosmpp/Utils"
 )
 
 type UnsuccessSME struct {
