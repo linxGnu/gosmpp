@@ -2,7 +2,7 @@ package gosmpp
 
 // GoSmppConfig global configuration
 var GoSmppConfig = struct {
-	trace bool
+	Trace bool
 } {
-	trace: false,
+	Trace: false,
 }
