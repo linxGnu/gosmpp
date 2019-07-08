@@ -217,7 +217,7 @@ func (c *Session) BindWithListener(req PDU.IBindRequest, pduListener ServerPDUEv
 
 	c.Open()
 	c.transmitter = NewTransmitterWithConnection(c.connection)
-	c.receiver = NewReceiverWithTransmitterCon(pduListener, c.transmitter, c.connection)
+	c.receiver = NewReceiverWithTransmitterCon(nil, c.transmitter, c.connection)
 
 	resp, err := c.SendAsync(req, false)
 	if err != nil {
@@ -242,6 +242,7 @@ func (c *Session) BindWithListener(req PDU.IBindRequest, pduListener ServerPDUEv
 		} else {
 			c.setState(STATE_RECEIVER)
 		}
+		c.receiver.setListener(pduListener)
 	}
 
 	return bindResp, nil
