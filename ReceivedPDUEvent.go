@@ -9,7 +9,7 @@ type ReceivedPDUEvent struct {
 	Source           interface{}
 }
 
-func NewReceivedPDUEvent(source *ReceiverBase, con IConnection, pdu PDU.IPDU) *ReceivedPDUEvent {
+func NewReceivedPDUEvent(source *receiverBase, con IConnection, pdu PDU.IPDU) *ReceivedPDUEvent {
 	a := &ReceivedPDUEvent{}
 	a.serialVersionUID = 2888578757849035826
 	a.Source = source

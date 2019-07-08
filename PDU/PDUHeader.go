@@ -1,8 +1,6 @@
 package PDU
 
 import (
-	"fmt"
-
 	"github.com/linxGnu/gosmpp/Exception"
 	"github.com/linxGnu/gosmpp/PDU/Common"
 	"github.com/linxGnu/gosmpp/Utils"
@@ -42,13 +40,6 @@ func (c *PDUHeader) Construct() {
 }
 
 func (c *PDUHeader) GetData() (res *Utils.ByteBuffer, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-			res = nil
-		}
-	}()
-
 	buf := Utils.NewBuffer(make([]byte, 0, Utils.SZ_INT*4))
 
 	buf.Write_UnsafeInt(c.CommandLength)

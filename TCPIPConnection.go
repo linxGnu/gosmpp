@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -128,19 +127,14 @@ func (c *TCPIPConnection) Close() *Exception.Exception {
 	defer c.lock.Unlock()
 
 	if c.connType == CONN_CLIENT {
-		defer func() {
+		if c.socket != nil {
+			err := c.socket.Close()
 			c.socket = nil
 			c.opened = false
-		}()
 
-		if c.socket != nil {
-			fmt.Fprintf(os.Stdout, "Closing connection to "+c.GetAddress()+"\n")
-			err := c.socket.Close()
 			if err != nil {
-				fmt.Fprintf(os.Stdout, "Connection closed error: "+err.Error()+"\n")
 				return Exception.NewException(err)
 			}
-			fmt.Fprintf(os.Stdout, "Connection closed successfully")
 		}
 	}
 
@@ -149,12 +143,6 @@ func (c *TCPIPConnection) Close() *Exception.Exception {
 
 // Send buffered data
 func (c *TCPIPConnection) Send(data *Utils.ByteBuffer) (err *Exception.Exception) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = Exception.NewException(fmt.Errorf("%v", e))
-		}
-	}()
-
 	if !c.IsOpened() {
 		return Exception.EXCEPTION_TCP_NOT_OPEN
 	}
@@ -183,13 +171,6 @@ func (c *TCPIPConnection) Send(data *Utils.ByteBuffer) (err *Exception.Exception
 
 // Receive message from connection in form of buffer
 func (c *TCPIPConnection) Receive() (result *Utils.ByteBuffer, err *Exception.Exception) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = Exception.NewException(fmt.Errorf("%v", e))
-			result = nil
-		}
-	}()
-
 	if !c.IsOpened() {
 		return nil, Exception.EXCEPTION_TCP_NOT_OPEN
 	}

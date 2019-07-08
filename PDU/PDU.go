@@ -1,8 +1,7 @@
 package PDU
 
 import (
-	"fmt"
-	"sync"
+	"sync/atomic"
 
 	"github.com/linxGnu/gosmpp/Data"
 	"github.com/linxGnu/gosmpp/Exception"
@@ -18,19 +17,17 @@ const (
 	VALID_ALL    byte = 3
 )
 
-var SequenceNumber int32
-var l sync.Mutex
+var sequenceNumber int32
 
-func nextSequenceNumber() int32 {
-	l.Lock()
-	defer l.Unlock()
-
+func nextSequenceNumber() (v int32) {
 	// & 0x7FFFFFFF: cater for integer overflow
 	// Allowed range is 0x01 to 0x7FFFFFFF. This
 	// will still result in a single invalid value
 	// of 0x00 every ~2 billion PDUs (not too bad):
-	SequenceNumber++
-	return SequenceNumber & 0x7FFFFFFF
+	if v = atomic.AddInt32(&sequenceNumber, 1) & 0x7FFFFFFF; v <= 0 {
+		v = 1
+	}
+	return
 }
 
 type IPDU interface {
@@ -113,12 +110,6 @@ func (c *PDU) ResetSequenceNumber() {
 }
 
 func (c *PDU) SetData(buf *Utils.ByteBuffer) (err *Exception.Exception, source IPDU) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	source = c.This.(IPDU)
 
 	if buf == nil || buf.Buffer == nil {
@@ -175,13 +166,6 @@ func (c *PDU) SetData(buf *Utils.ByteBuffer) (err *Exception.Exception, source I
 }
 
 func (c *PDU) GetData() (buf *Utils.ByteBuffer, err *Exception.Exception, source IPDU) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-			buf = nil
-		}
-	}()
-
 	source = c.This.(IPDU)
 
 	body, err, _ := source.GetBody()
@@ -293,13 +277,6 @@ func (c *PDU) SetOptionalBody(buf *Utils.ByteBuffer) *Exception.Exception {
 }
 
 func (c *PDU) GetOptionalBody() (res *Utils.ByteBuffer, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-			res = nil
-		}
-	}()
-
 	dat1, err := c.GetOptionalBodyBuffer(c.OptionalParameters)
 	if err != nil {
 		return nil, err
@@ -319,13 +296,6 @@ func (c *PDU) GetOptionalBody() (res *Utils.ByteBuffer, err *Exception.Exception
 }
 
 func (c *PDU) GetOptionalBodyBuffer(optionalParams []TLV.ITLV) (res *Utils.ByteBuffer, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-			res = nil
-		}
-	}()
-
 	optBody := Utils.NewBuffer(make([]byte, 0, 64))
 
 	if optionalParams == nil {

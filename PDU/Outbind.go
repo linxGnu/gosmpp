@@ -1,8 +1,6 @@
 package PDU
 
 import (
-	"fmt"
-
 	"github.com/linxGnu/gosmpp/Data"
 	"github.com/linxGnu/gosmpp/Exception"
 	"github.com/linxGnu/gosmpp/Utils"
@@ -41,12 +39,6 @@ func (c *Outbind) CanResponse() bool {
 }
 
 func (c *Outbind) SetBody(buf *Utils.ByteBuffer) (err *Exception.Exception, source IPDU) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	source = c.This.(IPDU)
 
 	if buf == nil || buf.Buffer == nil {
@@ -76,12 +68,6 @@ func (c *Outbind) SetBody(buf *Utils.ByteBuffer) (err *Exception.Exception, sour
 }
 
 func (c *Outbind) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception, source IPDU) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	source = c.This.(IPDU)
 
 	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetSystemId())+1+len(c.GetPassword())+1))

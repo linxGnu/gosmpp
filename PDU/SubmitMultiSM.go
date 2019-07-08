@@ -1,8 +1,6 @@
 package PDU
 
 import (
-	"fmt"
-
 	"github.com/linxGnu/gosmpp/Data"
 	"github.com/linxGnu/gosmpp/Exception"
 	"github.com/linxGnu/gosmpp/PDU/Common"
@@ -142,12 +140,6 @@ func (c *SubmitMultiSM) CreateResponse() (IResponse, error) {
 }
 
 func (c *SubmitMultiSM) SetBody(buf *Utils.ByteBuffer) (err *Exception.Exception, source IPDU) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	source = c.This.(IPDU)
 
 	if buf == nil || buf.Buffer == nil {
@@ -250,13 +242,6 @@ func (c *SubmitMultiSM) SetBody(buf *Utils.ByteBuffer) (err *Exception.Exception
 }
 
 func (c *SubmitMultiSM) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception, source IPDU) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-			buf = nil
-		}
-	}()
-
 	source = c.This.(IPDU)
 
 	src, err := c.GetSourceAddr().GetData()

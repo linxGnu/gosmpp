@@ -1,7 +1,6 @@
 package Common
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -83,12 +82,6 @@ func (c *ByteData) CheckCStringMinMax(String string, min int, max int) *Exceptio
 }
 
 func (c *ByteData) CheckDate(dateStr string) (err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	strLen := len(dateStr)
 	count := strLen + 1
 	if count != 1 && count != int(Data.SM_DATE_LEN) {

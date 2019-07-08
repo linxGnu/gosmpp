@@ -29,12 +29,6 @@ func NewBuffer(inp []byte) *ByteBuffer {
 }
 
 func (c *ByteBuffer) read(n int) (r []byte, err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = fmt.Errorf("%v", e)
-		}
-	}()
-
 	if c.Buffer == nil {
 		return nil, fmt.Errorf("Buffer not init!")
 	}
@@ -162,12 +156,6 @@ func (c *ByteBuffer) Read_Int() (int32, *Exception.Exception) {
 }
 
 func (c *ByteBuffer) write(data []byte, n int) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = fmt.Errorf("%v", e)
-		}
-	}()
-
 	if c.Buffer == nil {
 		c.Buffer = &bytes.Buffer{}
 	}
@@ -289,12 +277,6 @@ func (c *ByteBuffer) Write_Buffer(d *ByteBuffer) *Exception.Exception {
 }
 
 func (c *ByteBuffer) write_String0(st string, isCString bool, enc Data.Encoding) (err *Exception.Exception) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = Exception.NewException(fmt.Errorf("%v", e))
-		}
-	}()
-
 	if len(st) > 0 {
 		var stringBuf []byte
 		if enc == nil {

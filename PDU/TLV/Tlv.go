@@ -1,8 +1,6 @@
 package TLV
 
 import (
-	"fmt"
-
 	"github.com/linxGnu/gosmpp/Exception"
 	"github.com/linxGnu/gosmpp/PDU/Common"
 	"github.com/linxGnu/gosmpp/Utils"
@@ -98,12 +96,6 @@ func (c *TLV) GetLength() (len int, err *Exception.Exception) {
 }
 
 func (c *TLV) SetData(bb *Utils.ByteBuffer) (err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	if bb.Len() < Utils.SZ_SHORT<<1 {
 		return Exception.NewExceptionFromStr("TLV: Buffer not enough to SetData")
 	}

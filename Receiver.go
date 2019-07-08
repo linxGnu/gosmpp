@@ -3,7 +3,6 @@ package gosmpp
 import (
 	"fmt"
 	"os"
-	// "runtime/debug"
 	"sync"
 
 	"github.com/linxGnu/gosmpp/Data"
@@ -17,69 +16,57 @@ const (
 	RECEIVE_CHAN_SIZE    = 10000
 )
 
+type IReceiver interface {
+	Receive()
+	TryReceivePDU(IConnection, PDU.IPDU) (PDU.IPDU, *Exception.Exception)
+}
+
 type Receiver struct {
-	ReceiverBase
-	transmitter         *Transmitter
-	connection          IConnection
-	unprocessed         *Utils.Unprocessed
-	pduListener         ServerPDUEventListener
-	asynchronousSending bool
-	automaticNack       bool // If true then GenericNack messages will be sent automatically if message can't be parsed
-	lock                sync.Mutex
+	*receiverBase
+	transmitter     *Transmitter
+	connection      IConnection
+	unprocessed     *Utils.Unprocessed
+	pduListener     ServerPDUEventListener
+	pduListenerLock sync.RWMutex
+	automaticNack   bool // If true then GenericNack messages will be sent automatically if message can't be parsed
 }
 
-func NewReceiver() *Receiver {
-	a := &Receiver{}
-	a.ReceiverBase.Construct()
-	a.automaticNack = true
-	a.asynchronousSending = false
-	a.unprocessed = Utils.NewUnprocessed()
-	a.RegisterReceiver(a)
-
-	return a
+func NewReceiver(listener ServerPDUEventListener) (r *Receiver) {
+	r = &Receiver{pduListener: listener}
+	r.receiverBase = newReceiverBase(r)
+	r.automaticNack = true
+	r.unprocessed = Utils.NewUnprocessed()
+	return
 }
 
-func NewReceiverWithConnection(con IConnection) *Receiver {
-	a := NewReceiver()
-	a.connection = con
-
-	return a
+func NewReceiverWithConnection(listener ServerPDUEventListener, conn IConnection) (r *Receiver) {
+	r = NewReceiver(listener)
+	r.connection = conn
+	return
 }
 
-func NewReceiverWithTransmitterCon(trans *Transmitter, con IConnection) *Receiver {
-	a := NewReceiverWithConnection(con)
-	a.transmitter = trans
-
-	return a
+func NewReceiverWithTransmitterCon(listener ServerPDUEventListener, trans *Transmitter, conn IConnection) (r *Receiver) {
+	r = NewReceiverWithConnection(listener, conn)
+	r.transmitter = trans
+	return
 }
 
-func (c *Receiver) SetServerPDUEventListener(listener ServerPDUEventListener) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	c.pduListener = listener
-	c.asynchronousSending = c.pduListener != nil
-}
-
-/**
- * Resets unprocessed data and starts receiving on the background.
- *
- * @see ReceiverBase#start()
- */
+// Start will reset unprocessed data and start receiving on the background.
 func (c *Receiver) Start() {
 	c.unprocessed.Reset()
-	c.StartProcess()
+	c.receiverBase.start()
 }
 
+// Stop receiver.
 func (c *Receiver) Stop() {
-	c.StopProcess()
+	c.receiverBase.stop()
 }
 
+// StopByException stops receiver and print err log.
 func (c *Receiver) StopByException(e *Exception.Exception) {
 	if e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e.Error)
 	}
-
 	c.Stop()
 }
 
@@ -118,10 +105,6 @@ func (c *Receiver) StopByException(e *Exception.Exception) {
  * @see ReceiverBase#tryReceivePDUWithTimeout(Connection,PDU,long)
  */
 func (c *Receiver) ReceiveSyncWTimeout(timeout int64) (PDU.IPDU, *Exception.Exception) {
-	if c.asynchronousSending {
-		return nil, nil
-	}
-
 	return c.tryReceivePDUWithCustomTimeout(c.connection, nil, timeout)
 }
 
@@ -134,23 +117,10 @@ func (c *Receiver) ReceiveSyncWTimeout(timeout int64) (PDU.IPDU, *Exception.Exce
  * @see ReceiverBase#tryReceivePDUWithTimeout(Connection,PDU,long)
  */
 func (c *Receiver) ReceiveSyncWithExpectedPDU(pdu PDU.IPDU) (PDU.IPDU, *Exception.Exception) {
-	if c.asynchronousSending {
-		return nil, nil
-	}
-
 	return c.tryReceivePDUWithTimeout(c.connection, pdu)
 }
 
 func (c *Receiver) TryReceivePDU(conn IConnection, expected PDU.IPDU) (pduResult PDU.IPDU, expc *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			pduResult = nil
-			expc = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
-	// debug.PrintStack()
-
 	var pdu PDU.IPDU
 	pdu, err := c.ReceivePDUFromConnection(c.connection, c.unprocessed)
 	if err != nil {
@@ -178,15 +148,7 @@ func (c *Receiver) TryReceivePDU(conn IConnection, expected PDU.IPDU) (pduResult
  *
  * @see ReceiverBase#run()
  */
-func (c *Receiver) ReceiveAsync() {
-	defer func() {
-		if errs := recover(); errs != nil {
-			c.Stop()
-		}
-
-		// debug.PrintStack()
-	}()
-
+func (c *Receiver) Receive() {
 	if c.connection != nil && !c.connection.IsOpened() {
 		c.Stop()
 		return
@@ -226,10 +188,21 @@ func (c *Receiver) ReceiveAsync() {
 	}
 
 	if pdu != nil {
-		if c.asynchronousSending {
-			c.handle(pdu)
-		}
+		c.handle(pdu)
 	}
+}
+
+func (c *Receiver) getListener() (lis ServerPDUEventListener) {
+	c.pduListenerLock.RLock()
+	lis = c.pduListener
+	c.pduListenerLock.RUnlock()
+	return
+}
+
+func (c *Receiver) setListener(lis ServerPDUEventListener) {
+	c.pduListenerLock.Lock()
+	c.pduListener = lis
+	c.pduListenerLock.Unlock()
 }
 
 func (c *Receiver) handle(pdu PDU.IPDU) {
@@ -237,12 +210,12 @@ func (c *Receiver) handle(pdu PDU.IPDU) {
 		return
 	}
 
-	if c.pduListener != nil {
-		c.pduListener.HandleEvent(NewServerPDUEvent(c, c.connection, pdu))
+	if pduListener := c.getListener(); pduListener != nil {
+		pduListener.HandleEvent(NewServerPDUEvent(c, c.connection, pdu))
 	} else {
 		t, _, _ := pdu.GetData()
 		if t != nil {
-			fmt.Fprintf(os.Stdout, "async receiver doesn't have ServerPDUEventListener, "+"discarding "+t.GetHexDump()+"\n")
+			fmt.Fprintf(os.Stdout, "Receiver doesn't have ServerPDUEventListener, "+"discarding "+t.GetHexDump()+"\n")
 		}
 	}
 }

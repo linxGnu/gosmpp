@@ -2,7 +2,6 @@ package Common
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/linxGnu/gosmpp/Exception"
 	"github.com/linxGnu/gosmpp/Utils"
@@ -50,12 +49,6 @@ func (c *ByteDataList) ResetValues() {
 }
 
 func (c *ByteDataList) SetData(buffer *Utils.ByteBuffer) (err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	c.ResetValues()
 
 	var nrValues int

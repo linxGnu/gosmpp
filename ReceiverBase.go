@@ -1,7 +1,7 @@
 package gosmpp
 
 import (
-	"fmt"
+	"context"
 	"time"
 
 	"github.com/linxGnu/gosmpp/Data"
@@ -10,76 +10,62 @@ import (
 	"github.com/linxGnu/gosmpp/Utils"
 )
 
-type IReceiver interface {
-	IRoutineProcess
-	ReceiveAsync()
-	TryReceivePDU(IConnection, PDU.IPDU) (PDU.IPDU, *Exception.Exception)
-}
-
-type ReceiverBase struct {
-	RoutineProcess
+// base struct for receiver.
+type receiverBase struct {
+	ctx                         context.Context
+	cancel                      context.CancelFunc
 	receiveTimeout              int64
 	messageIncompleteRetryCount byte
 	receiver                    IReceiver
 }
 
-func NewReceiverBase() *ReceiverBase {
-	a := &ReceiverBase{}
-	a.Construct()
-
-	return a
+func newReceiverBase(receiver IReceiver) (r *receiverBase) {
+	r = &receiverBase{
+		receiver:       receiver,
+		receiveTimeout: Data.RECEIVER_TIMEOUT,
+	}
+	r.ctx, r.cancel = context.WithCancel(context.Background())
+	r.init()
+	return r
 }
 
-func (c *ReceiverBase) Construct() {
+func (c *receiverBase) init() {
 	c.receiveTimeout = Data.RECEIVER_TIMEOUT
 	c.messageIncompleteRetryCount = 0
 }
 
-func (c *ReceiverBase) RegisterReceiver(rec IReceiver) {
-	c.receiver = rec
-	c.RegisterProcessUnit(rec)
+func (c *receiverBase) start() {
+	go func() {
+		for {
+			select {
+			case <-c.ctx.Done():
+				return
+
+			default:
+				if c.receiver != nil {
+					c.receiver.Receive()
+				}
+			}
+		}
+	}()
 }
 
-func (c *ReceiverBase) GetReceiveTimeout() int64 {
-	return c.receiveTimeout
+func (c *receiverBase) stop() {
+	c.cancel()
 }
 
-func (c *ReceiverBase) SetReceiveTimeout(timeout int64) {
-	c.receiveTimeout = timeout
-}
-
-/**
- * This is an implementation of <code>ProcessingThread</code>'s
- * <code>process</code> method, which is method called in loop from
- * the <code>run</code> method.<br>
- * This simply calls <code>receiveAsync</code>.
- */
-func (c *ReceiverBase) Process() {
-	if c.receiver != nil {
-		c.receiver.ReceiveAsync()
-	}
-}
-
-func (c *ReceiverBase) canContinueReceiving(deadLine time.Time, timeout int64) bool {
+func (c *receiverBase) canContinueReceiving(deadLine time.Time, timeout int64) bool {
 	if timeout == Data.RECEIVE_BLOCKING {
 		return true
 	}
-
 	return time.Now().Before(deadLine)
 }
 
-func (c *ReceiverBase) tryReceivePDUWithTimeout(conn IConnection, expected PDU.IPDU) (PDU.IPDU, *Exception.Exception) {
-	return c.tryReceivePDUWithCustomTimeout(conn, expected, c.GetReceiveTimeout())
+func (c *receiverBase) tryReceivePDUWithTimeout(conn IConnection, expected PDU.IPDU) (PDU.IPDU, *Exception.Exception) {
+	return c.tryReceivePDUWithCustomTimeout(conn, expected, c.receiveTimeout)
 }
 
-func (c *ReceiverBase) tryReceivePDUWithCustomTimeout(conn IConnection, expectedPDU PDU.IPDU, timeout int64) (pduResult PDU.IPDU, expc *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			pduResult = nil
-			expc = Exception.NewException(fmt.Errorf("%v\n", errs))
-		}
-	}()
-
+func (c *receiverBase) tryReceivePDUWithCustomTimeout(conn IConnection, expectedPDU PDU.IPDU, timeout int64) (pduResult PDU.IPDU, expc *Exception.Exception) {
 	if c.receiver == nil {
 		return nil, Exception.NewExceptionFromStr("Receiver not initialized")
 	}
@@ -107,7 +93,7 @@ func (c *ReceiverBase) tryReceivePDUWithCustomTimeout(conn IConnection, expected
 	return pdu, nil
 }
 
-func (c *ReceiverBase) ReceivePDUFromConnection(conn IConnection, unprocessed *Utils.Unprocessed) (PDU.IPDU, *Exception.Exception) {
+func (c *receiverBase) ReceivePDUFromConnection(conn IConnection, unprocessed *Utils.Unprocessed) (PDU.IPDU, *Exception.Exception) {
 	if unprocessed == nil {
 		return nil, nil
 	}
@@ -150,9 +136,7 @@ func (c *ReceiverBase) ReceivePDUFromConnection(conn IConnection, unprocessed *U
 
 			pdu = _pdu
 		} else {
-			timeout := c.GetReceiveTimeout()
-
-			if unprocessedBuf.Len() > 0 && time.Now().UnixNano() > timeout*int64(1000000)+unprocessed.GetLastTimeReceived() {
+			if unprocessedBuf.Len() > 0 && time.Now().UnixNano() > c.receiveTimeout*int64(1000000)+unprocessed.GetLastTimeReceived() {
 				unprocessed.Reset()
 				return pdu, Exception.TimeoutException
 			}
@@ -162,7 +146,7 @@ func (c *ReceiverBase) ReceivePDUFromConnection(conn IConnection, unprocessed *U
 	return pdu, nil
 }
 
-func (c *ReceiverBase) tryGetUnprocessedPDU(unproc *Utils.Unprocessed) (PDU.IPDU, *Exception.Exception) {
+func (c *receiverBase) tryGetUnprocessedPDU(unproc *Utils.Unprocessed) (PDU.IPDU, *Exception.Exception) {
 	unprocBuffer := unproc.GetUnprocessed()
 
 	pdu, err, header := PDU.CreatePDU(unprocBuffer)

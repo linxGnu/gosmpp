@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/linxGnu/gosmpp/Data"
@@ -207,12 +206,6 @@ func (c *Session) Bind(req PDU.IBindRequest) (PDU.IResponse, *Exception.Exceptio
 }
 
 func (c *Session) BindWithListener(req PDU.IBindRequest, pduListener ServerPDUEventListener) (bindResp PDU.IResponse, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return
@@ -224,9 +217,9 @@ func (c *Session) BindWithListener(req PDU.IBindRequest, pduListener ServerPDUEv
 
 	c.Open()
 	c.transmitter = NewTransmitterWithConnection(c.connection)
-	c.receiver = NewReceiverWithTransmitterCon(c.transmitter, c.connection)
+	c.receiver = NewReceiverWithTransmitterCon(pduListener, c.transmitter, c.connection)
 
-	resp, err := c.SendWithAsyncStyle(req, false)
+	resp, err := c.SendAsync(req, false)
 	if err != nil {
 		return
 	}
@@ -249,19 +242,12 @@ func (c *Session) BindWithListener(req PDU.IBindRequest, pduListener ServerPDUEv
 		} else {
 			c.setState(STATE_RECEIVER)
 		}
-		c.setServerPDUEventListener(pduListener)
 	}
 
 	return bindResp, nil
 }
 
 func (c *Session) Unbind() (unbindResp *PDU.UnbindResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
 	if c.bound {
 		unbindReq := PDU.NewUnbind()
 		err = c.CheckPDUState(unbindReq)
@@ -305,12 +291,6 @@ func (c *Session) Unbind() (unbindResp *PDU.UnbindResp, err *Exception.Exception
 }
 
 func (c *Session) Submit(req *PDU.SubmitSM) (resp *PDU.SubmitSMResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return nil, err
@@ -329,12 +309,6 @@ func (c *Session) Submit(req *PDU.SubmitSM) (resp *PDU.SubmitSMResp, err *Except
 }
 
 func (c *Session) SubmitMulti(req *PDU.SubmitMultiSM) (resp *PDU.SubmitMultiSMResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return nil, err
@@ -353,12 +327,6 @@ func (c *Session) SubmitMulti(req *PDU.SubmitMultiSM) (resp *PDU.SubmitMultiSMRe
 }
 
 func (c *Session) Deliver(req *PDU.DeliverSM) (resp *PDU.DeliverSMResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return nil, err
@@ -377,12 +345,6 @@ func (c *Session) Deliver(req *PDU.DeliverSM) (resp *PDU.DeliverSMResp, err *Exc
 }
 
 func (c *Session) Data(req *PDU.DataSM) (resp *PDU.DataSMResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return nil, err
@@ -401,12 +363,6 @@ func (c *Session) Data(req *PDU.DataSM) (resp *PDU.DataSMResp, err *Exception.Ex
 }
 
 func (c *Session) Query(req *PDU.QuerySM) (resp *PDU.QuerySMResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return nil, err
@@ -425,12 +381,6 @@ func (c *Session) Query(req *PDU.QuerySM) (resp *PDU.QuerySMResp, err *Exception
 }
 
 func (c *Session) Cancel(req *PDU.CancelSM) (resp *PDU.CancelSMResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return nil, err
@@ -449,12 +399,6 @@ func (c *Session) Cancel(req *PDU.CancelSM) (resp *PDU.CancelSMResp, err *Except
 }
 
 func (c *Session) Replace(req *PDU.ReplaceSM) (resp *PDU.ReplaceSMResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return nil, err
@@ -473,12 +417,6 @@ func (c *Session) Replace(req *PDU.ReplaceSM) (resp *PDU.ReplaceSMResp, err *Exc
 }
 
 func (c *Session) EnquireLink(req *PDU.EnquireLink) (resp *PDU.EnquireLinkResp, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return nil, err
@@ -501,12 +439,6 @@ func (c *Session) DoEnquireLink() (resp *PDU.EnquireLinkResp, err *Exception.Exc
 }
 
 func (c *Session) AlertNotification(req *PDU.AlertNotification) (err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	err = c.CheckPDUState(req)
 	if err != nil {
 		return
@@ -558,16 +490,10 @@ func (c *Session) GetConnection() IConnection {
 }
 
 func (c *Session) Send(req PDU.IRequest) (resp PDU.IResponse, err *Exception.Exception) {
-	return c.SendWithAsyncStyle(req, c.isAsync)
+	return c.SendAsync(req, c.isAsync)
 }
 
-func (c *Session) SendWithAsyncStyle(req PDU.IRequest, isAsync bool) (resp PDU.IResponse, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewException(fmt.Errorf("%v", errs))
-		}
-	}()
-
+func (c *Session) SendAsync(req PDU.IRequest, isAsync bool) (resp PDU.IResponse, err *Exception.Exception) {
 	resp = nil
 
 	err = c.transmitter.Send(req)
@@ -603,12 +529,6 @@ func (c *Session) SendWithAsyncStyle(req PDU.IRequest, isAsync bool) (resp PDU.I
 }
 
 func (c *Session) checkResponse(resp PDU.IPDU, exp PDU.IResponse) (result PDU.IResponse, err *Exception.Exception) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = Exception.NewExceptionFromStr(fmt.Sprintf("%v", errs))
-		}
-	}()
-
 	if resp.GetCommandId() != exp.GetCommandId() {
 		if resp.GetCommandId() == Data.GENERIC_NACK {
 			exp.SetCommandId(Data.GENERIC_NACK)
@@ -707,7 +627,7 @@ func (c *Session) IsPDUAllowed(pdu PDU.IPDU) bool {
 
 func (c *Session) setServerPDUEventListener(pduListener ServerPDUEventListener) {
 	c.pduListener = pduListener
-	c.receiver.SetServerPDUEventListener(pduListener)
+	c.receiver.setListener(pduListener)
 	c.isAsync = pduListener != nil
 }
 
@@ -739,11 +659,6 @@ func NewUnbindServerPDUEventListener(sess *Session, origListener ServerPDUEventL
 }
 
 func (c *UnbindServerPDUEventListener) HandleEvent(event *ServerPDUEvent) *Exception.Exception {
-	defer func() {
-		if errs := recover(); errs != nil {
-		}
-	}()
-
 	pdu := event.GetPDU()
 	if pdu == nil {
 		return nil
@@ -784,9 +699,6 @@ func (c *UnbindServerPDUEventListener) StartWait(miliSecond int64) {
 	timer := time.NewTimer(time.Millisecond * time.Duration(miliSecond))
 	go func(timer *time.Timer, a *UnbindServerPDUEventListener) {
 		defer func() {
-			if errs := recover(); errs != nil {
-			}
-
 			a.GetWaitChan() <- true
 		}()
 

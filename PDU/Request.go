@@ -1,7 +1,5 @@
 package PDU
 
-import "fmt"
-
 type IRequest interface {
 	IPDU
 	GetResponse() (IResponse, error)
@@ -33,12 +31,6 @@ func (c *Request) Construct() {
 }
 
 func (c *Request) GetResponse() (res IResponse, err error) {
-	defer func() {
-		if errs := recover(); errs != nil {
-			err = fmt.Errorf("%v", errs)
-		}
-	}()
-
 	source := c.This.(IRequest)
 
 	res, err = source.CreateResponse()
