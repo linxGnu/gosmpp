@@ -2,7 +2,6 @@ package gosmpp
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"strconv"
 	"sync"
@@ -193,7 +192,6 @@ func (c *TCPIPConnection) Receive() (result *Utils.ByteBuffer, err *Exception.Ex
 
 			if e != nil {
 				if nerr, ok := e.(net.Error); ok && nerr.Timeout() {
-					fmt.Println(e)
 					break
 				}
 

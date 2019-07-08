@@ -14,10 +14,8 @@ import (
 
 const (
 	testSMSCAddr = "localhost"
-	testSMSCPort = 34567
+	testSMSCPort = 2775
 )
-
-var session *gosmpp.Session
 
 // TestBindingSMSC test binding connection with SMSC
 func TestBindingSMSC(t *testing.T) {
@@ -33,7 +31,7 @@ func TestBindingSMSC(t *testing.T) {
 	request.SetPassword("password")
 	request.SetSystemType("CMT")
 
-	session = gosmpp.NewSessionWithConnection(connection)
+	session := gosmpp.NewSessionWithConnection(connection)
 	session.EnableStateChecking()
 
 	listener := &TestPDUListener{}
@@ -62,15 +60,31 @@ func TestSubmitSMSC(t *testing.T) {
 		return
 	}
 
+	connection2, err := gosmpp.NewTCPIPConnectionWithAddrPort(testSMSCAddr, testSMSCPort)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+		return
+	}
+
 	request := PDU.NewBindTransceiver()
 	request.SetSystemId("smppclient1")
 	request.SetPassword("password")
 	request.SetSystemType("CMT")
 
-	session = gosmpp.NewSessionWithConnection(connection)
+	request2 := PDU.NewBindTransceiver()
+	request2.SetSystemId("smppclient2")
+	request2.SetPassword("password")
+	request2.SetSystemType("CMT")
+
+	session := gosmpp.NewSessionWithConnection(connection)
 	session.EnableStateChecking()
 
-	listener := &TestPDUListener{}
+	session2 := gosmpp.NewSessionWithConnection(connection2)
+	session.EnableStateChecking()
+
+	listener := &TestPDUListener{id: "smppclient1", session: session}
+	listener2 := &TestPDUListener{id: "smppclient2", session: session2}
 
 	resp, e := session.BindWithListener(request, listener)
 	if e != nil || resp.GetCommandStatus() != 0 {
@@ -78,6 +92,15 @@ func TestSubmitSMSC(t *testing.T) {
 		t.Fail()
 		return
 	}
+	session.GetReceiver().SetReceiveTimeout(-1)
+
+	resp, e = session2.BindWithListener(request2, listener2)
+	if e != nil || resp.GetCommandStatus() != 0 {
+		t.Error(e)
+		t.Fail()
+		return
+	}
+	session2.GetReceiver().SetReceiveTimeout(-1)
 
 	// Test submit
 	submit := PDU.NewSubmitSM()
@@ -97,45 +120,61 @@ func TestSubmitSMSC(t *testing.T) {
 	submit.SetEsmClass(0)
 	submit.SetSequenceNumber(10)
 
-	if _, e = session.Submit(submit); e != nil {
-		t.Errorf(e.Error.Error())
-		t.Fail()
-		return
+	for i := 0; i < 100; i++ {
+		if _, e = session.Submit(submit); e != nil {
+			t.Errorf(e.Error.Error())
+			t.Fail()
+			return
+		}
 	}
 
-	fmt.Println("Waiting 15 seconds to receive submitSMResp from SMSC or deliverSM")
-	time.Sleep(15 * time.Second)
-	fmt.Println("Done")
+	fmt.Println("Waiting 60 seconds to receive submitSMResp from SMSC or deliverSM")
+	time.Sleep(60 * time.Second)
+	session.Unbind()
+	session2.Unbind()
 }
 
 type TestPDUListener struct {
+	id      string
+	session *gosmpp.Session
 }
 
 func (c *TestPDUListener) HandleEvent(event *gosmpp.ServerPDUEvent) *Exception.Exception {
-	switch event.GetPDU().(type) {
-	case *PDU.SubmitSMResp:
-		t := event.GetPDU().(*PDU.SubmitSMResp)
-		fmt.Println("SUBMIT SM RESP", t.GetMessageId())
-	case *PDU.DeliverSM:
-		t := event.GetPDU().(*PDU.DeliverSM)
+	switch ev := event.GetPDU().(type) {
+	case *PDU.DeliverSMResp:
+		fmt.Println("DeliverSMResp", ev)
 
-		// It's always better to do response without worrying!
-		resp, _ := t.GetResponse()
+	case *PDU.SubmitSMResp:
+		fmt.Println("SubmitSMResp", ev)
+
+	case *PDU.DataSM:
+		fmt.Println("DataSM", ev)
+		resp, _ := ev.GetResponse()
 		if resp != nil {
-			session.Respond(resp)
+			c.session.Respond(resp)
 		}
 
-		if t.GetEsmClass() == 0 {
-			if t.GetDataCoding() == 0 {
-				x, er := t.GetShortMessage()
-				fmt.Println("From:", t.GetSourceAddr(), "with message:", x, er)
+	case *PDU.DeliverSM:
+		fmt.Println("DeliverSM", ev, c.id)
+
+		// It's always better to do response without worrying!
+		resp, _ := ev.GetResponse()
+		if resp != nil {
+			fmt.Println("Responding", resp, c.session)
+			c.session.Respond(resp)
+		}
+
+		if ev.GetEsmClass() == 0 {
+			if ev.GetDataCoding() == 0 {
+				x, er := ev.GetShortMessage()
+				fmt.Println("From:", ev.GetSourceAddr(), "with message:", x, er)
 			} else {
-				x, er := t.GetShortMessageWithEncoding(Data.ENC_UTF16)
-				fmt.Println("From:", t.GetSourceAddr(), "with message:", x, er)
+				x, er := ev.GetShortMessageWithEncoding(Data.ENC_UTF16)
+				fmt.Println("From:", ev.GetSourceAddr(), "with message:", x, er)
 			}
 		} else {
-			if t.HasReceiptedMessageId() {
-				rm, e := t.GetReceiptedMessageId()
+			if ev.HasReceiptedMessageId() {
+				rm, e := ev.GetReceiptedMessageId()
 				if e != nil {
 					fmt.Println("DeliverSM Message ID:", rm, e)
 				} else {

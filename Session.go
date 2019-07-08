@@ -1,6 +1,7 @@
 package gosmpp
 
 import (
+	"context"
 	"time"
 
 	"github.com/linxGnu/gosmpp/Data"
@@ -217,7 +218,7 @@ func (c *Session) BindWithListener(req PDU.IBindRequest, pduListener ServerPDUEv
 
 	c.Open()
 	c.transmitter = NewTransmitterWithConnection(c.connection)
-	c.receiver = NewReceiverWithTransmitterCon(nil, c.transmitter, c.connection)
+	c.receiver = NewReceiverWithTransmitterCon(pduListener, c.transmitter, c.connection)
 
 	resp, err := c.SendAsync(req, false)
 	if err != nil {
@@ -232,6 +233,7 @@ func (c *Session) BindWithListener(req PDU.IBindRequest, pduListener ServerPDUEv
 	if !c.bound {
 		c.Close()
 	} else {
+		c.setServerPDUEventListener(pduListener)
 		c.receiver.Start()
 		if req.IsTransmitter() {
 			if req.IsReceiver() {
@@ -242,7 +244,6 @@ func (c *Session) BindWithListener(req PDU.IBindRequest, pduListener ServerPDUEv
 		} else {
 			c.setState(STATE_RECEIVER)
 		}
-		c.receiver.setListener(pduListener)
 	}
 
 	return bindResp, nil
@@ -266,8 +267,6 @@ func (c *Session) Unbind() (unbindResp *PDU.UnbindResp, err *Exception.Exception
 			c.Send(unbindReq)
 
 			unbindListener.StartWait(Data.UNBIND_RECEIVE_TIMEOUT)
-			<-unbindListener.GetWaitChan()
-			unbindListener.CloseWaitChan()
 
 			unbindResp = unbindListener.GetUnbindResp()
 
@@ -637,24 +636,25 @@ func (c *Session) getServerPDUEventListener() ServerPDUEventListener {
 }
 
 type UnbindServerPDUEventListener struct {
+	ctx          context.Context
+	cancel       context.CancelFunc
 	session      *Session
 	origListener ServerPDUEventListener
 	unbindReq    *PDU.Unbind
 	expectedResp *PDU.UnbindResp
 	unbindResp   *PDU.UnbindResp
-	waitChan     chan bool
 }
 
 func NewUnbindServerPDUEventListener(sess *Session, origListener ServerPDUEventListener, unbindReq *PDU.Unbind) *UnbindServerPDUEventListener {
-	a := &UnbindServerPDUEventListener{}
-	a.session = sess
-	a.origListener = origListener
-	a.unbindReq = unbindReq
+	urResp, _ := unbindReq.GetResponse()
 
-	tmp, _ := unbindReq.GetResponse()
-	a.expectedResp = tmp.(*PDU.UnbindResp)
-
-	a.waitChan = make(chan bool, 10)
+	a := &UnbindServerPDUEventListener{
+		session:      sess,
+		origListener: origListener,
+		unbindReq:    unbindReq,
+		expectedResp: urResp.(*PDU.UnbindResp),
+	}
+	a.ctx, a.cancel = context.WithCancel(context.Background())
 
 	return a
 }
@@ -673,12 +673,10 @@ func (c *UnbindServerPDUEventListener) HandleEvent(event *ServerPDUEvent) *Excep
 
 		if resp != nil {
 			c.unbindResp = resp.(*PDU.UnbindResp)
-			c.waitChan <- true
+			c.cancel()
 		}
-	} else {
-		if c.origListener != nil {
-			c.origListener.HandleEvent(event)
-		}
+	} else if c.origListener != nil {
+		c.origListener.HandleEvent(event)
 	}
 
 	return nil
@@ -688,21 +686,12 @@ func (c *UnbindServerPDUEventListener) GetUnbindResp() *PDU.UnbindResp {
 	return c.unbindResp
 }
 
-func (c *UnbindServerPDUEventListener) GetWaitChan() chan bool {
-	return c.waitChan
-}
-
-func (c *UnbindServerPDUEventListener) CloseWaitChan() {
-	close(c.waitChan)
-}
-
 func (c *UnbindServerPDUEventListener) StartWait(miliSecond int64) {
-	timer := time.NewTimer(time.Millisecond * time.Duration(miliSecond))
-	go func(timer *time.Timer, a *UnbindServerPDUEventListener) {
-		defer func() {
-			a.GetWaitChan() <- true
-		}()
+	select {
+	case <-time.After(time.Millisecond * time.Duration(miliSecond)):
+		return
 
-		<-timer.C
-	}(timer, c)
+	case <-c.ctx.Done():
+		return
+	}
 }
