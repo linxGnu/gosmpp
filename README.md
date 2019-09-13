@@ -16,7 +16,7 @@ go get -u github.com/linxGnu/gosmpp
 ## Usage
 Please refer to [Communication Test Case](https://github.com/linxGnu/gosmpp/blob/master/test/Communication_test.go) for sample code. If you are familiar with [OpenSMPP](https://github.com/OpenSmpp/opensmpp), you would know how to implement it easily.
 
-Full project of building SMPP Client could be found at: [Telcos](https://github.com/linxGnu/gosmpp/examples/telcos)
+Full example could be found: [gist](https://gist.github.com/linxGnu/b488997a0e62b3f6a7060ba2af6391ea)
 
 ## Supported PDUs
 
