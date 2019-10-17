@@ -107,10 +107,10 @@ func (c *TCPIPConnection) Open() *Exception.Exception {
 				return Exception.NewException(err)
 			}
 			c.socket = socket
-			c.socket.SetKeepAlive(true)
-			c.socket.SetKeepAlivePeriod(5 * time.Second)
-			c.socket.SetReadBuffer(int(c.receiveBufferSize))
-			c.socket.SetWriteBuffer(int(c.receiveBufferSize))
+			_ = c.socket.SetKeepAlive(true)
+			_ = c.socket.SetKeepAlivePeriod(5 * time.Second)
+			_ = c.socket.SetReadBuffer(int(c.receiveBufferSize))
+			_ = c.socket.SetWriteBuffer(int(c.receiveBufferSize))
 			c.opened = true
 		} else {
 			return Exception.NewExceptionFromStr("TCPIPConnection: unknown connection type = " + strconv.Itoa(int(c.connType)))
@@ -153,7 +153,7 @@ func (c *TCPIPConnection) Send(data *Utils.ByteBuffer) (err *Exception.Exception
 	if c.connType == CONN_CLIENT {
 		sendTimeout := c.GetSendTimeout()
 		if sendTimeout >= 0 {
-			c.socket.SetWriteDeadline(time.Now().Add(time.Duration(sendTimeout) * time.Millisecond))
+			_ = c.socket.SetWriteDeadline(time.Now().Add(time.Duration(sendTimeout) * time.Millisecond))
 		}
 
 		_, err := c.socket.Write(data.Bytes())
@@ -184,7 +184,7 @@ func (c *TCPIPConnection) Receive() (result *Utils.ByteBuffer, err *Exception.Ex
 		totalRead := 0
 
 		if recTimeout >= 0 {
-			c.socket.SetReadDeadline(deadLineRead)
+			_ = c.socket.SetReadDeadline(deadLineRead)
 		}
 
 		for totalRead < c.maxReceiveSize && (recTimeout < 0 || time.Now().Before(deadLineRead)) {

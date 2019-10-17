@@ -209,6 +209,8 @@ func (c *Receiver) Receive() {
 			} else {
 				pdu = PDU.NewGenericNackWithCmStatusSeqNum(err.ErrorCode, pdu.GetSequenceNumber())
 			}
+		} else {
+			c.handleException(err)
 		}
 	}
 
@@ -223,10 +225,8 @@ func (c *Receiver) ReceivePDUFromConnection(conn IConnection, unprocessed *Utils
 	}
 
 	var pdu PDU.IPDU // nil by default
-	var unprocessedBuf *Utils.ByteBuffer
 
 	if unprocessed.GetHasUnprocessed() {
-		unprocessedBuf = unprocessed.GetUnprocessed()
 		_pdu, err := c.tryGetUnprocessedPDU(unprocessed)
 		if err != nil {
 			return _pdu, err
@@ -240,7 +240,7 @@ func (c *Receiver) ReceivePDUFromConnection(conn IConnection, unprocessed *Utils
 			return pdu, err
 		}
 
-		unprocessedBuf = unprocessed.GetUnprocessed()
+		unprocessedBuf := unprocessed.GetUnprocessed()
 		if buffer.Len() != 0 {
 			_, err := unprocessedBuf.Write(buffer.Bytes())
 			if err != nil {
@@ -327,16 +327,24 @@ func (c *Receiver) setListener(lis ServerPDUEventListener) {
 }
 
 func (c *Receiver) handle(pdu PDU.IPDU) {
-	if pdu == nil {
-		return
+	if pdu != nil {
+		if pduListener := c.getListener(); pduListener != nil {
+			pduListener.HandleEvent(NewServerPDUEvent(c, c.connection, pdu))
+		} else {
+			t, _, _ := pdu.GetData()
+			if t != nil {
+				fmt.Fprintf(os.Stdout, "Receiver doesn't have ServerPDUEventListener, "+"discarding "+t.GetHexDump()+"\n")
+			}
+		}
 	}
+}
 
-	if pduListener := c.getListener(); pduListener != nil {
-		pduListener.HandleEvent(NewServerPDUEvent(c, c.connection, pdu))
-	} else {
-		t, _, _ := pdu.GetData()
-		if t != nil {
-			fmt.Fprintf(os.Stdout, "Receiver doesn't have ServerPDUEventListener, "+"discarding "+t.GetHexDump()+"\n")
+func (c *Receiver) handleException(err *Exception.Exception) {
+	if err != nil {
+		if pduListener := c.getListener(); pduListener != nil {
+			pduListener.HandleException(err)
+		} else {
+			fmt.Fprintf(os.Stderr, "Exception: %v\n", err.Error)
 		}
 	}
 }

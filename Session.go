@@ -463,8 +463,7 @@ func (c *Session) ReceiveWTimeout(timeout int64) (pdu PDU.IPDU, err *Exception.E
 	} else {
 		err = Exception.NotSynchronousException
 	}
-
-	return pdu, nil
+	return
 }
 
 func (c *Session) Respond(resp PDU.IResponse) (err *Exception.Exception) {
@@ -681,6 +680,8 @@ func (c *UnbindServerPDUEventListener) HandleEvent(event *ServerPDUEvent) *Excep
 
 	return nil
 }
+
+func (c *UnbindServerPDUEventListener) HandleException(err *Exception.Exception) {}
 
 func (c *UnbindServerPDUEventListener) GetUnbindResp() *PDU.UnbindResp {
 	return c.unbindResp

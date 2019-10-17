@@ -187,3 +187,5 @@ func (c *TestPDUListener) HandleEvent(event *gosmpp.ServerPDUEvent) *Exception.E
 
 	return nil
 }
+
+func (c *TestPDUListener) HandleException(err *Exception.Exception) {}
