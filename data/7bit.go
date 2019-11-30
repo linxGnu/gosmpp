@@ -1,31 +1,32 @@
-package Data
+package data
 
 // Below source code belongs to github.com/xlab/at/pdu/7bit.go
 import (
 	"bytes"
-	"errors"
 	"fmt"
 )
 
-// Esc code.
-const Esc byte = 0x1B
-
-// Ctrl+Z code.
-const Sub byte = 0x1A
-
-// <CR> code.
-const CR byte = 0x0D
-
-var crcr = []byte{CR, CR}
-var cr = []byte{CR}
-
 const (
+	// Esc code.
+	Esc byte = 0x1B
+
+	// Sub indicates Ctrl+Z code.
+	Sub byte = 0x1A
+
+	// CR indicates <CR> code.
+	CR byte = 0x0D
+
 	max     byte = 0x7F
 	unknown rune = '?'
 )
 
-// ErrUnexpectedByte happens when someone tries to decode non GSM 7-bit encoded string.
-var ErrUnexpectedByte = errors.New("7bit decode: met an unexpected byte")
+var (
+	crcr = []byte{CR, CR}
+	cr   = []byte{CR}
+
+	// ErrUnexpectedByte happens when someone tries to decode non GSM 7-bit encoded string.
+	ErrUnexpectedByte = fmt.Errorf("7bit decode: met an unexpected byte")
+)
 
 // Encode7Bit encodes the given UTF-8 text into GSM 7-bit (3GPP TS 23.038) encoding with packing.
 func Encode7Bit(str string) []byte {

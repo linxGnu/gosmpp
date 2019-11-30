@@ -1,12 +1,13 @@
-package Common
+package common
 
 import (
 	"errors"
 
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/Utils"
+	"github.com/linxGnu/gosmpp/errors"
+	"github.com/linxGnu/gosmpp/utils"
 )
 
+// IByteDataList interface.
 type IByteDataList interface {
 	CreateValue() IByteData
 }

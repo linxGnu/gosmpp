@@ -1,8 +1,7 @@
-package Data
+package data
 
 import (
-	"sync"
-	"time"
+	"sync/atomic"
 )
 
 const (
@@ -32,7 +31,7 @@ const (
 	SM_RESPONSE_TNACK int32 = 1
 	SM_RESPONSE_PNACK int32 = 2
 
-	//SMPP Command Set
+	// SMPP Command Set
 	GENERIC_NACK          int32 = -2147483648
 	BIND_RECEIVER         int32 = 0x00000001
 	BIND_RECEIVER_RESP    int32 = -2147483647
@@ -61,7 +60,7 @@ const (
 	DATA_SM               int32 = 0x00000103
 	DATA_SM_RESP          int32 = -2147483389
 
-	//Command_Status Error Codes
+	// Command_Status Error Codes
 	ESME_ROK           int32 = 0x00000000
 	ESME_RINVMSGLEN    int32 = 0x00000001
 	ESME_RINVCMDLEN    int32 = 0x00000002
@@ -160,8 +159,8 @@ const (
 	ESME_RINVSMUSER        int32 = 0x0000009A // int16 Message User Group Invalid
 	ESME_RINVRTDB          int32 = 0x0000009B // Real Time Data broadcasts Invalid
 	ESME_RINVREGDEL        int32 = 0x0000009C // Registered Delivery Invalid
-	//public static final int32 ESME_RINVOPTPARSTREAM = 0x0000009D  // KIF IW Field out of data
-	//public static final int32 ESME_ROPTPARNOTALLWD = 0x0000009E  // Optional Parameter not allowed
+	// public static final int32 ESME_RINVOPTPARSTREAM = 0x0000009D  // KIF IW Field out of data
+	// public static final int32 ESME_ROPTPARNOTALLWD = 0x0000009E  // Optional Parameter not allowed
 	ESME_RINVOPTPARLEN int32 = 0x0000009F // Invalid Optional Parameter Length
 
 	ESME_RINVOPTPARSTREAM int32 = 0x000000C0
@@ -174,11 +173,11 @@ const (
 
 	ESME_LAST_ERROR int32 = 0x0000012C // the value of the last error code
 
-	//Interface_Version
+	// Interface_Version
 	SMPP_V33 int8 = int8(-0x33)
 	SMPP_V34 byte = byte(0x34)
 
-	//Address_TON
+	// Address_TON
 	GSM_TON_UNKNOWN       byte = byte(0x00)
 	GSM_TON_INTERNATIONAL byte = byte(0x01)
 	GSM_TON_NATIONAL      byte = byte(0x02)
@@ -188,7 +187,7 @@ const (
 	GSM_TON_ABBREVIATED   byte = byte(0x06)
 	GSM_TON_RESERVED_EXTN byte = byte(0x07)
 
-	//Address_NPI
+	// Address_NPI
 	GSM_NPI_UNKNOWN       byte = byte(0x00)
 	GSM_NPI_E164          byte = byte(0x01)
 	GSM_NPI_ISDN          byte = GSM_NPI_E164
@@ -202,7 +201,7 @@ const (
 	GSM_NPI_WAP_CLIENT_ID byte = byte(0x12)
 	GSM_NPI_RESERVED_EXTN byte = byte(0x0F)
 
-	//Service_Type
+	// Service_Type
 	SERVICE_NULL string = ""
 	SERVICE_CMT  string = "CMT"
 	SERVICE_CPT  string = "CPT"
@@ -232,7 +231,7 @@ const (
 	//******************
 
 	// Messaging Mode
-	SM_ESM_DEFAULT        int32 = 0x00 //Default SMSC Mode or Message Type
+	SM_ESM_DEFAULT        int32 = 0x00 // Default SMSC Mode or Message Type
 	SM_DATAGRAM_MODE      int32 = 0x01 // Use one-shot express mode
 	SM_FORWARD_MODE       int32 = 0x02 // Do not use
 	SM_STORE_FORWARD_MODE int32 = 0x03 // Use store & forward
@@ -508,40 +507,30 @@ const (
 	MIN_LENGTH_ADDRESS int32 = 7
 )
 
-var defaultTon byte = DFLT_GSM_TON
-var defaultNpi byte = DFLT_GSM_NPI
+var defaultTon atomic.Value
+var defaultNpi atomic.Value
 
-var l sync.RWMutex
+func init() {
+	defaultTon.Store(DFLT_GSM_TON)
+	defaultNpi.Store(DFLT_GSM_NPI)
+}
 
-// SetDefaultTon ..
+// SetDefaultTon set default ton.
 func SetDefaultTon(dfltTon byte) {
-	l.Lock()
-	defer l.Unlock()
-	defaultTon = dfltTon
+	defaultTon.Store(dfltTon)
 }
 
-// GetDefaultTon ...
+// GetDefaultTon get default ton.
 func GetDefaultTon() byte {
-	l.RLock()
-	defer l.RUnlock()
-	return defaultTon
+	return defaultTon.Load().(byte)
 }
 
-// SetDefaultNpi ...
+// SetDefaultNpi set default npi.
 func SetDefaultNpi(dfltNpi byte) {
-	l.Lock()
-	defer l.Unlock()
-	defaultNpi = dfltNpi
+	defaultNpi.Store(dfltNpi)
 }
 
-// GetDefaultNpi ...
+// GetDefaultNpi get default npi.
 func GetDefaultNpi() byte {
-	l.RLock()
-	defer l.RUnlock()
-	return defaultNpi
-}
-
-// GetCurrentTime ...
-func GetCurrentTime() time.Time {
-	return time.Now()
+	return defaultNpi.Load().(byte)
 }
