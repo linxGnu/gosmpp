@@ -1,4 +1,4 @@
-package common
+package utils
 
 func DecodeUnsigned(signed byte) int16 {
 	if signed >= 0 {

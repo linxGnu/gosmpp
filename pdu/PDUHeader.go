@@ -1,115 +1,62 @@
-package PDU
+package pdu
 
 import (
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/PDU/Common"
-	"github.com/linxGnu/gosmpp/Utils"
+	"encoding/binary"
+
+	"github.com/linxGnu/gosmpp/utils"
 )
 
-type IPDUHeader interface {
-	GetSequenceNumber() int32
-	SetSequenceNumber(seq int32)
-	GetCommandId() int32
-	SetCommandId(cmdId int32)
-	GetCommandLength() int32
-	SetCommandLength(length int32)
-	GetCommandStatus() int32
-	SetCommandStatus(status int32)
-}
-
-type PDUHeader struct {
-	Common.ByteData
+// Header represents PDU header.
+type Header struct {
 	CommandLength  int32
-	CommandId      int32
+	CommandID      int32
 	CommandStatus  int32
 	SequenceNumber int32
 }
 
-func NewPDUHeader() *PDUHeader {
-	a := &PDUHeader{}
-	a.Construct()
-
-	return a
+// NewHeader creates new PDU Header.
+func NewHeader() *Header {
+	return &Header{SequenceNumber: 1}
 }
 
-func (c *PDUHeader) Construct() {
-	defer c.SetRealReference(c)
-	c.ByteData.Construct()
+// ParseHeader parses PDU header.
+func ParseHeader(v [16]byte) (h Header) {
+	h.CommandLength = int32(binary.BigEndian.Uint32(v[:]))
+	h.CommandID = int32(binary.BigEndian.Uint32(v[4:]))
+	h.CommandStatus = int32(binary.BigEndian.Uint32(v[8:]))
+	h.SequenceNumber = int32(binary.BigEndian.Uint32(v[12:]))
+	return
+}
 
+// Unmarshal from buffer.
+func (c *Header) Unmarshal(b *utils.ByteBuffer) (err error) {
+	c.CommandLength, err = b.ReadInt()
+	if err == nil {
+		c.CommandID, err = b.ReadInt()
+		if err == nil {
+			if c.CommandStatus, err = b.ReadInt(); err == nil {
+				c.SequenceNumber, err = b.ReadInt()
+			}
+		}
+	}
+	return
+}
+
+// AssignSequenceNumber assigns sequence number.
+func (c *Header) AssignSequenceNumber() {
+	c.SequenceNumber = nextSequenceNumber()
+}
+
+// ResetSequenceNumber resets sequence number.
+func (c *Header) ResetSequenceNumber() {
 	c.SequenceNumber = 1
 }
 
-func (c *PDUHeader) GetData() (res *Utils.ByteBuffer, err *Exception.Exception) {
-	buf := Utils.NewBuffer(make([]byte, 0, Utils.SZ_INT*4))
-
-	buf.Write_UnsafeInt(c.CommandLength)
-	buf.Write_UnsafeInt(c.CommandId)
-	buf.Write_UnsafeInt(c.CommandStatus)
-	buf.Write_UnsafeInt(c.SequenceNumber)
-
-	return buf, nil
-}
-
-func (c *PDUHeader) GetCommandLength() int32 {
-	return c.CommandLength
-}
-
-func (c *PDUHeader) SetCommandLength(length int32) {
-	c.CommandLength = length
-}
-
-func (c *PDUHeader) GetCommandId() int32 {
-	return c.CommandId
-}
-
-func (c *PDUHeader) SetCommandId(cmdId int32) {
-	c.CommandId = cmdId
-}
-
-func (c *PDUHeader) GetCommandStatus() int32 {
-	return c.CommandStatus
-}
-
-func (c *PDUHeader) SetCommandStatus(status int32) {
-	c.CommandStatus = status
-}
-
-func (c *PDUHeader) GetSequenceNumber() int32 {
-	return c.SequenceNumber
-}
-
-func (c *PDUHeader) SetSequenceNumber(seq int32) {
-	c.SequenceNumber = seq
-}
-
-func (c *PDUHeader) SetData(buf *Utils.ByteBuffer) *Exception.Exception {
-	if buf == nil || buf.Buffer == nil {
-		return Exception.NewExceptionFromStr("PDUHeader: buffer passing is nil")
-	}
-
-	val, err := buf.Read_Int()
-	if err != nil {
-		return err
-	}
-	c.CommandLength = val
-
-	val, err = buf.Read_Int()
-	if err != nil {
-		return err
-	}
-	c.CommandId = val
-
-	val, err = buf.Read_Int()
-	if err != nil {
-		return err
-	}
-	c.CommandStatus = val
-
-	val, err = buf.Read_Int()
-	if err != nil {
-		return err
-	}
-	c.SequenceNumber = val
-
-	return nil
+// Marshal to buffer.
+func (c *Header) Marshal(b *utils.ByteBuffer) {
+	b.Grow(16)
+	b.WriteInt(c.CommandLength)
+	b.WriteInt(c.CommandID)
+	b.WriteInt(c.CommandStatus)
+	b.WriteInt(c.SequenceNumber)
 }

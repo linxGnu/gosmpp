@@ -1,188 +1,61 @@
-package PDU
+package pdu
 
 import (
-	"github.com/linxGnu/gosmpp/Data"
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/Utils"
+	"github.com/linxGnu/gosmpp/data"
+	"github.com/linxGnu/gosmpp/utils"
 )
 
+// CancelSM PDU.
 type CancelSM struct {
-	Request
-	serviceType string
-	messageId   string
-	sourceAddr  *Address
-	destAddr    *Address
+	base
+	ServiceType string
+	MessageID   string
+	SourceAddr  Address
+	DestAddr    Address
 }
 
-func NewCancelSM() *CancelSM {
-	a := &CancelSM{}
-	a.Construct()
-
-	return a
-}
-
-func (c *CancelSM) Construct() {
-	defer c.SetRealReference(c)
-	c.Request.Construct()
-
-	c.SetCommandId(Data.CANCEL_SM)
-	c.serviceType = Data.DFLT_SRVTYPE
-	c.messageId = Data.DFLT_MSGID
-	c.sourceAddr = NewAddress()
-	c.destAddr = NewAddress()
-}
-
-func (c *CancelSM) GetInstance() (IPDU, error) {
-	return NewCancelSM(), nil
-}
-
-func (c *CancelSM) CreateResponse() (IResponse, error) {
-	return NewCancelSMResp(), nil
-}
-
-func (c *CancelSM) SetBody(buf *Utils.ByteBuffer) (err *Exception.Exception, source IPDU) {
-	source = c.This.(IPDU)
-
-	if buf == nil || buf.Buffer == nil {
-		err = Exception.NewExceptionFromStr("CancelSM: set body buffer is nil")
-		return
+// NewCancelSM returns CancelSM PDU.
+func NewCancelSM() (c *CancelSM) {
+	c = &CancelSM{
+		ServiceType: data.DFLT_SRVTYPE,
+		MessageID:   data.DFLT_MSGID,
+		SourceAddr:  *NewAddress(),
+		DestAddr:    *NewAddress(),
 	}
-
-	val, err := buf.Read_CString()
-	if err != nil {
-		return
-	}
-	err = c.SetServiceType(val)
-	if err != nil {
-		return
-	}
-
-	val, err = buf.Read_CString()
-	if err != nil {
-		return
-	}
-	err = c.SetMessageId(val)
-	if err != nil {
-		return
-	}
-
-	err = c.sourceAddr.SetData(buf)
-	if err != nil {
-		return
-	}
-
-	err = c.destAddr.SetData(buf)
+	c.CommandID = data.CANCEL_SM
 	return
 }
 
-func (c *CancelSM) GetBody() (buf *Utils.ByteBuffer, err *Exception.Exception, source IPDU) {
-	source = c.This.(IPDU)
+// CanResponse implements PDU interface.
+func (c *CancelSM) CanResponse() bool {
+	return true
+}
 
-	src, err := c.GetSourceAddr().GetData()
-	if err != nil {
+// GetResponse implements PDU interface.
+func (c *CancelSM) GetResponse() PDU {
+	return NewCancelSMResp()
+}
+
+// Marshal implements PDU interface.
+func (c *CancelSM) Marshal(b *utils.ByteBuffer) {
+	c.base.marshal(b, func(b *utils.ByteBuffer) {
+		b.WriteCString(c.ServiceType)
+		b.WriteCString(c.MessageID)
+		c.SourceAddr.Marshal(b)
+		c.DestAddr.Marshal(b)
+	})
+}
+
+// Unmarshal implements PDU interface.
+func (c *CancelSM) Unmarshal(b *utils.ByteBuffer) error {
+	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+		if c.ServiceType, err = b.ReadCString(); err == nil {
+			if c.MessageID, err = b.ReadCString(); err == nil {
+				if err = c.SourceAddr.Unmarshal(b); err == nil {
+					err = c.DestAddr.Unmarshal(b)
+				}
+			}
+		}
 		return
-	}
-
-	des, err := c.GetDestAddr().GetData()
-	if err != nil {
-		return
-	}
-
-	buf = Utils.NewBuffer(make([]byte, 0, len(c.GetServiceType())+1+len(c.GetMessageId())+1+src.Len()+des.Len()))
-
-	buf.Write_CString(c.GetServiceType())
-	buf.Write_CString(c.GetMessageId())
-
-	err = buf.Write_Buffer(src)
-	if err != nil {
-		return
-	}
-
-	err = buf.Write_Buffer(des)
-
-	return
-}
-
-func (c *CancelSM) SetServiceType(value string) *Exception.Exception {
-	err := c.CheckCStringMax(value, int(Data.SM_SRVTYPE_LEN))
-	if err != nil {
-		return err
-	}
-
-	c.serviceType = value
-	return nil
-}
-
-func (c *CancelSM) SetMessageId(value string) *Exception.Exception {
-	err := c.CheckCStringMax(value, int(Data.SM_MSGID_LEN))
-	if err != nil {
-		return err
-	}
-
-	c.messageId = value
-	return nil
-}
-
-func (c *CancelSM) SetSourceAddr(value *Address) {
-	c.sourceAddr = value
-}
-
-func (c *CancelSM) SetSourceAddrFromStr(st string) *Exception.Exception {
-	tmp, err := NewAddressWithAddr(st)
-	if err != nil {
-		return err
-	}
-
-	c.sourceAddr = tmp
-	return nil
-}
-
-func (c *CancelSM) SetSourceAddrFromStrTon(ton, npi byte, st string) *Exception.Exception {
-	tmp, err := NewAddressWithTonNpiAddr(ton, npi, st)
-	if err != nil {
-		return err
-	}
-
-	c.sourceAddr = tmp
-	return nil
-}
-
-func (c *CancelSM) SetDestAddr(value *Address) {
-	c.destAddr = value
-}
-
-func (c *CancelSM) SetDestAddrFromStr(st string) *Exception.Exception {
-	tmp, err := NewAddressWithAddr(st)
-	if err != nil {
-		return err
-	}
-
-	c.destAddr = tmp
-	return nil
-}
-
-func (c *CancelSM) SetDestAddrFromStrTon(ton, npi byte, st string) *Exception.Exception {
-	tmp, err := NewAddressWithTonNpiAddr(ton, npi, st)
-	if err != nil {
-		return err
-	}
-
-	c.destAddr = tmp
-	return nil
-}
-
-func (c *CancelSM) GetServiceType() string {
-	return c.serviceType
-}
-
-func (c *CancelSM) GetMessageId() string {
-	return c.messageId
-}
-
-func (c *CancelSM) GetSourceAddr() *Address {
-	return c.sourceAddr
-}
-
-func (c *CancelSM) GetDestAddr() *Address {
-	return c.destAddr
+	})
 }

@@ -1,45 +1,38 @@
-package PDU
+package pdu
 
 import (
-	"github.com/linxGnu/gosmpp/Data"
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/Utils"
+	"github.com/linxGnu/gosmpp/data"
+	"github.com/linxGnu/gosmpp/utils"
 )
 
+// AlertNotification PDU.
 type AlertNotification struct {
-	Request
+	base
 }
 
-func NewAlertNotification() *AlertNotification {
-	a := &AlertNotification{}
-	a.Construct()
-
-	return a
+// NewAlertNotification create new alert notification pdu.
+func NewAlertNotification() (a *AlertNotification) {
+	a = &AlertNotification{}
+	a.CommandID = data.ALERT_NOTIFICATION
+	return
 }
 
-func (c *AlertNotification) Construct() {
-	defer c.SetRealReference(c)
-	c.Request.Construct()
-
-	c.SetCommandId(Data.ALERT_NOTIFICATION)
-}
-
-func (c *AlertNotification) GetInstance() (IPDU, error) {
-	return NewAlertNotification(), nil
-}
-
-func (c *AlertNotification) CanResponse() bool {
+// CanResponse implements PDU interface.
+func (a *AlertNotification) CanResponse() bool {
 	return false
 }
 
-func (c *AlertNotification) CreateResponse() (IResponse, error) {
-	return nil, nil
+// GetResponse implements PDU interface.
+func (a *AlertNotification) GetResponse() PDU {
+	return nil
 }
 
-func (c *AlertNotification) GetBody() (*Utils.ByteBuffer, *Exception.Exception, IPDU) {
-	return nil, nil, nil
+// Marshal implements PDU interface.
+func (a *AlertNotification) Marshal(b *utils.ByteBuffer) {
+	a.base.marshal(b, nil)
 }
 
-func (c *AlertNotification) SetBody(buffer *Utils.ByteBuffer) (*Exception.Exception, IPDU) {
-	return nil, nil
+// Unmarshal implements PDU interface.
+func (a *AlertNotification) Unmarshal(b *utils.ByteBuffer) error {
+	return a.base.unmarshal(b, nil)
 }

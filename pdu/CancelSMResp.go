@@ -1,37 +1,38 @@
-package PDU
+package pdu
 
 import (
-	"github.com/linxGnu/gosmpp/Data"
-	"github.com/linxGnu/gosmpp/Exception"
-	"github.com/linxGnu/gosmpp/Utils"
+	"github.com/linxGnu/gosmpp/data"
+	"github.com/linxGnu/gosmpp/utils"
 )
 
+// CancelSMResp PDU.
 type CancelSMResp struct {
-	Response
+	base
 }
 
-func NewCancelSMResp() *CancelSMResp {
-	a := &CancelSMResp{}
-	a.Construct()
-
-	return a
+// NewCancelSMResp returns CancelSMResp.
+func NewCancelSMResp() (c *CancelSMResp) {
+	c = &CancelSMResp{}
+	c.CommandID = data.CANCEL_SM_RESP
+	return
 }
 
-func (c *CancelSMResp) Construct() {
-	defer c.SetRealReference(c)
-	c.Response.Construct()
-
-	c.SetCommandId(Data.CANCEL_SM_RESP)
+// CanResponse implements PDU interface.
+func (c *CancelSMResp) CanResponse() bool {
+	return false
 }
 
-func (c *CancelSMResp) SetBody(buffer *Utils.ByteBuffer) (*Exception.Exception, IPDU) {
-	return nil, c
+// GetResponse implements PDU interface.
+func (c *CancelSMResp) GetResponse() PDU {
+	return nil
 }
 
-func (c *CancelSMResp) GetBody() (*Utils.ByteBuffer, *Exception.Exception, IPDU) {
-	return nil, nil, c
+// Marshal implements PDU interface.
+func (c *CancelSMResp) Marshal(b *utils.ByteBuffer) {
+	c.base.marshal(b, nil)
 }
 
-func (c *CancelSMResp) GetInstance() (IPDU, error) {
-	return NewCancelSMResp(), nil
+// Unmarshal implements PDU interface.
+func (c *CancelSMResp) Unmarshal(b *utils.ByteBuffer) error {
+	return c.base.unmarshal(b, nil)
 }

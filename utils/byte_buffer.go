@@ -44,11 +44,13 @@ func NewBuffer(inp []byte) *ByteBuffer {
 
 // ReadN read n-bytes from buffer.
 func (c *ByteBuffer) ReadN(n int) (r []byte, err error) {
-	if c.Len() >= n { // optimistic branching
-		r = make([]byte, n)
-		_, _ = c.Read(r)
-	} else {
-		err = ErrBufferNotEnoughByteToRead
+	if n > 0 {
+		if c.Len() >= n { // optimistic branching
+			r = make([]byte, n)
+			_, _ = c.Read(r)
+		} else {
+			err = ErrBufferNotEnoughByteToRead
+		}
 	}
 	return
 }
