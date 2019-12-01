@@ -12,7 +12,9 @@ type AlertNotification struct {
 
 // NewAlertNotification create new alert notification pdu.
 func NewAlertNotification() (a *AlertNotification) {
-	a = &AlertNotification{}
+	a = &AlertNotification{
+		base: newBase(),
+	}
 	a.CommandID = data.ALERT_NOTIFICATION
 	return
 }

@@ -31,6 +31,7 @@ type BindRequest struct {
 // NewBindRequest returns new bind request.
 func NewBindRequest(t BindingType) (b *BindRequest) {
 	b = &BindRequest{
+		base:             newBase(),
 		Type:             t,
 		SystemID:         data.DFLT_SYSID,
 		Password:         data.DFLT_PASS,
@@ -55,12 +56,12 @@ func NewBindRequest(t BindingType) (b *BindRequest) {
 
 // CanResponse implements PDU interface.
 func (b *BindRequest) CanResponse() bool {
-	return false
+	return true
 }
 
 // GetResponse implements PDU interface.
 func (b *BindRequest) GetResponse() PDU {
-	return nil
+	return NewBindResp(b)
 }
 
 // Marshal implements PDU interface.

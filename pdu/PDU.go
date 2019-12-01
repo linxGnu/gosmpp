@@ -33,11 +33,11 @@ type PDU interface {
 
 type base struct {
 	Header
-	OptionalParameters      []tlv.Field
-	ApplicationSpecificInfo map[interface{}]interface{}
+	OptionalParameters map[tlv.Tag]tlv.Field
 }
 
 func newBase() (v base) {
+	v.OptionalParameters = make(map[tlv.Tag]tlv.Field)
 	v.AssignSequenceNumber()
 	return
 }
@@ -95,7 +95,7 @@ func (c *base) unmarshalOptionalBody(body []byte) (err error) {
 		if err = field.Unmarshal(buf); err != nil {
 			return
 		}
-		c.OptionalParameters = append(c.OptionalParameters, field)
+		c.OptionalParameters[field.Tag] = field
 	}
 	return
 }
@@ -110,8 +110,8 @@ func (c *base) marshal(b *utils.ByteBuffer, bodyWriter func(*utils.ByteBuffer)) 
 	}
 
 	// optional body
-	for i := range c.OptionalParameters {
-		c.OptionalParameters[i].Marshal(bodyBuf)
+	for _, v := range c.OptionalParameters {
+		v.Marshal(bodyBuf)
 	}
 
 	// write header
@@ -124,7 +124,7 @@ func (c *base) marshal(b *utils.ByteBuffer, bodyWriter func(*utils.ByteBuffer)) 
 
 // RegisterOptionalParam register optional param.
 func (c *base) RegisterOptionalParam(tlv tlv.Field) {
-	c.OptionalParameters = append(c.OptionalParameters, tlv)
+	c.OptionalParameters[tlv.Tag] = tlv
 }
 
 // IsOk is ok message.
