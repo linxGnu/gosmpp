@@ -8,11 +8,20 @@ import (
 // ReplaceSMResp PDU.
 type ReplaceSMResp struct {
 	base
-	Request *ReplaceSM
+	Request ReplaceSM
 }
 
 // NewReplaceSMResp returns ReplaceSMResp.
-func NewReplaceSMResp(req *ReplaceSM) (c *ReplaceSMResp) {
+func NewReplaceSMResp() PDU {
+	c := &ReplaceSMResp{
+		base: newBase(),
+	}
+	c.CommandID = data.REPLACE_SM_RESP
+	return c
+}
+
+// NewReplaceSMRespFromReq returns ReplaceSMResp.
+func NewReplaceSMRespFromReq(req ReplaceSM) (c *ReplaceSMResp) {
 	c = &ReplaceSMResp{
 		base:    newBase(),
 		Request: req,

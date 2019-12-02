@@ -84,9 +84,9 @@ func (b *BindRequest) Marshal(w *utils.ByteBuffer) {
 	b.base.marshal(w, func(w *utils.ByteBuffer) {
 		w.Grow(len(b.SystemID) + len(b.Password) + len(b.SystemType) + 4)
 
-		w.WriteCString(b.SystemID)
-		w.WriteCString(b.Password)
-		w.WriteCString(b.SystemType)
+		_ = w.WriteCString(b.SystemID)
+		_ = w.WriteCString(b.Password)
+		_ = w.WriteCString(b.SystemType)
 		_ = w.WriteByte(b.InterfaceVersion)
 		b.AddressRange.Marshal(w)
 	})

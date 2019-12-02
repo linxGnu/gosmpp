@@ -18,9 +18,9 @@ type ReplaceSM struct {
 }
 
 // NewReplaceSM returns ReplaceSM PDU.
-func NewReplaceSM() (c *ReplaceSM) {
+func NewReplaceSM() PDU {
 	message, _ := NewShortMessage("")
-	c = &ReplaceSM{
+	c := &ReplaceSM{
 		base:                 newBase(),
 		SourceAddr:           NewAddress(),
 		ScheduleDeliveryTime: data.DFLT_SCHEDULE,
@@ -30,7 +30,7 @@ func NewReplaceSM() (c *ReplaceSM) {
 		ShortMessage:         message,
 	}
 	c.CommandID = data.REPLACE_SM
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -40,7 +40,7 @@ func (c *ReplaceSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *ReplaceSM) GetResponse() PDU {
-	return NewReplaceSMResp(c)
+	return NewReplaceSMRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.
@@ -48,10 +48,10 @@ func (c *ReplaceSM) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.MessageID) + len(c.ScheduleDeliveryTime) + len(c.ValidityPeriod) + 5)
 
-		b.WriteCString(c.MessageID)
+		_ = b.WriteCString(c.MessageID)
 		c.SourceAddr.Marshal(b)
-		b.WriteCString(c.ScheduleDeliveryTime)
-		b.WriteCString(c.ValidityPeriod)
+		_ = b.WriteCString(c.ScheduleDeliveryTime)
+		_ = b.WriteCString(c.ValidityPeriod)
 		_ = b.WriteByte(c.RegisteredDelivery)
 		_ = b.WriteByte(c.SmDefaultMsgID)
 		c.ShortMessage.Marshal(b)
@@ -67,7 +67,7 @@ func (c *ReplaceSM) Unmarshal(b *utils.ByteBuffer) error {
 					if c.ValidityPeriod, err = b.ReadCString(); err == nil {
 						if c.RegisteredDelivery, err = b.ReadByte(); err == nil {
 							if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
-								c.ShortMessage.Unmarshal(b)
+								err = c.ShortMessage.Unmarshal(b)
 							}
 						}
 					}

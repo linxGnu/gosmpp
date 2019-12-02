@@ -79,7 +79,8 @@ func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
 
 // Unmarshal implements PDU interface.
 func (c *ShortMessage) Unmarshal(b *utils.ByteBuffer) (err error) {
-	if n, err := b.ReadByte(); err == nil {
+	n, err := b.ReadByte()
+	if err == nil {
 		c.messageData, err = b.ReadN(int(n))
 	}
 	return

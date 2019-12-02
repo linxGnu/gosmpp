@@ -11,12 +11,12 @@ type GenerickNack struct {
 }
 
 // NewGenerickNack returns new GenerickNack PDU.
-func NewGenerickNack() (c *GenerickNack) {
-	c = &GenerickNack{
+func NewGenerickNack() PDU {
+	c := &GenerickNack{
 		base: newBase(),
 	}
 	c.CommandID = data.GENERIC_NACK
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.

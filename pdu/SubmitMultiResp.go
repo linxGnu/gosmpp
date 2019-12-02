@@ -49,7 +49,7 @@ func (c *SubmitMultiResp) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.MessageID) + 1)
 
-		b.WriteCString(c.MessageID)
+		_ = b.WriteCString(c.MessageID)
 		c.UnsuccessSMEs.Marshal(b)
 	})
 }

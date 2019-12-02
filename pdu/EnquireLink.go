@@ -11,12 +11,12 @@ type EnquireLink struct {
 }
 
 // NewEnquireLink returns new EnquireLink PDU.
-func NewEnquireLink() (c *EnquireLink) {
-	c = &EnquireLink{
+func NewEnquireLink() PDU {
+	c := &EnquireLink{
 		base: newBase(),
 	}
 	c.CommandID = data.ENQUIRE_LINK
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -26,7 +26,7 @@ func (c *EnquireLink) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *EnquireLink) GetResponse() PDU {
-	return NewEnquireLinkResp(c)
+	return NewEnquireLinkRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.

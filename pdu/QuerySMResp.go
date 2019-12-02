@@ -56,8 +56,8 @@ func (c *QuerySMResp) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.MessageID) + len(c.FinalDate) + 4)
 
-		b.WriteCString(c.MessageID)
-		b.WriteCString(c.FinalDate)
+		_ = b.WriteCString(c.MessageID)
+		_ = b.WriteCString(c.FinalDate)
 		_ = b.WriteByte(c.MessageState)
 		_ = b.WriteByte(c.ErrorCode)
 	})

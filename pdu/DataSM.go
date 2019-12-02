@@ -46,7 +46,7 @@ func (c *DataSM) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.ServiceType) + 4)
 
-		b.WriteCString(c.ServiceType)
+		_ = b.WriteCString(c.ServiceType)
 		c.SourceAddr.Marshal(b)
 		c.DestAddr.Marshal(b)
 		_ = b.WriteByte(c.EsmClass)

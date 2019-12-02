@@ -61,14 +61,14 @@ func (c *SubmitMulti) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.ServiceType) + len(c.ScheduleDeliveryTime) + len(c.ValidityPeriod) + 10)
 
-		b.WriteCString(c.ServiceType)
+		_ = b.WriteCString(c.ServiceType)
 		c.SourceAddr.Marshal(b)
 		c.DestAddrs.Marshal(b)
 		_ = b.WriteByte(c.EsmClass)
 		_ = b.WriteByte(c.ProtocolID)
 		_ = b.WriteByte(c.PriorityFlag)
-		b.WriteCString(c.ScheduleDeliveryTime)
-		b.WriteCString(c.ValidityPeriod)
+		_ = b.WriteCString(c.ScheduleDeliveryTime)
+		_ = b.WriteCString(c.ValidityPeriod)
 		_ = b.WriteByte(c.RegisteredDelivery)
 		_ = b.WriteByte(c.ReplaceIfPresentFlag)
 		_ = b.WriteByte(c.DataCoding)
@@ -92,7 +92,7 @@ func (c *SubmitMulti) Unmarshal(b *utils.ByteBuffer) error {
 											if c.ReplaceIfPresentFlag, err = b.ReadByte(); err == nil {
 												if c.DataCoding, err = b.ReadByte(); err == nil {
 													if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
-														c.ShortMessage.Unmarshal(b)
+														err = c.ShortMessage.Unmarshal(b)
 													}
 												}
 											}

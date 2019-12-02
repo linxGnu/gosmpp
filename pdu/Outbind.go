@@ -36,8 +36,8 @@ func (c *Outbind) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.SystemID) + len(c.Password) + 2)
 
-		b.WriteCString(c.SystemID)
-		b.WriteCString(c.Password)
+		_ = b.WriteCString(c.SystemID)
+		_ = b.WriteCString(c.Password)
 	})
 }
 

@@ -8,11 +8,20 @@ import (
 // EnquireLinkResp PDU.
 type EnquireLinkResp struct {
 	base
-	Request *EnquireLink
+	Request EnquireLink
 }
 
 // NewEnquireLinkResp returns EnquireLinkResp.
-func NewEnquireLinkResp(req *EnquireLink) (c *EnquireLinkResp) {
+func NewEnquireLinkResp() PDU {
+	c := &EnquireLinkResp{
+		base: newBase(),
+	}
+	c.CommandID = data.ENQUIRE_LINK_RESP
+	return c
+}
+
+// NewEnquireLinkRespFromReq returns EnquireLinkResp.
+func NewEnquireLinkRespFromReq(req EnquireLink) (c *EnquireLinkResp) {
 	c = &EnquireLinkResp{
 		base:    newBase(),
 		Request: req,
