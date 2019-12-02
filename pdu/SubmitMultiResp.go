@@ -5,17 +5,17 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// SubmitMultiSMResp PDU.
-type SubmitMultiSMResp struct {
+// SubmitMultiResp PDU.
+type SubmitMultiResp struct {
 	base
 	Request       PDU
 	MessageID     string
 	UnsuccessSMEs UnsuccessSMEs
 }
 
-// NewSubmitMultiSMResp returns new SubmitMultiSMResp.
-func NewSubmitMultiSMResp(req PDU) (c *SubmitMultiSMResp) {
-	c = &SubmitMultiSMResp{
+// NewSubmitMultiResp returns new SubmitMultiResp.
+func NewSubmitMultiResp(req PDU) (c *SubmitMultiResp) {
+	c = &SubmitMultiResp{
 		base:      newBase(),
 		Request:   req,
 		MessageID: data.DFLT_MSGID,
@@ -25,17 +25,17 @@ func NewSubmitMultiSMResp(req PDU) (c *SubmitMultiSMResp) {
 }
 
 // CanResponse implements PDU interface.
-func (c *SubmitMultiSMResp) CanResponse() bool {
+func (c *SubmitMultiResp) CanResponse() bool {
 	return false
 }
 
 // GetResponse implements PDU interface.
-func (c *SubmitMultiSMResp) GetResponse() PDU {
+func (c *SubmitMultiResp) GetResponse() PDU {
 	return nil
 }
 
 // Marshal implements PDU interface.
-func (c *SubmitMultiSMResp) Marshal(b *utils.ByteBuffer) {
+func (c *SubmitMultiResp) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.MessageID) + 1)
 
@@ -45,7 +45,7 @@ func (c *SubmitMultiSMResp) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *SubmitMultiSMResp) Unmarshal(b *utils.ByteBuffer) error {
+func (c *SubmitMultiResp) Unmarshal(b *utils.ByteBuffer) error {
 	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
 		if c.MessageID, err = b.ReadCString(); err == nil {
 			err = c.UnsuccessSMEs.Unmarshal(b)
