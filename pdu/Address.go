@@ -73,7 +73,11 @@ func (c *Address) SetAddress(addr string) (err error) {
 	if c.maxAddressLength > 0 && len(addr) > c.maxAddressLength {
 		err = fmt.Errorf("Address len exceed limit. (%d > %d)", len(addr), c.maxAddressLength)
 	}
-	c.address = addr
+
+	if err == nil {
+		c.address = addr
+	}
+
 	return
 }
 

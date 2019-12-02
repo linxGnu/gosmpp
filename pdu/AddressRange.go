@@ -54,8 +54,9 @@ func (c *AddressRange) Marshal(b *utils.ByteBuffer) {
 func (c *AddressRange) SetAddressRange(addr string) (err error) {
 	if len(addr) > data.SM_ADDR_RANGE_LEN {
 		err = fmt.Errorf("Address len exceed limit. (%d > %d)", len(addr), data.SM_ADDR_RANGE_LEN)
+	} else {
+		c.addressRange = addr
 	}
-	c.addressRange = addr
 	return
 }
 

@@ -1,6 +1,9 @@
 package pdu
 
-import "github.com/linxGnu/gosmpp/utils"
+import (
+	"github.com/linxGnu/gosmpp/data"
+	"github.com/linxGnu/gosmpp/utils"
+)
 
 // UnsuccessSME indicates submission was unsuccessful and the respective errors.
 type UnsuccessSME struct {
@@ -11,7 +14,8 @@ type UnsuccessSME struct {
 // NewUnsuccessSME returns new UnsuccessSME
 func NewUnsuccessSME() (c UnsuccessSME) {
 	c = UnsuccessSME{
-		Address: NewAddress(),
+		Address:         NewAddress(),
+		errorStatusCode: data.ESME_ROK,
 	}
 	return
 }
@@ -33,7 +37,8 @@ func NewUnsuccessSMEWithMaxLength(len int) (c UnsuccessSME) {
 // NewUnsuccessSMEWithTonNpiLen create new address with ton, npi, max length.
 func NewUnsuccessSMEWithTonNpiLen(ton, npi byte, len int) UnsuccessSME {
 	return UnsuccessSME{
-		Address: NewAddressWithTonNpiLen(ton, npi, len),
+		Address:         NewAddressWithTonNpiLen(ton, npi, len),
+		errorStatusCode: data.ESME_ROK,
 	}
 }
 
@@ -59,4 +64,41 @@ func (c *UnsuccessSME) SetErrorStatusCode(v int32) {
 // ErrorStatusCode returns assigned status code.
 func (c *UnsuccessSME) ErrorStatusCode() int32 {
 	return c.errorStatusCode
+}
+
+// UnsuccessSMEs represents list of UnsuccessSME(s).
+type UnsuccessSMEs struct {
+	l []UnsuccessSME
+}
+
+// Add to list.
+func (c *UnsuccessSMEs) Add(u UnsuccessSME) {
+	c.l = append(c.l, u)
+}
+
+// Unmarshal from buffer.
+func (c *UnsuccessSMEs) Unmarshal(b *utils.ByteBuffer) (err error) {
+	var n byte
+	if n, err = b.ReadByte(); err == nil {
+		c.l = make([]UnsuccessSME, n)
+
+		var i byte
+		for ; i < n; i++ {
+			if err = c.l[i].Unmarshal(b); err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// Marshal to buffer.
+func (c *UnsuccessSMEs) Marshal(b *utils.ByteBuffer) {
+	n := byte(len(c.l))
+	_ = b.WriteByte(n)
+
+	var i byte
+	for ; i < n; i++ {
+		c.l[i].Marshal(b)
+	}
 }
