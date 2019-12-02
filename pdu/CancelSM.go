@@ -15,8 +15,8 @@ type CancelSM struct {
 }
 
 // NewCancelSM returns CancelSM PDU.
-func NewCancelSM() (c *CancelSM) {
-	c = &CancelSM{
+func NewCancelSM() PDU {
+	c := &CancelSM{
 		base:        newBase(),
 		ServiceType: data.DFLT_SRVTYPE,
 		MessageID:   data.DFLT_MSGID,
@@ -24,7 +24,7 @@ func NewCancelSM() (c *CancelSM) {
 		DestAddr:    NewAddress(),
 	}
 	c.CommandID = data.CANCEL_SM
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -34,7 +34,7 @@ func (c *CancelSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *CancelSM) GetResponse() PDU {
-	return NewCancelSMResp(c)
+	return NewCancelSMRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.

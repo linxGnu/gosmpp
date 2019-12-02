@@ -8,7 +8,7 @@ import (
 // QuerySMResp PDU.
 type QuerySMResp struct {
 	base
-	Request      *QuerySM
+	Request      QuerySM
 	MessageID    string
 	FinalDate    string
 	MessageState byte
@@ -16,7 +16,19 @@ type QuerySMResp struct {
 }
 
 // NewQuerySMResp returns new QuerySM PDU.
-func NewQuerySMResp(req *QuerySM) (c *QuerySMResp) {
+func NewQuerySMResp() PDU {
+	c := &QuerySMResp{
+		base:         newBase(),
+		FinalDate:    data.DFLT_DATE,
+		MessageState: data.DFLT_MSG_STATE,
+		ErrorCode:    data.DFLT_ERR,
+	}
+	c.CommandID = data.QUERY_SM_RESP
+	return c
+}
+
+// NewQuerySMRespFromReq returns new QuerySM PDU.
+func NewQuerySMRespFromReq(req QuerySM) (c *QuerySMResp) {
 	c = &QuerySMResp{
 		base:         newBase(),
 		Request:      req,

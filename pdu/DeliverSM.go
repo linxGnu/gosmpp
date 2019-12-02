@@ -24,9 +24,9 @@ type DeliverSM struct {
 }
 
 // NewDeliverSM returns DeliverSM PDU.
-func NewDeliverSM() (c *DeliverSM) {
+func NewDeliverSM() PDU {
 	message, _ := NewShortMessage("")
-	c = &DeliverSM{
+	c := &DeliverSM{
 		base:                 newBase(),
 		ServiceType:          data.DFLT_SRVTYPE,
 		SourceAddr:           NewAddress(),
@@ -43,7 +43,7 @@ func NewDeliverSM() (c *DeliverSM) {
 		ShortMessage:         message,
 	}
 	c.CommandID = data.DELIVER_SM
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -53,7 +53,7 @@ func (c *DeliverSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *DeliverSM) GetResponse() PDU {
-	return NewDeliverSMResp(c)
+	return NewDeliverSMRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.

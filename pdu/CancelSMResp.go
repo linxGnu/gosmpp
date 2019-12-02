@@ -8,11 +8,20 @@ import (
 // CancelSMResp PDU.
 type CancelSMResp struct {
 	base
-	Request *CancelSM
+	Request CancelSM
 }
 
 // NewCancelSMResp returns CancelSMResp.
-func NewCancelSMResp(req *CancelSM) (c *CancelSMResp) {
+func NewCancelSMResp() PDU {
+	c := &CancelSMResp{
+		base: newBase(),
+	}
+	c.CommandID = data.CANCEL_SM_RESP
+	return c
+}
+
+// NewCancelSMRespFromReq returns CancelSMResp.
+func NewCancelSMRespFromReq(req CancelSM) (c *CancelSMResp) {
 	c = &CancelSMResp{
 		base:    newBase(),
 		Request: req,

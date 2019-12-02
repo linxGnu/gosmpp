@@ -13,12 +13,12 @@ type Outbind struct {
 }
 
 // NewOutbind returns Outbind PDU.
-func NewOutbind() (c *Outbind) {
-	c = &Outbind{
+func NewOutbind() PDU {
+	c := &Outbind{
 		base: newBase(),
 	}
 	c.CommandID = data.OUTBIND
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.

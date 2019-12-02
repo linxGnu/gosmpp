@@ -11,12 +11,12 @@ type AlertNotification struct {
 }
 
 // NewAlertNotification create new alert notification pdu.
-func NewAlertNotification() (a *AlertNotification) {
-	a = &AlertNotification{
+func NewAlertNotification() PDU {
+	a := &AlertNotification{
 		base: newBase(),
 	}
 	a.CommandID = data.ALERT_NOTIFICATION
-	return
+	return a
 }
 
 // CanResponse implements PDU interface.

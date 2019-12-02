@@ -8,30 +8,55 @@ import (
 // BindResp PDU.
 type BindResp struct {
 	base
-	Request *BindRequest
+	Request BindRequest
 }
 
 // NewBindResp returns BindResp.
-func NewBindResp(req *BindRequest) (c *BindResp) {
+func NewBindResp(req BindRequest) (c *BindResp) {
 	c = &BindResp{
 		base:    newBase(),
 		Request: req,
 	}
 
-	if req != nil {
-		switch req.Type {
-		case Transceiver:
-			c.CommandID = data.BIND_TRANSCEIVER_RESP
+	switch req.BindingType {
+	case Transceiver:
+		c.CommandID = data.BIND_TRANSCEIVER_RESP
 
-		case Receiver:
-			c.CommandID = data.BIND_RECEIVER_RESP
+	case Receiver:
+		c.CommandID = data.BIND_RECEIVER_RESP
 
-		case Transmitter:
-			c.CommandID = data.BIND_TRANSMITTER_RESP
-		}
+	case Transmitter:
+		c.CommandID = data.BIND_TRANSMITTER_RESP
 	}
 
 	return
+}
+
+// NewBindTransmitterResp returns new bind transmitter resp.
+func NewBindTransmitterResp() PDU {
+	c := &BindResp{
+		base: newBase(),
+	}
+	c.CommandID = data.BIND_TRANSMITTER_RESP
+	return c
+}
+
+// NewBindTransceiverResp returns new bind transceiver resp.
+func NewBindTransceiverResp() PDU {
+	c := &BindResp{
+		base: newBase(),
+	}
+	c.CommandID = data.BIND_TRANSCEIVER_RESP
+	return c
+}
+
+// NewBindReceiverResp returns new bind receiver resp.
+func NewBindReceiverResp() PDU {
+	c := &BindResp{
+		base: newBase(),
+	}
+	c.CommandID = data.BIND_RECEIVER_RESP
+	return c
 }
 
 // CanResponse implements PDU interface.

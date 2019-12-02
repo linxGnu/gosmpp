@@ -8,12 +8,22 @@ import (
 // DeliverSMResp represents deliver_sm resp.
 type DeliverSMResp struct {
 	base
-	Request   *DeliverSM
+	Request   DeliverSM
 	MessageID string
 }
 
 // NewDeliverSMResp returns new DeliverSMResp.
-func NewDeliverSMResp(req *DeliverSM) (c *DeliverSMResp) {
+func NewDeliverSMResp() PDU {
+	c := &DeliverSMResp{
+		base:      newBase(),
+		MessageID: data.DFLT_MSGID,
+	}
+	c.CommandID = data.DELIVER_SM_RESP
+	return c
+}
+
+// NewDeliverSMRespFromReq returns new DeliverSMResp.
+func NewDeliverSMRespFromReq(req DeliverSM) (c *DeliverSMResp) {
 	c = &DeliverSMResp{
 		base:      newBase(),
 		Request:   req,

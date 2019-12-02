@@ -13,12 +13,12 @@ type QuerySM struct {
 }
 
 // NewQuerySM returns new QuerySM PDU.
-func NewQuerySM() (c *QuerySM) {
-	c = &QuerySM{
+func NewQuerySM() PDU {
+	c := &QuerySM{
 		SourceAddr: NewAddress(),
 	}
 	c.CommandID = data.QUERY_SM
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -28,7 +28,7 @@ func (c *QuerySM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *QuerySM) GetResponse() PDU {
-	return NewQuerySMResp(c)
+	return NewQuerySMRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.

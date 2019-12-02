@@ -11,12 +11,12 @@ type Unbind struct {
 }
 
 // NewUnbind returns Unbind PDU.
-func NewUnbind() (c *Unbind) {
-	c = &Unbind{
+func NewUnbind() PDU {
+	c := &Unbind{
 		base: newBase(),
 	}
 	c.CommandID = data.UNBIND
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -26,7 +26,7 @@ func (c *Unbind) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *Unbind) GetResponse() PDU {
-	return NewUnbindResp(c)
+	return NewUnbindRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.

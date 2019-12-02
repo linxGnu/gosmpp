@@ -25,14 +25,14 @@ type BindRequest struct {
 	SystemType       string
 	InterfaceVersion byte
 	AddressRange     AddressRange
-	Type             BindingType
+	BindingType      BindingType
 }
 
 // NewBindRequest returns new bind request.
 func NewBindRequest(t BindingType) (b *BindRequest) {
 	b = &BindRequest{
 		base:             newBase(),
-		Type:             t,
+		BindingType:      t,
 		SystemID:         data.DFLT_SYSID,
 		Password:         data.DFLT_PASS,
 		SystemType:       data.DFLT_SYSTYPE,
@@ -54,6 +54,21 @@ func NewBindRequest(t BindingType) (b *BindRequest) {
 	return
 }
 
+// NewBindTransmitter returns new bind transmitter pdu.
+func NewBindTransmitter() PDU {
+	return NewBindRequest(Transmitter)
+}
+
+// NewBindTransceiver returns new bind transceiver pdu.
+func NewBindTransceiver() PDU {
+	return NewBindRequest(Transceiver)
+}
+
+// NewBindReceiver returns new bind receiver pdu.
+func NewBindReceiver() PDU {
+	return NewBindRequest(Receiver)
+}
+
 // CanResponse implements PDU interface.
 func (b *BindRequest) CanResponse() bool {
 	return true
@@ -61,7 +76,7 @@ func (b *BindRequest) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (b *BindRequest) GetResponse() PDU {
-	return NewBindResp(b)
+	return NewBindResp(*b)
 }
 
 // Marshal implements PDU interface.

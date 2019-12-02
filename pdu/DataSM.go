@@ -17,8 +17,8 @@ type DataSM struct {
 }
 
 // NewDataSM returns new data sm pdu.
-func NewDataSM() (c *DataSM) {
-	c = &DataSM{
+func NewDataSM() PDU {
+	c := &DataSM{
 		base:               newBase(),
 		ServiceType:        data.DFLT_SRVTYPE,
 		SourceAddr:         NewAddressWithMaxLength(data.SM_DATA_ADDR_LEN),
@@ -28,7 +28,7 @@ func NewDataSM() (c *DataSM) {
 		DataCoding:         data.DFLT_DATA_CODING,
 	}
 	c.CommandID = data.DATA_SM
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -38,7 +38,7 @@ func (c *DataSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *DataSM) GetResponse() PDU {
-	return NewDataSMResp(c)
+	return NewDataSMRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.

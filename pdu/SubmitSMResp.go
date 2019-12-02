@@ -8,12 +8,22 @@ import (
 // SubmitSMResp represents deliver_sm resp.
 type SubmitSMResp struct {
 	base
-	Request   *SubmitSM
+	Request   SubmitSM
 	MessageID string
 }
 
 // NewSubmitSMResp returns new SubmitSMResp.
-func NewSubmitSMResp(req *SubmitSM) (c *SubmitSMResp) {
+func NewSubmitSMResp() PDU {
+	c := &SubmitSMResp{
+		base:      newBase(),
+		MessageID: data.DFLT_MSGID,
+	}
+	c.CommandID = data.SUBMIT_SM_RESP
+	return c
+}
+
+// NewSubmitSMNewSubmitSMRespFromReqResp returns new SubmitSMResp.
+func NewSubmitSMRespFromReq(req SubmitSM) (c *SubmitSMResp) {
 	c = &SubmitSMResp{
 		base:      newBase(),
 		Request:   req,

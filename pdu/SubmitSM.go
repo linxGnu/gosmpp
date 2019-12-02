@@ -24,9 +24,9 @@ type SubmitSM struct {
 }
 
 // NewSubmitSM returns SubmitSM PDU.
-func NewSubmitSM() (c *SubmitSM) {
+func NewSubmitSM() PDU {
 	message, _ := NewShortMessage("")
-	c = &SubmitSM{
+	c := &SubmitSM{
 		base:                 newBase(),
 		ServiceType:          data.DFLT_SRVTYPE,
 		SourceAddr:           NewAddress(),
@@ -43,7 +43,7 @@ func NewSubmitSM() (c *SubmitSM) {
 		ShortMessage:         message,
 	}
 	c.CommandID = data.SUBMIT_SM
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -53,7 +53,7 @@ func (c *SubmitSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *SubmitSM) GetResponse() PDU {
-	return NewSubmitSMResp(c)
+	return NewSubmitSMRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.

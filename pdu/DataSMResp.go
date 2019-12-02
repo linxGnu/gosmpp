@@ -8,12 +8,22 @@ import (
 // DataSMResp PDU.
 type DataSMResp struct {
 	base
-	Request   *DataSM
+	Request   DataSM
 	MessageID string
 }
 
 // NewDataSMResp returns DataSMResp.
-func NewDataSMResp(req *DataSM) (c *DataSMResp) {
+func NewDataSMResp() PDU {
+	c := &DataSMResp{
+		base:      newBase(),
+		MessageID: data.DFLT_MSGID,
+	}
+	c.CommandID = data.DATA_SM_RESP
+	return c
+}
+
+// NewDataSMRespFromReq returns DataSMResp.
+func NewDataSMRespFromReq(req DataSM) (c *DataSMResp) {
 	c = &DataSMResp{
 		base:      newBase(),
 		Request:   req,

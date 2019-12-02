@@ -8,11 +8,20 @@ import (
 // UnbindResp PDU.
 type UnbindResp struct {
 	base
-	Request *Unbind
+	Request Unbind
 }
 
-// NewUnbindResp returns UnbindResp.
-func NewUnbindResp(req *Unbind) (c *UnbindResp) {
+// NewUnbindRespFromReq returns UnbindResp.
+func NewUnbindResp() PDU {
+	c := &UnbindResp{
+		base: newBase(),
+	}
+	c.CommandID = data.UNBIND_RESP
+	return c
+}
+
+// NewUnbindRespFromReq returns UnbindResp.
+func NewUnbindRespFromReq(req Unbind) (c *UnbindResp) {
 	c = &UnbindResp{
 		base:    newBase(),
 		Request: req,

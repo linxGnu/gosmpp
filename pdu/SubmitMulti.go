@@ -24,9 +24,9 @@ type SubmitMulti struct {
 }
 
 // NewSubmiNewSubmitMultitSM returns NewSubmitMulti PDU.
-func NewSubmitMulti() (c *SubmitMulti) {
+func NewSubmitMulti() PDU {
 	message, _ := NewShortMessage("")
-	c = &SubmitMulti{
+	c := &SubmitMulti{
 		base:                 newBase(),
 		ServiceType:          data.DFLT_SRVTYPE,
 		SourceAddr:           NewAddress(),
@@ -43,7 +43,7 @@ func NewSubmitMulti() (c *SubmitMulti) {
 		ShortMessage:         message,
 	}
 	c.CommandID = data.SUBMIT_MULTI
-	return
+	return c
 }
 
 // CanResponse implements PDU interface.
@@ -53,7 +53,7 @@ func (c *SubmitMulti) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *SubmitMulti) GetResponse() PDU {
-	return NewSubmitMultiResp(c)
+	return NewSubmitMultiRespFromReq(*c)
 }
 
 // Marshal implements PDU interface.
