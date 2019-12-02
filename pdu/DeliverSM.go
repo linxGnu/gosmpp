@@ -23,6 +23,7 @@ type DeliverSM struct {
 	ShortMessage         ShortMessage
 }
 
+// NewDeliverSM returns DeliverSM PDU.
 func NewDeliverSM() (c *DeliverSM) {
 	message, _ := NewShortMessage("")
 	c = &DeliverSM{
