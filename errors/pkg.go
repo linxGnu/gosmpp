@@ -2,6 +2,8 @@ package errors
 
 import (
 	"fmt"
+
+	"github.com/linxGnu/gosmpp/data"
 )
 
 // SmppErr indicates smpp error(s), compatible with OpenSMPP.
@@ -60,6 +62,9 @@ var (
 
 	// ErrWrongStringLength indicates wrong string length.
 	ErrWrongStringLength error = &SmppErr{err: "Wrong string length", serialVersionUID: 8604133584902790266}
+
+	// ErrShortMessageLengthTooLarge indicates short message length is too large.
+	ErrShortMessageLengthTooLarge error = &SmppErr{err: fmt.Sprintf("Encoded short message data exceeds size of %d", data.SM_MSG_LEN), serialVersionUID: 78237205927624}
 
 	// ErrBufferFull indicates buffer full.
 	ErrBufferFull error = &SmppErr{err: "Buffer is full", serialVersionUID: -3720107899765064964}

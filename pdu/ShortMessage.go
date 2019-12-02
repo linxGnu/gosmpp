@@ -2,13 +2,15 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
+	"github.com/linxGnu/gosmpp/errors"
+	"github.com/linxGnu/gosmpp/utils"
 )
 
 // ShortMessage message.
 type ShortMessage struct {
-	Message     string
-	Enc         data.Encoding
-	MessageData []byte
+	message     string
+	enc         data.Encoding
+	messageData []byte
 }
 
 // NewShortMessage returns new ShortMessage.
@@ -28,16 +30,20 @@ func (c *ShortMessage) SetMessage(message string) (err error) {
 
 // SetMessageWithEncoding set message with encoding.
 func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding) (err error) {
-	if c.MessageData, err = enc.Encode(message); err == nil {
-		c.Message = message
-		c.Enc = enc
+	if c.messageData, err = enc.Encode(message); err == nil {
+		if len(c.messageData) > data.SM_MSG_LEN {
+			err = errors.ErrShortMessageLengthTooLarge
+			return
+		}
+		c.message = message
+		c.enc = enc
 	}
 	return
 }
 
 // GetMessage returns underlying message.
 func (c *ShortMessage) GetMessage() (string, error) {
-	enc := c.Enc
+	enc := c.enc
 	if enc == nil {
 		enc = data.GSM7BIT
 	}
@@ -52,54 +58,29 @@ func (c *ShortMessage) GetMessage() (string, error) {
 
 // GetMessageWithEncoding returns (decoded) underlying message.
 func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (string, error) {
-	if len(c.MessageData) == 0 {
+	if len(c.messageData) == 0 {
 		return "", nil
 	}
 
 	if enc == nil {
-		return string(c.MessageData), nil
+		return string(c.messageData), nil
 	}
 
-	return enc.Decode(c.MessageData)
+	return enc.Decode(c.messageData)
 }
 
-// func (c *ShortMessage) SetData(buf *Utils.ByteBuffer) *Exception.Exception {
-// 	if buf == nil || buf.Buffer == nil {
-// 		c.messageData = nil
-// 		c.length = 0
-// 		c.message = ""
-// 		return nil
-// 	}
+// Marshal implements PDU interface.
+func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
+	n := byte(len(c.messageData))
+	b.Grow(int(n) + 1)
+	_ = b.WriteByte(n)
+	_, _ = b.Write(c.messageData[:n])
+}
 
-// 	c.messageData = buf.Bytes()
-// 	if c.messageData == nil {
-// 		c.length = 0
-// 	} else {
-// 		c.length = int32(len(c.messageData))
-// 	}
-
-// 	if c.length < c.minLength || c.length > c.maxLength {
-// 		return Exception.WrongLengthException
-// 	}
-
-// 	return nil
-// }
-
-// func (c *ShortMessage) GetData() (*Utils.ByteBuffer, *Exception.Exception) {
-// 	return Utils.NewBuffer(c.messageData), nil
-// }
-
-// func (c *ShortMessage) SetEncoding(enc Data.Encoding) *Exception.Exception {
-// 	if enc == nil {
-// 		return Exception.NewExceptionFromStr("ShortMessage: encoding object is nil")
-// 	}
-
-// 	tmp, err1 := enc.Decode(c.messageData)
-// 	if err1 != nil {
-// 		return Exception.UnsupportedEncodingException
-// 	}
-
-// 	c.message = tmp
-// 	c.enc = enc
-// 	return nil
-// }
+// Unmarshal implements PDU interface.
+func (c *ShortMessage) Unmarshal(b *utils.ByteBuffer) (err error) {
+	if n, err := b.ReadByte(); err == nil {
+		c.messageData, err = b.ReadN(int(n))
+	}
+	return
+}
