@@ -33,10 +33,10 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 	if c.messageData, err = enc.Encode(message); err == nil {
 		if len(c.messageData) > data.SM_MSG_LEN {
 			err = errors.ErrShortMessageLengthTooLarge
-			return
+		} else {
+			c.message = message
+			c.enc = enc
 		}
-		c.message = message
-		c.enc = enc
 	}
 	return
 }
