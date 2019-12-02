@@ -22,7 +22,7 @@ func NewReplaceSM() (c *ReplaceSM) {
 	message, _ := NewShortMessage("")
 	c = &ReplaceSM{
 		base:                 newBase(),
-		SourceAddr:           *NewAddress(),
+		SourceAddr:           NewAddress(),
 		ScheduleDeliveryTime: data.DFLT_SCHEDULE,
 		ValidityPeriod:       data.DFLT_VALIDITY,
 		RegisteredDelivery:   data.DFLT_REG_DELIVERY,

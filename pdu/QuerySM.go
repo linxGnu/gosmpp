@@ -15,7 +15,7 @@ type QuerySM struct {
 // NewQuerySM returns new QuerySM PDU.
 func NewQuerySM() (c *QuerySM) {
 	c = &QuerySM{
-		SourceAddr: *NewAddress(),
+		SourceAddr: NewAddress(),
 	}
 	c.CommandID = data.QUERY_SM
 	return

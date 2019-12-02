@@ -20,8 +20,8 @@ func NewCancelSM() (c *CancelSM) {
 		base:        newBase(),
 		ServiceType: data.DFLT_SRVTYPE,
 		MessageID:   data.DFLT_MSGID,
-		SourceAddr:  *NewAddress(),
-		DestAddr:    *NewAddress(),
+		SourceAddr:  NewAddress(),
+		DestAddr:    NewAddress(),
 	}
 	c.CommandID = data.CANCEL_SM
 	return

@@ -29,8 +29,8 @@ func NewSubmitSM() (c *SubmitSM) {
 	c = &SubmitSM{
 		base:                 newBase(),
 		ServiceType:          data.DFLT_SRVTYPE,
-		SourceAddr:           *NewAddress(),
-		DestAddr:             *NewAddress(),
+		SourceAddr:           NewAddress(),
+		DestAddr:             NewAddress(),
 		EsmClass:             data.DFLT_ESM_CLASS,
 		ProtocolID:           data.DFLT_PROTOCOLID,
 		PriorityFlag:         data.DFLT_PRIORITY_FLAG,

@@ -9,43 +9,41 @@ import (
 
 // Address smpp address of src and dst.
 type Address struct {
-	Ton              byte
-	Npi              byte
-	Address          string
-	MaxAddressLength int
+	ton              byte
+	npi              byte
+	address          string
+	maxAddressLength int
 }
 
-// NewAddress create new address with default max length
-func NewAddress() *Address {
-	return &Address{Ton: data.GetDefaultTon(), Npi: data.GetDefaultNpi(), MaxAddressLength: data.SM_ADDR_LEN}
+// NewAddress returns new address with default max length.
+func NewAddress() Address {
+	return Address{ton: data.GetDefaultTon(), npi: data.GetDefaultNpi(), maxAddressLength: data.SM_ADDR_LEN}
 }
 
-// NewAddressWithAddr create new address
-func NewAddressWithAddr(addr string) (a *Address, err error) {
+// NewAddressWithAddr returns new address.
+func NewAddressWithAddr(addr string) (a Address, err error) {
 	a = NewAddress()
 	err = a.SetAddress(addr)
 	return
 }
 
-// NewAddressWithMaxLength create new address, set max length in C of address
-func NewAddressWithMaxLength(len int) (a *Address) {
+// NewAddressWithMaxLength returns new address, set max length in C of address
+func NewAddressWithMaxLength(len int) (a Address) {
 	a = NewAddress()
-	a.MaxAddressLength = len
+	a.maxAddressLength = len
 	return
 }
 
-// NewAddressWithTonNpiLen create new address with ton, npi, max length.
-func NewAddressWithTonNpiLen(ton, npi byte, len int) *Address {
-	return &Address{MaxAddressLength: len, Ton: ton, Npi: npi}
+// NewAddressWithTonNpiLen returns new address with ton, npi, max length.
+func NewAddressWithTonNpiLen(ton, npi byte, len int) Address {
+	return Address{ton: ton, npi: npi, maxAddressLength: len}
 }
 
 // Unmarshal from buffer.
 func (c *Address) Unmarshal(b *utils.ByteBuffer) (err error) {
-	c.Ton, err = b.ReadByte()
-	if err == nil {
-		c.Npi, err = b.ReadByte()
-		if err == nil {
-			c.Address, err = b.ReadCString()
+	if c.ton, err = b.ReadByte(); err == nil {
+		if c.npi, err = b.ReadByte(); err == nil {
+			c.address, err = b.ReadCString()
 		}
 	}
 	return
@@ -53,17 +51,43 @@ func (c *Address) Unmarshal(b *utils.ByteBuffer) (err error) {
 
 // Marshal to buffer.
 func (c *Address) Marshal(b *utils.ByteBuffer) {
-	b.Grow(3 + len(c.Address))
-	_ = b.WriteByte(c.Ton)
-	_ = b.WriteByte(c.Npi)
-	_ = b.WriteCString(c.Address)
+	b.Grow(3 + len(c.address))
+
+	_ = b.WriteByte(c.ton)
+	_ = b.WriteByte(c.npi)
+	_ = b.WriteCString(c.address)
 }
 
-// SetAddress to pdu.
+// SetTon sets ton.
+func (c *Address) SetTon(ton byte) {
+	c.ton = ton
+}
+
+// SetNpi sets npi.
+func (c *Address) SetNpi(npi byte) {
+	c.npi = npi
+}
+
+// SetAddress sets address.
 func (c *Address) SetAddress(addr string) (err error) {
-	if c.MaxAddressLength > 0 && len(addr) > c.MaxAddressLength {
-		err = fmt.Errorf("Address len exceed limit. (%d > %d)", len(addr), c.MaxAddressLength)
+	if c.maxAddressLength > 0 && len(addr) > c.maxAddressLength {
+		err = fmt.Errorf("Address len exceed limit. (%d > %d)", len(addr), c.maxAddressLength)
 	}
-	c.Address = addr
+	c.address = addr
 	return
+}
+
+// Ton returns assigned ton.
+func (c *Address) Ton() byte {
+	return c.ton
+}
+
+// Npi returns assigned npi.
+func (c *Address) Npi() byte {
+	return c.npi
+}
+
+// Address returns assigned address (in string).
+func (c *Address) Address() string {
+	return c.address
 }
