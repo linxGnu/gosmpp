@@ -8,13 +8,13 @@ import (
 // SubmitMultiResp PDU.
 type SubmitMultiResp struct {
 	base
-	Request       PDU
+	Request       *SubmitMulti
 	MessageID     string
 	UnsuccessSMEs UnsuccessSMEs
 }
 
 // NewSubmitMultiResp returns new SubmitMultiResp.
-func NewSubmitMultiResp(req PDU) (c *SubmitMultiResp) {
+func NewSubmitMultiResp(req *SubmitMulti) (c *SubmitMultiResp) {
 	c = &SubmitMultiResp{
 		base:      newBase(),
 		Request:   req,

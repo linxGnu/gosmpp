@@ -66,14 +66,25 @@ func (c *UnsuccessSME) ErrorStatusCode() int32 {
 	return c.errorStatusCode
 }
 
-// UnsuccessSMEs represents list of UnsuccessSME(s).
+// UnsuccessSMEs represents list of UnsuccessSME.
 type UnsuccessSMEs struct {
 	l []UnsuccessSME
+}
+
+// NewUnsuccessSMEs returns list of UnsuccessSME.
+func NewUnsuccessSMEs() (u UnsuccessSMEs) {
+	u.l = make([]UnsuccessSME, 0, 8)
+	return
 }
 
 // Add to list.
 func (c *UnsuccessSMEs) Add(u UnsuccessSME) {
 	c.l = append(c.l, u)
+}
+
+// Get list.
+func (c *UnsuccessSMEs) Get() []UnsuccessSME {
+	return c.l
 }
 
 // Unmarshal from buffer.

@@ -102,3 +102,51 @@ func (c *DestinationAddress) IsAddress() bool {
 func (c *DestinationAddress) IsDistributionList() bool {
 	return c.destFlag == byte(data.SM_DEST_DL_NAME)
 }
+
+// DestinationAddresses represents list of DestinationAddress.
+type DestinationAddresses struct {
+	l []DestinationAddress
+}
+
+// NewDestinationAddresses returns list of DestinationAddress.
+func NewDestinationAddresses() (u DestinationAddresses) {
+	u.l = make([]DestinationAddress, 0, 8)
+	return
+}
+
+// Add to list.
+func (c *DestinationAddresses) Add(u DestinationAddress) {
+	c.l = append(c.l, u)
+}
+
+// Get list.
+func (c *DestinationAddresses) Get() []DestinationAddress {
+	return c.l
+}
+
+// Unmarshal from buffer.
+func (c *DestinationAddresses) Unmarshal(b *utils.ByteBuffer) (err error) {
+	var n byte
+	if n, err = b.ReadByte(); err == nil {
+		c.l = make([]DestinationAddress, n)
+
+		var i byte
+		for ; i < n; i++ {
+			if err = c.l[i].Unmarshal(b); err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// Marshal to buffer.
+func (c *DestinationAddresses) Marshal(b *utils.ByteBuffer) {
+	n := byte(len(c.l))
+	_ = b.WriteByte(n)
+
+	var i byte
+	for ; i < n; i++ {
+		c.l[i].Marshal(b)
+	}
+}
