@@ -41,6 +41,7 @@ func (c *CancelSM) GetResponse() PDU {
 func (c *CancelSM) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.ServiceType) + len(c.MessageID) + 2)
+
 		b.WriteCString(c.ServiceType)
 		b.WriteCString(c.MessageID)
 		c.SourceAddr.Marshal(b)

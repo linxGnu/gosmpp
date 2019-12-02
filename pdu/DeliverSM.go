@@ -26,6 +26,7 @@ type DeliverSM struct {
 func NewDeliverSM() (c *DeliverSM) {
 	message, _ := NewShortMessage("")
 	c = &DeliverSM{
+		base:                 newBase(),
 		ServiceType:          data.DFLT_SRVTYPE,
 		SourceAddr:           *NewAddress(),
 		DestAddr:             *NewAddress(),

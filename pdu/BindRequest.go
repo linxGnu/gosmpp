@@ -23,8 +23,8 @@ type BindRequest struct {
 	SystemID         string
 	Password         string
 	SystemType       string
-	AddressRange     AddressRange
 	InterfaceVersion byte
+	AddressRange     AddressRange
 	Type             BindingType
 }
 
@@ -68,6 +68,7 @@ func (b *BindRequest) GetResponse() PDU {
 func (b *BindRequest) Marshal(w *utils.ByteBuffer) {
 	b.base.marshal(w, func(w *utils.ByteBuffer) {
 		w.Grow(len(b.SystemID) + len(b.Password) + len(b.SystemType) + 4)
+
 		w.WriteCString(b.SystemID)
 		w.WriteCString(b.Password)
 		w.WriteCString(b.SystemType)

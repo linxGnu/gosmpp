@@ -17,7 +17,7 @@ func NewOutbind() (c *Outbind) {
 	c = &Outbind{
 		base: newBase(),
 	}
-	c.CommandID = data.CANCEL_SM
+	c.CommandID = data.OUTBIND
 	return
 }
 
@@ -35,6 +35,7 @@ func (c *Outbind) GetResponse() PDU {
 func (c *Outbind) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.SystemID) + len(c.Password) + 2)
+
 		b.WriteCString(c.SystemID)
 		b.WriteCString(c.Password)
 	})

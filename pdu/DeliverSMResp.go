@@ -37,6 +37,7 @@ func (c *DeliverSMResp) GetResponse() PDU {
 func (c *DeliverSMResp) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(b *utils.ByteBuffer) {
 		b.Grow(len(c.MessageID) + 1)
+
 		b.WriteCString(c.MessageID)
 	})
 }
