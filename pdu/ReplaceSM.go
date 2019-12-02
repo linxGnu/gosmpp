@@ -29,7 +29,7 @@ func NewReplaceSM() (c *ReplaceSM) {
 		SmDefaultMsgID:       data.DFLT_DFLTMSGID,
 		ShortMessage:         message,
 	}
-	c.CommandID = data.DELIVER_SM
+	c.CommandID = data.REPLACE_SM
 	return
 }
 
