@@ -10,8 +10,8 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-// TransmitterConfig is configuration for transmitter.
-type TransmitterConfig struct {
+// TransmitListener is listener for transmitter.
+type TransmitListener struct {
 	// WriteTimeout is timeout/deadline for writting.
 	WriteTimeout time.Duration
 
@@ -24,28 +24,35 @@ type TransmitterConfig struct {
 
 	// OnClosed handles transmitter `closed` event
 	// with processing pdu and the specific error that causes transmitter closed.
-	OnClosed func(pdu.PDU, error)
+	OnClosed func()
 }
 
 type transmitter struct {
-	ctx    context.Context
-	cancel context.CancelFunc
+	ctx      context.Context
+	cancel   context.CancelFunc
+	wg       sync.WaitGroup
+	listener TransmitListener
 
-	wg sync.WaitGroup
-
-	config TransmitterConfig
-
-	shared bool
-	conn   net.Conn
+	dedicated bool
+	conn      Connection
 
 	input chan pdu.PDU
-
 	state int32
 }
 
 // NewTransmitter returns new transmitter.
-func NewTransmitter(ctx context.Context, config TransmitterConfig) Transmitter {
-	return &transmitter{}
+func NewTransmitter(conn Connection, listener TransmitListener) Transmitter {
+	t := &transmitter{
+		listener: listener,
+		conn:     conn,
+		input:    make(chan pdu.PDU),
+	}
+	t.ctx, t.cancel = context.WithCancel(context.Background())
+
+	// start transmitter daemon(s)
+	t.start()
+
+	return t
 }
 
 // Close transmitter and stop underlying daemons.
@@ -57,11 +64,22 @@ func (t *transmitter) Close() (err error) {
 		// wait daemons
 		t.wg.Wait()
 
-		if !t.shared {
-			err = t.conn.Close()
+		if t.conn.Dedicated {
+			err = t.conn.Conn.Close()
+		}
+
+		// notify transmitter closed
+		if t.listener.OnClosed != nil {
+			t.listener.OnClosed()
 		}
 	}
 	return
+}
+
+func (t *transmitter) close() {
+	go func() {
+		_ = t.Close()
+	}()
 }
 
 // Write submits a pdu.
@@ -76,14 +94,19 @@ func (t *transmitter) Write(p pdu.PDU) (err error) {
 	}
 }
 
-// write pdu daemon
-func (t *transmitter) write() {
-	if t.config.EnquireLink > 0 {
-		t.loopWithEnquireLink()
+func (t *transmitter) start() {
+	t.wg.Add(1)
+	if t.listener.EnquireLink > 0 {
+		go func() {
+			t.loopWithEnquireLink()
+			t.wg.Done()
+		}()
 	} else {
-		t.loop()
+		go func() {
+			t.loop()
+			t.wg.Done()
+		}()
 	}
-	t.wg.Done()
 }
 
 // pdu loop processing
@@ -95,7 +118,7 @@ func (t *transmitter) loop() {
 
 		case p := <-t.input:
 			if p != nil {
-				n, err := t._write(marshal(p))
+				n, err := t.write(marshal(p))
 				if t.check(p, n, err) {
 					return
 				}
@@ -106,7 +129,7 @@ func (t *transmitter) loop() {
 
 // pdu loop processing with enquire link support
 func (t *transmitter) loopWithEnquireLink() {
-	ticker := time.NewTicker(t.config.EnquireLink)
+	ticker := time.NewTicker(t.listener.EnquireLink)
 
 	// enquireLink payload
 	eqp := pdu.NewEnquireLink()
@@ -118,14 +141,14 @@ func (t *transmitter) loopWithEnquireLink() {
 			return
 
 		case <-ticker.C:
-			n, err := t._write(enquireLink)
+			n, err := t.write(enquireLink)
 			if t.check(eqp, n, err) {
 				return
 			}
 
 		case p := <-t.input:
 			if p != nil {
-				n, err := t._write(marshal(p))
+				n, err := t.write(marshal(p))
 				if t.check(p, n, err) {
 					return
 				}
@@ -140,8 +163,8 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 		return
 	}
 
-	if t.config.OnError != nil {
-		t.config.OnError(p, err)
+	if t.listener.OnError != nil {
+		t.listener.OnError(p, err)
 	}
 
 	if n == 0 {
@@ -153,36 +176,28 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 	}
 
 	if closing {
-		go closeTransmitter(t, p, err)
+		t.close() // start closing
 	}
 
 	return
 }
 
 // low level writing
-func (t *transmitter) _write(v []byte) (n int, err error) {
-	hasTimeout := t.config.WriteTimeout > 0
+func (t *transmitter) write(v []byte) (n int, err error) {
+	hasTimeout := t.listener.WriteTimeout > 0
 
 	if hasTimeout {
-		t.conn.SetWriteDeadline(time.Now().Add(t.config.WriteTimeout))
+		t.conn.Conn.SetWriteDeadline(time.Now().Add(t.listener.WriteTimeout))
 	}
 
-	if n, err = t.conn.Write(v); err != nil && n == 0 {
+	if n, err = t.conn.Conn.Write(v); err != nil && n == 0 {
 		// retry again with double timeout
 		if hasTimeout {
-			t.conn.SetWriteDeadline(time.Now().Add(t.config.WriteTimeout << 1))
+			t.conn.Conn.SetWriteDeadline(time.Now().Add(t.listener.WriteTimeout << 1))
 		}
 
-		n, err = t.conn.Write(v)
+		n, err = t.conn.Conn.Write(v)
 	}
 
 	return
-}
-
-func closeTransmitter(t *transmitter, processingPDU pdu.PDU, err error) {
-	_ = t.Close()
-
-	if t.config.OnClosed != nil {
-		t.config.OnClosed(processingPDU, err)
-	}
 }

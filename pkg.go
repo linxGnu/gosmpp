@@ -2,9 +2,16 @@ package gosmpp
 
 import (
 	"io"
+	"net"
 
 	"github.com/linxGnu/gosmpp/pdu"
 )
+
+// Connection wraps over net.Conn along with setting(s).
+type Connection struct {
+	Conn      net.Conn // underlying connection
+	Dedicated bool     // indicates connection is dedicated from invoker. Invoker won't care about its state
+}
 
 // Writer submits PDU to SMSC.
 type Writer interface {
