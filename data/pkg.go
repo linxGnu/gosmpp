@@ -253,109 +253,109 @@ const (
 	// Following are the 2 byte tag and min/max lengths for
 	// supported optional parameter (declann)
 
-	OPT_PAR_MSG_WAIT int16 = 2
+	OPT_PAR_MSG_WAIT = 2
 
 	// Privacy Indicator
-	OPT_PAR_PRIV_IND int16 = 0x0201
+	OPT_PAR_PRIV_IND = 0x0201
 
 	// Source Subaddress
-	OPT_PAR_SRC_SUBADDR     int16 = 0x0202
-	OPT_PAR_SRC_SUBADDR_MIN       = 2
-	OPT_PAR_SRC_SUBADDR_MAX       = 23
+	OPT_PAR_SRC_SUBADDR     = 0x0202
+	OPT_PAR_SRC_SUBADDR_MIN = 2
+	OPT_PAR_SRC_SUBADDR_MAX = 23
 
 	// Destination Subaddress
-	OPT_PAR_DEST_SUBADDR     int16 = 0x0203
-	OPT_PAR_DEST_SUBADDR_MIN       = 2
-	OPT_PAR_DEST_SUBADDR_MAX       = 23
+	OPT_PAR_DEST_SUBADDR     = 0x0203
+	OPT_PAR_DEST_SUBADDR_MIN = 2
+	OPT_PAR_DEST_SUBADDR_MAX = 23
 
 	// User Message Reference
-	OPT_PAR_USER_MSG_REF int16 = 0x0204
+	OPT_PAR_USER_MSG_REF = 0x0204
 
 	// User Response Code
-	OPT_PAR_USER_RESP_CODE int16 = 0x0205
+	OPT_PAR_USER_RESP_CODE = 0x0205
 
 	// Language Indicator
-	OPT_PAR_LANG_IND int16 = 0x020D
+	OPT_PAR_LANG_IND = 0x020D
 
 	// Source Port
-	OPT_PAR_SRC_PORT int16 = 0x020A
+	OPT_PAR_SRC_PORT = 0x020A
 
 	// Destination Port
-	OPT_PAR_DST_PORT int16 = 0x020B
+	OPT_PAR_DST_PORT = 0x020B
 
 	// Concat Msg Ref Num
-	OPT_PAR_SAR_MSG_REF_NUM int16 = 0x020C
+	OPT_PAR_SAR_MSG_REF_NUM = 0x020C
 
 	// Concat Total Segments
-	OPT_PAR_SAR_TOT_SEG int16 = 0x020E
+	OPT_PAR_SAR_TOT_SEG = 0x020E
 
 	// Concat Segment Seqnums
-	OPT_PAR_SAR_SEG_SNUM int16 = 0x020F
+	OPT_PAR_SAR_SEG_SNUM = 0x020F
 
 	// SC Interface Version
-	OPT_PAR_SC_IF_VER int16 = 0x0210
+	OPT_PAR_SC_IF_VER = 0x0210
 
 	// Display Time
-	OPT_PAR_DISPLAY_TIME int16 = 0x1201
+	OPT_PAR_DISPLAY_TIME = 0x1201
 
 	// Validity Information
-	OPT_PAR_MS_VALIDITY int16 = 0x1204
+	OPT_PAR_MS_VALIDITY = 0x1204
 
 	// DPF Result
-	OPT_PAR_DPF_RES int16 = 0x0420
+	OPT_PAR_DPF_RES = 0x0420
 
 	// Set DPF
-	OPT_PAR_SET_DPF int16 = 0x0421
+	OPT_PAR_SET_DPF = 0x0421
 
 	// MS Availability Status
-	OPT_PAR_MS_AVAIL_STAT int16 = 0x0422
+	OPT_PAR_MS_AVAIL_STAT = 0x0422
 
 	// Network Error Code
-	OPT_PAR_NW_ERR_CODE     int16 = 0x0423
-	OPT_PAR_NW_ERR_CODE_MIN       = 3
-	OPT_PAR_NW_ERR_CODE_MAX       = 3
+	OPT_PAR_NW_ERR_CODE     = 0x0423
+	OPT_PAR_NW_ERR_CODE_MIN = 3
+	OPT_PAR_NW_ERR_CODE_MAX = 3
 
 	// Extended int16 Message has no size limit
 
 	// Delivery Failure Reason
-	OPT_PAR_DEL_FAIL_RSN int16 = 0x0425
+	OPT_PAR_DEL_FAIL_RSN = 0x0425
 
 	// More Messages to Follow
-	OPT_PAR_MORE_MSGS int16 = 0x0426
+	OPT_PAR_MORE_MSGS = 0x0426
 
 	// Message State
-	OPT_PAR_MSG_STATE int16 = 0x0427
+	OPT_PAR_MSG_STATE = 0x0427
 
 	// Callback Number
-	OPT_PAR_CALLBACK_NUM     int16 = 0x0381
-	OPT_PAR_CALLBACK_NUM_MIN       = 4
-	OPT_PAR_CALLBACK_NUM_MAX       = 19
+	OPT_PAR_CALLBACK_NUM     = 0x0381
+	OPT_PAR_CALLBACK_NUM_MIN = 4
+	OPT_PAR_CALLBACK_NUM_MAX = 19
 
 	// Callback Number Presentation  Indicator
-	OPT_PAR_CALLBACK_NUM_PRES_IND int16 = 0x0302
+	OPT_PAR_CALLBACK_NUM_PRES_IND = 0x0302
 
 	// Callback Number Alphanumeric Tag
-	OPT_PAR_CALLBACK_NUM_ATAG     int16 = 0x0303
-	OPT_PAR_CALLBACK_NUM_ATAG_MIN       = 1
-	OPT_PAR_CALLBACK_NUM_ATAG_MAX       = 65
+	OPT_PAR_CALLBACK_NUM_ATAG     = 0x0303
+	OPT_PAR_CALLBACK_NUM_ATAG_MIN = 1
+	OPT_PAR_CALLBACK_NUM_ATAG_MAX = 65
 
 	// Number of messages in Mailbox
-	OPT_PAR_NUM_MSGS int16 = 0x0304
+	OPT_PAR_NUM_MSGS = 0x0304
 
 	// SMS Received Alert
-	OPT_PAR_SMS_SIGNAL int16 = 0x1203
+	OPT_PAR_SMS_SIGNAL = 0x1203
 
 	// Message Delivery Alert
-	OPT_PAR_ALERT_ON_MSG_DELIVERY int16 = 0x130C
+	OPT_PAR_ALERT_ON_MSG_DELIVERY = 0x130C
 
 	// ITS Reply Type
-	OPT_PAR_ITS_REPLY_TYPE int16 = 0x1380
+	OPT_PAR_ITS_REPLY_TYPE = 0x1380
 
 	// ITS Session Info
-	OPT_PAR_ITS_SESSION_INFO int16 = 0x1383
+	OPT_PAR_ITS_SESSION_INFO = 0x1383
 
 	// USSD Service Op
-	OPT_PAR_USSD_SER_OP int16 = 0x0501
+	OPT_PAR_USSD_SER_OP = 0x0501
 
 	// Priority
 	SM_NOPRIORITY = 0
@@ -395,64 +395,64 @@ const (
 	SM_OPCLASS_TRANSACTION = 3
 
 	// Originating MSC Address
-	OPT_PAR_ORIG_MSC_ADDR     int16 = -32639 // int16(0x8081)
-	OPT_PAR_ORIG_MSC_ADDR_MIN       = 1
-	OPT_PAR_ORIG_MSC_ADDR_MAX       = 24
+	OPT_PAR_ORIG_MSC_ADDR     = -32639 // int16(0x8081)
+	OPT_PAR_ORIG_MSC_ADDR_MIN = 1
+	OPT_PAR_ORIG_MSC_ADDR_MAX = 24
 
 	// Destination MSC Address
-	OPT_PAR_DEST_MSC_ADDR     int16 = -32638 // int16(0x8082)
-	OPT_PAR_DEST_MSC_ADDR_MIN       = 1
-	OPT_PAR_DEST_MSC_ADDR_MAX       = 24
+	OPT_PAR_DEST_MSC_ADDR     = -32638 // int16(0x8082)
+	OPT_PAR_DEST_MSC_ADDR_MIN = 1
+	OPT_PAR_DEST_MSC_ADDR_MAX = 24
 
 	// Unused Tag
 	OPT_PAR_UNUSED = 0xffff
 
 	// Destination Address Subunit
-	OPT_PAR_DST_ADDR_SUBUNIT int16 = 0x0005
+	OPT_PAR_DST_ADDR_SUBUNIT = 0x0005
 
 	// Destination Network Type
-	OPT_PAR_DST_NW_TYPE int16 = 0x0006
+	OPT_PAR_DST_NW_TYPE = 0x0006
 
 	// Destination Bearer Type
-	OPT_PAR_DST_BEAR_TYPE int16 = 0x0007
+	OPT_PAR_DST_BEAR_TYPE = 0x0007
 
 	// Destination Telematics ID
-	OPT_PAR_DST_TELE_ID int16 = 0x0008
+	OPT_PAR_DST_TELE_ID = 0x0008
 
 	// Source Address Subunit
-	OPT_PAR_SRC_ADDR_SUBUNIT int16 = 0x000D
+	OPT_PAR_SRC_ADDR_SUBUNIT = 0x000D
 
 	// Source Network Type
-	OPT_PAR_SRC_NW_TYPE int16 = 0x000E
+	OPT_PAR_SRC_NW_TYPE = 0x000E
 
 	// Source Bearer Type
-	OPT_PAR_SRC_BEAR_TYPE int16 = 0x000F
+	OPT_PAR_SRC_BEAR_TYPE = 0x000F
 
 	// Source Telematics ID
-	OPT_PAR_SRC_TELE_ID int16 = 0x0010
+	OPT_PAR_SRC_TELE_ID = 0x0010
 
 	// QOS Time to Live
-	OPT_PAR_QOS_TIME_TO_LIVE     int16 = 0x0017
-	OPT_PAR_QOS_TIME_TO_LIVE_MIN       = 1
-	OPT_PAR_QOS_TIME_TO_LIVE_MAX       = 4
+	OPT_PAR_QOS_TIME_TO_LIVE     = 0x0017
+	OPT_PAR_QOS_TIME_TO_LIVE_MIN = 1
+	OPT_PAR_QOS_TIME_TO_LIVE_MAX = 4
 
 	// Payload Type
-	OPT_PAR_PAYLOAD_TYPE int16 = 0x0019
+	OPT_PAR_PAYLOAD_TYPE = 0x0019
 
 	// Additional Status Info Text
-	OPT_PAR_ADD_STAT_INFO     int16 = 0x001D
-	OPT_PAR_ADD_STAT_INFO_MIN       = 1
-	OPT_PAR_ADD_STAT_INFO_MAX       = 256
+	OPT_PAR_ADD_STAT_INFO     = 0x001D
+	OPT_PAR_ADD_STAT_INFO_MIN = 1
+	OPT_PAR_ADD_STAT_INFO_MAX = 256
 
 	// Receipted Message ID
-	OPT_PAR_RECP_MSG_ID     int16 = 0x001E
-	OPT_PAR_RECP_MSG_ID_MIN       = 1
-	OPT_PAR_RECP_MSG_ID_MAX       = 65
+	OPT_PAR_RECP_MSG_ID     = 0x001E
+	OPT_PAR_RECP_MSG_ID_MIN = 1
+	OPT_PAR_RECP_MSG_ID_MAX = 65
 
 	// Message Payload
-	OPT_PAR_MSG_PAYLOAD     int16 = 0x0424
-	OPT_PAR_MSG_PAYLOAD_MIN       = 1
-	OPT_PAR_MSG_PAYLOAD_MAX       = 1500
+	OPT_PAR_MSG_PAYLOAD     = 0x0424
+	OPT_PAR_MSG_PAYLOAD_MIN = 1
+	OPT_PAR_MSG_PAYLOAD_MAX = 1500
 
 	/**
 	 * @deprecated As of version 1.3 of the library there are defined

@@ -7,7 +7,8 @@ import (
 
 // TransceiverSession represents session for Transceiver.
 type TransceiverSession struct {
-	auth Auth
+	dialer Dialer
+	auth   Auth
 
 	originalOnClosed func(State)
 	settings         TransceiveSettings
@@ -28,13 +29,14 @@ type TransceiverSession struct {
 // `rebindingInterval` indicates duration that Session has to wait before rebinding again.
 //
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
-func NewTransceiverSession(auth Auth, settings TransceiveSettings, rebindingInterval time.Duration) (session *TransceiverSession, err error) {
-	conn, err := ConnectAsTransceiver(auth)
+func NewTransceiverSession(dialer Dialer, auth Auth, settings TransceiveSettings, rebindingInterval time.Duration) (session *TransceiverSession, err error) {
+	conn, err := ConnectAsTransceiver(dialer, auth)
 	if err != nil {
 		return
 	}
 
 	session = &TransceiverSession{
+		dialer:            dialer,
 		auth:              auth,
 		rebindingInterval: rebindingInterval,
 		originalOnClosed:  settings.OnClosed,
@@ -97,7 +99,7 @@ func (s *TransceiverSession) rebind() {
 		_ = s.close()
 
 		for {
-			conn, err := ConnectAsTransceiver(s.auth)
+			conn, err := ConnectAsTransceiver(s.dialer, s.auth)
 			if err != nil {
 				if s.settings.OnRebindingError != nil {
 					s.settings.OnRebindingError(err)

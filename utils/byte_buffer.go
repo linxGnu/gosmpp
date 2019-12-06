@@ -99,7 +99,11 @@ func (c *ByteBuffer) writeString(st string, isCString bool, enc data.Encoding) (
 		var payload []byte
 		if enc == nil {
 			payload = []byte(st)
-		} else if payload, err = enc.Encode(st); err == nil {
+		} else {
+			payload, err = enc.Encode(st)
+		}
+
+		if err == nil {
 			_, _ = c.Write(payload)
 		}
 	}

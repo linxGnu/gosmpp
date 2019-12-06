@@ -2,7 +2,6 @@ package gosmpp
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/pdu"
@@ -15,8 +14,8 @@ func marshal(p pdu.PDU) []byte {
 	return buf.Bytes()
 }
 
-func connect(smsc string, bindReq *pdu.BindRequest) (c *Connection, err error) {
-	conn, err := net.Dial("tcp", smsc)
+func connect(dialer Dialer, addr string, bindReq *pdu.BindRequest) (c *Connection, err error) {
+	conn, err := dialer(addr)
 	if err != nil {
 		return
 	}

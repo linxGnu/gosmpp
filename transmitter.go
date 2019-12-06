@@ -195,13 +195,13 @@ func (t *transmitter) write(v []byte) (n int, err error) {
 	hasTimeout := t.settings.WriteTimeout > 0
 
 	if hasTimeout {
-		t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout))
+		_ = t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout))
 	}
 
 	if n, err = t.conn.Write(v); err != nil && n == 0 {
 		// retry again with double timeout
 		if hasTimeout {
-			t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout << 1))
+			_ = t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout << 1))
 		}
 
 		n, err = t.conn.Write(v)

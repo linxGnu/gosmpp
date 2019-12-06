@@ -17,7 +17,7 @@ func NewUnprocessed() (v *Unprocessed) {
 
 // Reset underlying buffer and state.
 func (c *Unprocessed) Reset() {
-	c.Reset()
+	c.ByteBuffer.Reset()
 	c.expected = 0
 }
 

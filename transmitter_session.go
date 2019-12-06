@@ -7,7 +7,8 @@ import (
 
 // TransmitterSession represents session for Transmitter.
 type TransmitterSession struct {
-	auth Auth
+	dialer Dialer
+	auth   Auth
 
 	originalOnClosed func(State)
 	settings         TransmitSettings
@@ -28,13 +29,14 @@ type TransmitterSession struct {
 // `rebindingInterval` indicates duration that Session has to wait before rebinding again.
 //
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
-func NewTransmitterSession(auth Auth, settings TransmitSettings, rebindingInterval time.Duration) (session *TransmitterSession, err error) {
-	conn, err := ConnectAsTransmitter(auth)
+func NewTransmitterSession(dialer Dialer, auth Auth, settings TransmitSettings, rebindingInterval time.Duration) (session *TransmitterSession, err error) {
+	conn, err := ConnectAsTransmitter(dialer, auth)
 	if err != nil {
 		return
 	}
 
 	session = &TransmitterSession{
+		dialer:            dialer,
 		auth:              auth,
 		rebindingInterval: rebindingInterval,
 		originalOnClosed:  settings.OnClosed,
@@ -97,7 +99,7 @@ func (s *TransmitterSession) rebind() {
 		_ = s.close()
 
 		for {
-			conn, err := ConnectAsTransmitter(s.auth)
+			conn, err := ConnectAsTransmitter(s.dialer, s.auth)
 			if err != nil {
 				if s.settings.OnRebindingError != nil {
 					s.settings.OnRebindingError(err)

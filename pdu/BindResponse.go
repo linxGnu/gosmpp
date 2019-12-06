@@ -8,7 +8,8 @@ import (
 // BindResp PDU.
 type BindResp struct {
 	base
-	Request BindRequest
+	Request  BindRequest
+	SystemID string
 }
 
 // NewBindResp returns BindResp.
@@ -71,10 +72,16 @@ func (c *BindResp) GetResponse() PDU {
 
 // Marshal implements PDU interface.
 func (c *BindResp) Marshal(b *utils.ByteBuffer) {
-	c.base.marshal(b, nil)
+	c.base.marshal(b, func(w *utils.ByteBuffer) {
+		w.Grow(len(c.SystemID) + 1)
+		_ = w.WriteCString(c.SystemID)
+	})
 }
 
 // Unmarshal implements PDU interface.
 func (c *BindResp) Unmarshal(b *utils.ByteBuffer) error {
-	return c.base.unmarshal(b, nil)
+	return c.base.unmarshal(b, func(w *utils.ByteBuffer) (err error) {
+		c.SystemID, err = w.ReadCString()
+		return
+	})
 }

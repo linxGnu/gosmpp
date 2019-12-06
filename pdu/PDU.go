@@ -170,7 +170,6 @@ func Parse(r io.Reader) (pdu PDU, err error) {
 		buf := utils.NewBuffer(make([]byte, 0, header.CommandLength))
 		_, _ = buf.Write(headerBytes[:])
 		_, _ = buf.Write(bodyBytes)
-
 		err = pdu.Unmarshal(buf)
 	}
 
