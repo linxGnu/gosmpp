@@ -8,6 +8,8 @@ import (
 // AlertNotification PDU.
 type AlertNotification struct {
 	base
+	SourceAddr Address
+	EsmeAddr   Address
 }
 
 // NewAlertNotification create new alert notification pdu.
@@ -31,10 +33,18 @@ func (a *AlertNotification) GetResponse() PDU {
 
 // Marshal implements PDU interface.
 func (a *AlertNotification) Marshal(b *utils.ByteBuffer) {
-	a.base.marshal(b, nil)
+	a.base.marshal(b, func(b *utils.ByteBuffer) {
+		a.SourceAddr.Marshal(b)
+		a.EsmeAddr.Marshal(b)
+	})
 }
 
 // Unmarshal implements PDU interface.
 func (a *AlertNotification) Unmarshal(b *utils.ByteBuffer) error {
-	return a.base.unmarshal(b, nil)
+	return a.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+		if err = a.SourceAddr.Unmarshal(b); err == nil {
+			err = a.EsmeAddr.Unmarshal(b)
+		}
+		return
+	})
 }
