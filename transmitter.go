@@ -10,53 +10,59 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-// TransmitListener is listener for transmitter.
-type TransmitListener struct {
-	// WriteTimeout is timeout/deadline for writting.
+// TransmitSettings is listener for transmitter.
+type TransmitSettings struct {
+	// WriteTimeout is timeout/deadline for submitting PDU.
 	WriteTimeout time.Duration
 
 	// EnquireLink periodically sends EnquireLink to SMSC.
-	// 0 duration means disable auto enquire link.
+	// Zero duration means disable auto enquire link.
 	EnquireLink time.Duration
 
-	// OnError handles fail to submit pdu with along error.
-	OnError func(pdu.PDU, error)
+	// OnSubmitError notifies fail-to-submit PDU with along error.
+	OnSubmitError func(pdu.PDU, error)
 
-	// OnClosed handles transmitter `closed` event
-	// with processing pdu and the specific error that causes transmitter closed.
-	OnClosed func()
+	// OnClosed notifies `closed` event due to State.
+	OnClosed func(State)
 }
 
 type transmitter struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	wg       sync.WaitGroup
-	listener TransmitListener
-
-	dedicated bool
-	conn      Connection
-
-	input chan pdu.PDU
-	state int32
+	settings TransmitSettings
+	conn     net.Conn
+	input    chan pdu.PDU
+	state    int32
 }
 
-// NewTransmitter returns new transmitter.
-func NewTransmitter(conn Connection, listener TransmitListener) Transmitter {
+// NewTransmitter returns new Transmitter.
+func NewTransmitter(conn net.Conn, settings TransmitSettings) Transmitter {
+	return newTransmitter(conn, settings, true)
+}
+
+func newTransmitter(conn net.Conn, settings TransmitSettings, startDaemon bool) *transmitter {
 	t := &transmitter{
-		listener: listener,
+		settings: settings,
 		conn:     conn,
-		input:    make(chan pdu.PDU),
+		input:    make(chan pdu.PDU, 1),
 	}
 	t.ctx, t.cancel = context.WithCancel(context.Background())
 
 	// start transmitter daemon(s)
-	t.start()
+	if startDaemon {
+		t.start()
+	}
 
 	return t
 }
 
 // Close transmitter and stop underlying daemons.
 func (t *transmitter) Close() (err error) {
+	return t.close(ExplicitClosing)
+}
+
+func (t *transmitter) close(state State) (err error) {
 	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
 		// cancel context to notify stop
 		t.cancel()
@@ -64,26 +70,25 @@ func (t *transmitter) Close() (err error) {
 		// wait daemons
 		t.wg.Wait()
 
-		if t.conn.Dedicated {
-			err = t.conn.Conn.Close()
-		}
+		// close connection
+		err = t.conn.Close()
 
 		// notify transmitter closed
-		if t.listener.OnClosed != nil {
-			t.listener.OnClosed()
+		if t.settings.OnClosed != nil {
+			t.settings.OnClosed(state)
 		}
 	}
 	return
 }
 
-func (t *transmitter) close() {
+func (t *transmitter) closing(state State) {
 	go func() {
 		_ = t.Close()
 	}()
 }
 
-// Write submits a pdu.
-func (t *transmitter) Write(p pdu.PDU) (err error) {
+// Submit a PDU.
+func (t *transmitter) Submit(p pdu.PDU) (err error) {
 	select {
 	case <-t.ctx.Done():
 		err = t.ctx.Err()
@@ -96,7 +101,7 @@ func (t *transmitter) Write(p pdu.PDU) (err error) {
 
 func (t *transmitter) start() {
 	t.wg.Add(1)
-	if t.listener.EnquireLink > 0 {
+	if t.settings.EnquireLink > 0 {
 		go func() {
 			t.loopWithEnquireLink()
 			t.wg.Done()
@@ -109,7 +114,7 @@ func (t *transmitter) start() {
 	}
 }
 
-// pdu loop processing
+// PDU loop processing
 func (t *transmitter) loop() {
 	for {
 		select {
@@ -127,9 +132,9 @@ func (t *transmitter) loop() {
 	}
 }
 
-// pdu loop processing with enquire link support
+// PDU loop processing with enquire link support
 func (t *transmitter) loopWithEnquireLink() {
-	ticker := time.NewTicker(t.listener.EnquireLink)
+	ticker := time.NewTicker(t.settings.EnquireLink)
 
 	// enquireLink payload
 	eqp := pdu.NewEnquireLink()
@@ -163,8 +168,8 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 		return
 	}
 
-	if t.listener.OnError != nil {
-		t.listener.OnError(p, err)
+	if t.settings.OnSubmitError != nil {
+		t.settings.OnSubmitError(p, err)
 	}
 
 	if n == 0 {
@@ -176,7 +181,7 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 	}
 
 	if closing {
-		t.close() // start closing
+		t.closing(ConnectionIssue) // start closing
 	}
 
 	return
@@ -184,19 +189,19 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 
 // low level writing
 func (t *transmitter) write(v []byte) (n int, err error) {
-	hasTimeout := t.listener.WriteTimeout > 0
+	hasTimeout := t.settings.WriteTimeout > 0
 
 	if hasTimeout {
-		t.conn.Conn.SetWriteDeadline(time.Now().Add(t.listener.WriteTimeout))
+		t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout))
 	}
 
-	if n, err = t.conn.Conn.Write(v); err != nil && n == 0 {
+	if n, err = t.conn.Write(v); err != nil && n == 0 {
 		// retry again with double timeout
 		if hasTimeout {
-			t.conn.Conn.SetWriteDeadline(time.Now().Add(t.listener.WriteTimeout << 1))
+			t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout << 1))
 		}
 
-		n, err = t.conn.Conn.Write(v)
+		n, err = t.conn.Write(v)
 	}
 
 	return

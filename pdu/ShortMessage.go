@@ -19,6 +19,12 @@ func NewShortMessage(message string) (s ShortMessage, err error) {
 	return
 }
 
+// NewShortMessageWithEncoding returns new ShortMessage with predefined encoding.
+func NewShortMessageWithEncoding(message string, enc data.Encoding) (s ShortMessage, err error) {
+	err = s.SetMessageWithEncoding(message, enc)
+	return
+}
+
 // SetMessage set message and its encoded data.
 func (c *ShortMessage) SetMessage(message string) (err error) {
 	err = c.SetMessageWithEncoding(message, data.GSM7BIT)

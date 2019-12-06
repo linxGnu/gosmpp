@@ -1,6 +1,7 @@
 package gosmpp
 
 import (
+	"net"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -8,51 +9,71 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-// ReceiveListener is event listener for Receiver.
-type ReceiveListener struct {
-	// OnRecevingError handles fail to submit pdu with along error.
-	OnRecevingError func(error)
-
-	// OnClosed handles receiver `closed` event
-	// with processing pdu and the specific error that causes receiver closed.
-	OnClosed func()
-
-	// OnPDU handles received pdu from SMSC.
+// ReceiveSettings is event listener for Receiver.
+type ReceiveSettings struct {
+	// OnPDU handles received PDU from SMSC.
 	OnPDU func(pdu.PDU)
 
-	// Response indicates that invoker should response specific provided pdu to SMSC.
-	Response func(pdu.PDU)
+	// OnReceivingError notifies happened error while reading PDU
+	// from SMSC.
+	OnReceivingError func(error)
+
+	// OnClosed notifies `closed` event due to State.
+	OnClosed func(State)
+
+	response func(pdu.PDU)
 }
 
 type receiver struct {
 	wg       sync.WaitGroup
-	listener ReceiveListener
-	conn     Connection
+	settings ReceiveSettings
+	conn     net.Conn
 	state    int32
+}
+
+// NewReceiver returns new Receiver.
+func NewReceiver(conn net.Conn, settings ReceiveSettings) Receiver {
+	return newReceiver(conn, settings, true)
+}
+
+func newReceiver(conn net.Conn, settings ReceiveSettings, startDaemon bool) *receiver {
+	r := &receiver{
+		settings: settings,
+		conn:     conn,
+	}
+
+	// start receiver daemon(s)
+	if startDaemon {
+		r.start()
+	}
+
+	return r
 }
 
 // Close receiver, close connection and stop underlying daemons.
 func (t *receiver) Close() (err error) {
+	return t.close(ExplicitClosing)
+}
+
+func (t *receiver) close(state State) (err error) {
 	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
 		// close connection to notify daemons to stop
-		if t.conn.Dedicated {
-			err = t.conn.Conn.Close()
-		}
+		err = t.conn.Close()
 
 		// wait daemons
 		t.wg.Wait()
 
 		// notify receiver closed
-		if t.listener.OnClosed != nil {
-			t.listener.OnClosed()
+		if t.settings.OnClosed != nil {
+			t.settings.OnClosed(state)
 		}
 	}
 	return
 }
 
-func (t *receiver) close() {
+func (t *receiver) closing(state State) {
 	go func() {
-		_ = t.Close()
+		_ = t.close(state)
 	}()
 }
 
@@ -70,49 +91,53 @@ func (t *receiver) check(err error) (closing bool) {
 		return
 	}
 
-	if t.listener.OnRecevingError != nil {
-		t.listener.OnRecevingError(err)
+	if t.settings.OnReceivingError != nil {
+		t.settings.OnReceivingError(err)
 	}
 
 	closing = true
 	return
 }
 
-// pdu loop processing
+// PDU loop processing
 func (t *receiver) loop() {
 	for {
-		p, err := pdu.Parse(t.conn.Conn)
-		if t.check(err) {
-			t.close()
+		p, err := pdu.Parse(t.conn)
+
+		closeOnError := t.check(err)
+		if closeOnError || t.handleOrClose(p) {
+			if closeOnError {
+				t.closing(InvalidStreaming)
+			}
 			return
 		}
-		t.handle(p)
 	}
 }
 
-func (t *receiver) handle(p pdu.PDU) {
+func (t *receiver) handleOrClose(p pdu.PDU) (closing bool) {
 	if p != nil {
 		switch pp := p.(type) {
 		case *pdu.EnquireLink:
-			if t.listener.Response != nil {
-				t.listener.Response(pp.GetResponse())
+			if t.settings.response != nil {
+				t.settings.response(pp.GetResponse())
 			}
 			return
 
 		case *pdu.Unbind:
-			if t.listener.Response != nil {
-				t.listener.Response(pp.GetResponse())
+			if t.settings.response != nil {
+				t.settings.response(pp.GetResponse())
 
 				// wait to send response before closing
 				time.Sleep(100 * time.Millisecond)
 			}
 
-			t.close()
+			closing = true
+			t.closing(UnbindClosing)
 			return
 
 		default:
-			if t.listener.OnPDU != nil {
-				t.listener.OnPDU(p)
+			if t.settings.OnPDU != nil {
+				t.settings.OnPDU(p)
 			}
 		}
 	}
