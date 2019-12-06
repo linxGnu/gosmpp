@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"net"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,6 +17,9 @@ type ReceiveSettings struct {
 	// from SMSC.
 	OnReceivingError func(error)
 
+	// OnRebindingError notifies error while rebinding.
+	OnRebindingError func(error)
+
 	// OnClosed notifies `closed` event due to State.
 	OnClosed func(State)
 
@@ -27,16 +29,16 @@ type ReceiveSettings struct {
 type receiver struct {
 	wg       sync.WaitGroup
 	settings ReceiveSettings
-	conn     net.Conn
+	conn     *Connection
 	state    int32
 }
 
-// NewReceiver returns new Receiver.
-func NewReceiver(conn net.Conn, settings ReceiveSettings) Receiver {
+// NewReceiver returns new Receiver, bound with inputStream stream.
+func NewReceiver(conn *Connection, settings ReceiveSettings) Receiver {
 	return newReceiver(conn, settings, true)
 }
 
-func newReceiver(conn net.Conn, settings ReceiveSettings, startDaemon bool) *receiver {
+func newReceiver(conn *Connection, settings ReceiveSettings, startDaemon bool) *receiver {
 	r := &receiver{
 		settings: settings,
 		conn:     conn,

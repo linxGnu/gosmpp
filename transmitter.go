@@ -22,6 +22,9 @@ type TransmitSettings struct {
 	// OnSubmitError notifies fail-to-submit PDU with along error.
 	OnSubmitError func(pdu.PDU, error)
 
+	// OnRebindingError notifies error while rebinding.
+	OnRebindingError func(error)
+
 	// OnClosed notifies `closed` event due to State.
 	OnClosed func(State)
 }
@@ -31,17 +34,17 @@ type transmitter struct {
 	cancel   context.CancelFunc
 	wg       sync.WaitGroup
 	settings TransmitSettings
-	conn     net.Conn
+	conn     *Connection
 	input    chan pdu.PDU
 	state    int32
 }
 
 // NewTransmitter returns new Transmitter.
-func NewTransmitter(conn net.Conn, settings TransmitSettings) Transmitter {
+func NewTransmitter(conn *Connection, settings TransmitSettings) Transmitter {
 	return newTransmitter(conn, settings, true)
 }
 
-func newTransmitter(conn net.Conn, settings TransmitSettings, startDaemon bool) *transmitter {
+func newTransmitter(conn *Connection, settings TransmitSettings, startDaemon bool) *transmitter {
 	t := &transmitter{
 		settings: settings,
 		conn:     conn,

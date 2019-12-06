@@ -6,21 +6,16 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-// Submiter submits PDU to SMSC.
-type Submiter interface {
-	Submit(pdu.PDU) error
-}
-
 // Transceiver interface.
 type Transceiver interface {
 	io.Closer
-	Submiter
+	Submit(pdu.PDU) error
 }
 
 // Transmitter interface.
 type Transmitter interface {
 	io.Closer
-	Submiter
+	Submit(pdu.PDU) error
 }
 
 // Receiver interface.

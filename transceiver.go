@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"net"
 	"sync/atomic"
 	"time"
 
@@ -27,20 +26,23 @@ type TransceiveSettings struct {
 	// from SMSC.
 	OnReceivingError func(error)
 
+	// OnRebindingError notifies error while rebinding.
+	OnRebindingError func(error)
+
 	// OnClosed notifies `closed` event due to State.
 	OnClosed func(State)
 }
 
 type transceiver struct {
 	settings TransceiveSettings
-	conn     net.Conn
+	conn     *Connection
 	in       *receiver
 	out      *transmitter
 	state    int32
 }
 
 // NewTransceiver creates new Transceiver from bound connection.
-func NewTransceiver(conn net.Conn, settings TransceiveSettings) Transceiver {
+func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 	t := &transceiver{
 		settings: settings,
 		conn:     conn,
