@@ -1,5 +1,5 @@
 # gosmpp
-Golang Smpp (3.4) Client Library, porting from [Java OpenSMPP Library](https://github.com/OpenSmpp/opensmpp). 
+SMPP (3.4) Client Library in pure Go.
 
 This library is well tested with SMSC simulators:
 - [Melroselabs SMSC](https://melroselabs.com/services/smsc-simulator/#smsc-simulator-try)
