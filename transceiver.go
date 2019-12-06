@@ -98,6 +98,11 @@ func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 	return t
 }
 
+// SystemID returns tagged SystemID, returned from bind_resp from SMSC.
+func (t *transceiver) SystemID() string {
+	return t.conn.systemID
+}
+
 // Close transceiver and stop underlying daemons.
 func (t *transceiver) Close() (err error) {
 	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {

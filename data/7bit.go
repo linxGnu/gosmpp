@@ -70,13 +70,6 @@ func Decode7Bit(octets []byte) (str string, err error) {
 	return
 }
 
-func pad(n, block int) int {
-	if n%block == 0 {
-		return n
-	}
-	return (n/block + 1) * block
-}
-
 func blocks(n, block int) int {
 	if n%block == 0 {
 		return n / block
@@ -107,12 +100,12 @@ func pack7Bit(raw7 []byte) []byte {
 	// N.B. in order to not confuse 7 zero-bits with @
 	// <CR> code is added to the packed bits.
 	if 8-bit == 7 {
-		oct, bit = pack(pack7, CR, oct, bit)
+		_, _ = pack(pack7, CR, oct, bit)
 	} else if bit == 0 && b == CR {
 		// and if data ends with <CR> on the octet boundary,
 		// then we add an additional octet with <CR>. See (3GPP TS 23.038).
 		pack7 = append(pack7, 0x00)
-		oct, bit = pack(pack7, CR, oct, bit)
+		_, _ = pack(pack7, CR, oct, bit)
 	}
 	return pack7
 }
@@ -136,18 +129,6 @@ func unpack7Bit(pack7 []byte) []byte {
 		raw7 = raw7[:len(raw7)-1]
 	}
 	return raw7
-}
-
-func displayPack(buf []byte) (out string) {
-	for i := 0; i < len(buf)*8; i++ {
-		b := buf[i/8]
-		if i%8 == 0 {
-			out += fmt.Sprintf("\n%02X:", b)
-		}
-		off := 7 - uint8(i%8)
-		out += fmt.Sprintf("%4d", b>>off&1)
-	}
-	return out
 }
 
 type escape struct {

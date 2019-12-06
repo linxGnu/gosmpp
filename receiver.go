@@ -52,6 +52,11 @@ func newReceiver(conn *Connection, settings ReceiveSettings, startDaemon bool) *
 	return r
 }
 
+// SystemID returns tagged SystemID, returned from bind_resp from SMSC.
+func (t *receiver) SystemID() string {
+	return t.conn.systemID
+}
+
 // Close receiver, close connection and stop underlying daemons.
 func (t *receiver) Close() (err error) {
 	return t.close(ExplicitClosing)

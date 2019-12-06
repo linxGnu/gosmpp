@@ -14,7 +14,7 @@ type ReplaceSM struct {
 	ValidityPeriod       string
 	RegisteredDelivery   byte
 	SmDefaultMsgID       byte
-	ShortMessage         ShortMessage
+	Message              ShortMessage
 }
 
 // NewReplaceSM returns ReplaceSM PDU.
@@ -27,7 +27,7 @@ func NewReplaceSM() PDU {
 		ValidityPeriod:       data.DFLT_VALIDITY,
 		RegisteredDelivery:   data.DFLT_REG_DELIVERY,
 		SmDefaultMsgID:       data.DFLT_DFLTMSGID,
-		ShortMessage:         message,
+		Message:              message,
 	}
 	c.CommandID = data.REPLACE_SM
 	return c
@@ -54,7 +54,7 @@ func (c *ReplaceSM) Marshal(b *utils.ByteBuffer) {
 		_ = b.WriteCString(c.ValidityPeriod)
 		_ = b.WriteByte(c.RegisteredDelivery)
 		_ = b.WriteByte(c.SmDefaultMsgID)
-		c.ShortMessage.Marshal(b)
+		c.Message.Marshal(b)
 	})
 }
 
@@ -67,7 +67,7 @@ func (c *ReplaceSM) Unmarshal(b *utils.ByteBuffer) error {
 					if c.ValidityPeriod, err = b.ReadCString(); err == nil {
 						if c.RegisteredDelivery, err = b.ReadByte(); err == nil {
 							if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
-								err = c.ShortMessage.Unmarshal(b)
+								err = c.Message.Unmarshal(b)
 							}
 						}
 					}

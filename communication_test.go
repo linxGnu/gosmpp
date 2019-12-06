@@ -2,6 +2,10 @@ package gosmpp
 
 import (
 	"testing"
+	"time"
+
+	"github.com/linxGnu/gosmpp/data"
+	"github.com/linxGnu/gosmpp/pdu"
 
 	"github.com/stretchr/testify/require"
 )
@@ -10,7 +14,10 @@ const (
 	smscAddr   = "smscsim.melroselabs.com:2775"
 	systemID   = "422315"
 	password   = "GNCKOO"
+	systemID2  = "459119"
+	password2  = "JRAEPF"
 	systemType = ""
+	mess       = "Thử nghiệm: chuẩn bị nế mễ"
 )
 
 func newAuth() Auth {
@@ -20,6 +27,40 @@ func newAuth() Auth {
 		Password:   password,
 		SystemType: systemType,
 	}
+}
+
+func newAuth2() Auth {
+	return Auth{
+		SMSC:       smscAddr,
+		SystemID:   systemID2,
+		Password:   password2,
+		SystemType: systemType,
+	}
+}
+
+func newSubmitSM() *pdu.SubmitSM {
+	// build up submitSM
+	srcAddr := pdu.NewAddress()
+	srcAddr.SetTon(5)
+	srcAddr.SetNpi(0)
+	_ = srcAddr.SetAddress(systemID)
+
+	destAddr := pdu.NewAddress()
+	destAddr.SetTon(1)
+	destAddr.SetNpi(1)
+	_ = destAddr.SetAddress(systemID2)
+
+	submitSM := pdu.NewSubmitSM().(*pdu.SubmitSM)
+	submitSM.SourceAddr = srcAddr
+	submitSM.DestAddr = destAddr
+	_ = submitSM.Message.SetMessageWithEncoding(mess, data.UTF16)
+	submitSM.DataCoding = 8
+	submitSM.ProtocolID = 0
+	submitSM.RegisteredDelivery = 1
+	submitSM.ReplaceIfPresentFlag = 0
+	submitSM.EsmClass = 0
+
+	return submitSM
 }
 
 // TestBindingSMSC test binding connection with SMSC
@@ -44,6 +85,82 @@ func TestBindingSMSC(t *testing.T) {
 
 	// close connection
 	_ = connection.Close()
+}
+
+func TestTransmitter(t *testing.T) {
+	transmitter, err := NewTransmitterSession(NonTLSDialer, newAuth(), TransmitSettings{
+		OnSubmitError: func(p pdu.PDU, err error) {
+			t.Fatal(err)
+		},
+		OnRebindingError: func(err error) {
+			t.Fatal(err)
+		},
+		OnClosed: func(state State) {
+			t.Log(state)
+		},
+	}, 5*time.Second)
+	require.Nil(t, err)
+	require.NotNil(t, transmitter)
+	defer func() {
+		_ = transmitter.Close()
+	}()
+
+	err = transmitter.Transmitter().Submit(newSubmitSM())
+	require.Nil(t, err)
+
+	time.Sleep(time.Second)
+}
+
+func TestReceiver(t *testing.T) {
+	receiver, err := NewReceiverSession(NonTLSDialer, newAuth2(), ReceiveSettings{
+		OnReceivingError: func(err error) {
+			t.Log(err)
+		},
+		OnRebindingError: func(err error) {
+			t.Log(err)
+		},
+		OnPDU: func(p pdu.PDU) {
+			t.Log(p)
+		},
+		OnClosed: func(state State) {
+			t.Log(state)
+		},
+	}, 5*time.Second)
+	require.Nil(t, err)
+	require.NotNil(t, receiver)
+	defer func() {
+		_ = receiver.Close()
+	}()
+}
+
+func TestSubmitSM(t *testing.T) {
+	trans, err := NewTransceiverSession(NonTLSDialer, newAuth(), TransceiveSettings{
+		OnSubmitError: func(p pdu.PDU, err error) {
+			t.Fatal(err)
+		},
+		OnReceivingError: func(err error) {
+			t.Log(err)
+		},
+		OnRebindingError: func(err error) {
+			t.Log(err)
+		},
+		OnPDU: func(p pdu.PDU) {
+			t.Log(p)
+		},
+		OnClosed: func(state State) {
+			t.Log(state)
+		},
+	}, 5*time.Second)
+	require.Nil(t, err)
+	require.NotNil(t, trans)
+	defer func() {
+		_ = trans.Close()
+	}()
+
+	err = trans.Transceiver().Submit(newSubmitSM())
+	require.Nil(t, err)
+
+	time.Sleep(time.Second)
 }
 
 // // TestSubmitSMSC test submit to SMSC

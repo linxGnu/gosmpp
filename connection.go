@@ -8,8 +8,9 @@ import (
 
 // Connection wraps over net.Conn with buffer reader data reading.
 type Connection struct {
-	conn   net.Conn
-	reader *bufio.Reader
+	systemID string
+	conn     net.Conn
+	reader   *bufio.Reader
 }
 
 // NewConnection returns a Connection.

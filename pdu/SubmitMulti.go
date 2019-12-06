@@ -20,7 +20,7 @@ type SubmitMulti struct {
 	ReplaceIfPresentFlag byte // not used
 	DataCoding           byte
 	SmDefaultMsgID       byte
-	ShortMessage         ShortMessage
+	Message              ShortMessage
 }
 
 // NewSubmiNewSubmitMultitSM returns NewSubmitMulti PDU.
@@ -40,7 +40,7 @@ func NewSubmitMulti() PDU {
 		ReplaceIfPresentFlag: data.DFTL_REPLACE_IFP,
 		DataCoding:           data.DFLT_DATA_CODING,
 		SmDefaultMsgID:       data.DFLT_DFLTMSGID,
-		ShortMessage:         message,
+		Message:              message,
 	}
 	c.CommandID = data.SUBMIT_MULTI
 	return c
@@ -73,7 +73,7 @@ func (c *SubmitMulti) Marshal(b *utils.ByteBuffer) {
 		_ = b.WriteByte(c.ReplaceIfPresentFlag)
 		_ = b.WriteByte(c.DataCoding)
 		_ = b.WriteByte(c.SmDefaultMsgID)
-		c.ShortMessage.Marshal(b)
+		c.Message.Marshal(b)
 	})
 }
 
@@ -92,7 +92,7 @@ func (c *SubmitMulti) Unmarshal(b *utils.ByteBuffer) error {
 											if c.ReplaceIfPresentFlag, err = b.ReadByte(); err == nil {
 												if c.DataCoding, err = b.ReadByte(); err == nil {
 													if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
-														err = c.ShortMessage.Unmarshal(b)
+														err = c.Message.Unmarshal(b)
 													}
 												}
 											}

@@ -79,6 +79,7 @@ func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (string, error)
 func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
 	n := byte(len(c.messageData))
 	b.Grow(int(n) + 1)
+
 	_ = b.WriteByte(n)
 	_, _ = b.Write(c.messageData[:n])
 }

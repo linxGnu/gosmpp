@@ -81,7 +81,9 @@ func (c *BindResp) Marshal(b *utils.ByteBuffer) {
 // Unmarshal implements PDU interface.
 func (c *BindResp) Unmarshal(b *utils.ByteBuffer) error {
 	return c.base.unmarshal(b, func(w *utils.ByteBuffer) (err error) {
-		c.SystemID, err = w.ReadCString()
+		if c.CommandID == data.BIND_TRANSCEIVER_RESP || c.CommandStatus == data.ESME_ROK {
+			c.SystemID, err = w.ReadCString()
+		}
 		return
 	})
 }

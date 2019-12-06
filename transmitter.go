@@ -60,6 +60,11 @@ func newTransmitter(conn *Connection, settings TransmitSettings, startDaemon boo
 	return t
 }
 
+// SystemID returns tagged SystemID, returned from bind_resp from SMSC.
+func (t *transmitter) SystemID() string {
+	return t.conn.systemID
+}
+
 // Close transmitter and stop underlying daemons.
 func (t *transmitter) Close() (err error) {
 	return t.close(ExplicitClosing)
