@@ -22,7 +22,7 @@ func NewSubmitSMResp() PDU {
 	return c
 }
 
-// NewSubmitSMNewSubmitSMRespFromReqResp returns new SubmitSMResp.
+// NewSubmitSMRespFromReq returns new SubmitSMResp.
 func NewSubmitSMRespFromReq(req SubmitSM) (c *SubmitSMResp) {
 	c = &SubmitSMResp{
 		base:      newBase(),

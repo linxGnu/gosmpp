@@ -11,7 +11,10 @@ import (
 // ReceiveSettings is event listener for Receiver.
 type ReceiveSettings struct {
 	// OnPDU handles received PDU from SMSC.
-	OnPDU func(pdu.PDU)
+	//
+	// `Responded` flag indicates this pdu is responded automatically,
+	// no manual respond needed.
+	OnPDU func(p pdu.PDU, responded bool)
 
 	// OnReceivingError notifies happened error while reading PDU
 	// from SMSC.
@@ -143,8 +146,14 @@ func (t *receiver) handleOrClose(p pdu.PDU) (closing bool) {
 			return
 
 		default:
+			var responded bool
+			if p.CanResponse() && t.settings.response != nil {
+				t.settings.response(p.GetResponse())
+				responded = true
+			}
+
 			if t.settings.OnPDU != nil {
-				t.settings.OnPDU(p)
+				t.settings.OnPDU(p, responded)
 			}
 		}
 	}

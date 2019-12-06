@@ -16,7 +16,9 @@ type TransmitSettings struct {
 	WriteTimeout time.Duration
 
 	// EnquireLink periodically sends EnquireLink to SMSC.
-	// Zero duration means disable auto enquire link.
+	// The duration must not be smaller than 1 minute.
+	//
+	// Zero duration disables auto enquire link.
 	EnquireLink time.Duration
 
 	// OnSubmitError notifies fail-to-submit PDU with along error.
@@ -77,6 +79,9 @@ func (t *transmitter) close(state State) (err error) {
 
 		// wait daemons
 		t.wg.Wait()
+
+		// try to send unbind
+		_, _ = t.conn.Write(marshal(pdu.NewUnbind()))
 
 		// close connection
 		err = t.conn.Close()
@@ -142,6 +147,10 @@ func (t *transmitter) loop() {
 
 // PDU loop processing with enquire link support
 func (t *transmitter) loopWithEnquireLink() {
+	if t.settings.EnquireLink < time.Minute {
+		t.settings.EnquireLink = time.Minute
+	}
+
 	ticker := time.NewTicker(t.settings.EnquireLink)
 
 	// enquireLink payload

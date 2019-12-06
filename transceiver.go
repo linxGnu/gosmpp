@@ -17,7 +17,10 @@ type TransceiveSettings struct {
 	EnquireLink time.Duration
 
 	// OnPDU handles received PDU from SMSC.
-	OnPDU func(pdu.PDU)
+	//
+	// `Responded` flag indicates this pdu is responded automatically,
+	// no manual respond needed.
+	OnPDU func(p pdu.PDU, responded bool)
 
 	// OnSubmitError notifies fail-to-submit PDU with along error.
 	OnSubmitError func(pdu.PDU, error)

@@ -11,7 +11,7 @@ type UnbindResp struct {
 	Request Unbind
 }
 
-// NewUnbindRespFromReq returns UnbindResp.
+// NewUnbindResp returns UnbindResp.
 func NewUnbindResp() PDU {
 	c := &UnbindResp{
 		base: newBase(),

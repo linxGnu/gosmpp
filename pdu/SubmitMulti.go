@@ -18,12 +18,10 @@ type SubmitMulti struct {
 	ValidityPeriod       string // not used
 	RegisteredDelivery   byte
 	ReplaceIfPresentFlag byte // not used
-	DataCoding           byte
-	SmDefaultMsgID       byte
 	Message              ShortMessage
 }
 
-// NewSubmiNewSubmitMultitSM returns NewSubmitMulti PDU.
+// NewSubmitMulti returns NewSubmitMulti PDU.
 func NewSubmitMulti() PDU {
 	message, _ := NewShortMessage("")
 	c := &SubmitMulti{
@@ -38,8 +36,6 @@ func NewSubmitMulti() PDU {
 		ValidityPeriod:       data.DFLT_VALIDITY,
 		RegisteredDelivery:   data.DFLT_REG_DELIVERY,
 		ReplaceIfPresentFlag: data.DFTL_REPLACE_IFP,
-		DataCoding:           data.DFLT_DATA_CODING,
-		SmDefaultMsgID:       data.DFLT_DFLTMSGID,
 		Message:              message,
 	}
 	c.CommandID = data.SUBMIT_MULTI
@@ -71,8 +67,6 @@ func (c *SubmitMulti) Marshal(b *utils.ByteBuffer) {
 		_ = b.WriteCString(c.ValidityPeriod)
 		_ = b.WriteByte(c.RegisteredDelivery)
 		_ = b.WriteByte(c.ReplaceIfPresentFlag)
-		_ = b.WriteByte(c.DataCoding)
-		_ = b.WriteByte(c.SmDefaultMsgID)
 		c.Message.Marshal(b)
 	})
 }
@@ -90,11 +84,7 @@ func (c *SubmitMulti) Unmarshal(b *utils.ByteBuffer) error {
 									if c.ValidityPeriod, err = b.ReadCString(); err == nil {
 										if c.RegisteredDelivery, err = b.ReadByte(); err == nil {
 											if c.ReplaceIfPresentFlag, err = b.ReadByte(); err == nil {
-												if c.DataCoding, err = b.ReadByte(); err == nil {
-													if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
-														err = c.Message.Unmarshal(b)
-													}
-												}
+												err = c.Message.Unmarshal(b)
 											}
 										}
 									}
