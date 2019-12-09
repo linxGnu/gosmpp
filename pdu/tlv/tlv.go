@@ -83,6 +83,7 @@ func (t *Field) String() string {
 func (t *Field) Marshal(w *utils.ByteBuffer) {
 	if len(t.Data) > 0 {
 		w.Grow(4 + len(t.Data))
+
 		w.WriteShort(int16(t.Tag))
 		w.WriteShort(int16(len(t.Data)))
 		_, _ = w.Write(t.Data)
