@@ -14,11 +14,6 @@ type Header struct {
 	SequenceNumber int32
 }
 
-// NewHeader creates new PDU Header.
-func NewHeader() *Header {
-	return &Header{SequenceNumber: 1}
-}
-
 // ParseHeader parses PDU header.
 func ParseHeader(v [16]byte) (h Header) {
 	h.CommandLength = int32(binary.BigEndian.Uint32(v[:]))

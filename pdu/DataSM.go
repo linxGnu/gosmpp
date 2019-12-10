@@ -5,7 +5,8 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// DataSM PDU.
+// DataSM PDU is used to transfer data between the SMSC and the ESME.
+// It may be used by both the ESME and SMSC.
 type DataSM struct {
 	base
 	ServiceType        string

@@ -10,6 +10,7 @@ import (
 
 func validate(t *testing.T, p PDU, hexValue string, expectCommandID int32) {
 	p.ResetSequenceNumber()
+	require.EqualValues(t, 1, p.GetSequenceNumber())
 
 	buf := utils.NewBuffer(nil)
 	p.Marshal(buf)

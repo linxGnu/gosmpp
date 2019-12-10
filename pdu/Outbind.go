@@ -5,8 +5,7 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// Outbind PDU.
-// The purpose of the outbind operation is to allow the SMSC signal an ESME to originate a bind_receiver request to the SMSC.
+// Outbind PDU is used by the SMSC to signal an ESME to originate a bind_receiver request to the SMSC.
 type Outbind struct {
 	base
 	SystemID string

@@ -5,7 +5,9 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// AlertNotification PDU.
+// AlertNotification PDU is sent by the SMSC to the ESME, when the SMSC has detected that
+// a particular mobile subscriber has become available and a delivery pending flag had been
+// set for that subscriber from a previous data_sm operation.
 type AlertNotification struct {
 	base
 	SourceAddr Address

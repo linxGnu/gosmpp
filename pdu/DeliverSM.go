@@ -5,7 +5,8 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// DeliverSM represents deliver_sm PDU.
+// DeliverSM PDU is issued by the SMSC to send a message to an ESME.
+// Using this command, the SMSC may route a short message to the ESME for delivery.
 type DeliverSM struct {
 	base
 	ServiceType          string
