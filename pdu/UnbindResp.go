@@ -8,7 +8,6 @@ import (
 // UnbindResp PDU.
 type UnbindResp struct {
 	base
-	Request Unbind
 }
 
 // NewUnbindResp returns UnbindResp.
@@ -18,16 +17,6 @@ func NewUnbindResp() PDU {
 	}
 	c.CommandID = data.UNBIND_RESP
 	return c
-}
-
-// NewUnbindRespFromReq returns UnbindResp.
-func NewUnbindRespFromReq(req Unbind) (c *UnbindResp) {
-	c = &UnbindResp{
-		base:    newBase(),
-		Request: req,
-	}
-	c.CommandID = data.UNBIND_RESP
-	return
 }
 
 // CanResponse implements PDU interface.

@@ -34,6 +34,7 @@ func TestDataSM(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, TagDestBearerType, tagged.Tag)
 	require.Equal(t, []byte{95}, tagged.Data)
+	require.Equal(t, "_", tagged.String())
 
 	validate(t,
 		v,

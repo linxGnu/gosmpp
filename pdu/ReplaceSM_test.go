@@ -26,6 +26,11 @@ func TestReplaceSM(t *testing.T) {
 	v.RegisteredDelivery = 83
 	_ = v.Message.SetMessageWithEncoding("nightwish", data.GSM7BIT)
 	v.Message.message = ""
+	require.Equal(t, data.GSM7BIT, v.Message.Encoding())
+
+	message, err := v.Message.GetMessage()
+	require.Nil(t, err)
+	require.Equal(t, "nightwish", message)
 
 	validate(t,
 		v,
