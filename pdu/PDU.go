@@ -24,10 +24,41 @@ func nextSequenceNumber() (v int32) {
 
 // PDU represents PDU interface.
 type PDU interface {
+	// Marshal PDU to buffer.
 	Marshal(*utils.ByteBuffer)
+
+	// Unmarshal PDU from buffer.
 	Unmarshal(*utils.ByteBuffer) error
+
+	// CanResponse indicates that PDU could response to SMSC.
 	CanResponse() bool
+
+	// GetResponse PDU.
 	GetResponse() PDU
+
+	// RegisterOptionalParam assigns an optional param.
+	RegisterOptionalParam(Field)
+
+	// GetHeader returns PDU header.
+	GetHeader() Header
+
+	// IsOk returns true if command status is OK.
+	IsOk() bool
+
+	// IsGNack returns true if PDU is GNack.
+	IsGNack() bool
+
+	// AssignSequenceNumber assigns sequence number auto-incrementally.
+	AssignSequenceNumber()
+
+	// ResetSequenceNumber resets sequence number.
+	ResetSequenceNumber()
+
+	// GetSequenceNumber returns assigned sequence number.
+	GetSequenceNumber() int32
+
+	// SetSequenceNumber manually sets sequence number.
+	SetSequenceNumber(int32)
 }
 
 type base struct {
@@ -39,6 +70,11 @@ func newBase() (v base) {
 	v.OptionalParameters = make(map[Tag]Field)
 	v.AssignSequenceNumber()
 	return
+}
+
+// GetHeader returns pdu header.
+func (c *base) GetHeader() Header {
+	return c.Header
 }
 
 func (c *base) unmarshal(b *utils.ByteBuffer, bodyReader func(*utils.ByteBuffer) error) (err error) {
@@ -126,7 +162,7 @@ func (c *base) RegisterOptionalParam(tlv Field) {
 	c.OptionalParameters[tlv.Tag] = tlv
 }
 
-// IsOk is ok message.
+// IsOk is status ok.
 func (c *base) IsOk() bool {
 	return c.CommandStatus == int32(data.ESME_ROK)
 }

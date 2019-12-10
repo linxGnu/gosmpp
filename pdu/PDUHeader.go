@@ -42,14 +42,24 @@ func (c *Header) Unmarshal(b *utils.ByteBuffer) (err error) {
 	return
 }
 
-// AssignSequenceNumber assigns sequence number.
+// AssignSequenceNumber assigns sequence number auto-incrementally.
 func (c *Header) AssignSequenceNumber() {
-	c.SequenceNumber = nextSequenceNumber()
+	c.SetSequenceNumber(nextSequenceNumber())
 }
 
 // ResetSequenceNumber resets sequence number.
 func (c *Header) ResetSequenceNumber() {
 	c.SequenceNumber = 1
+}
+
+// GetSequenceNumber returns assigned sequence number.
+func (c *Header) GetSequenceNumber() int32 {
+	return c.SequenceNumber
+}
+
+// SetSequenceNumber manually sets sequence number.
+func (c *Header) SetSequenceNumber(v int32) {
+	c.SequenceNumber = v
 }
 
 // Marshal to buffer.

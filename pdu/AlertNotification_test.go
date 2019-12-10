@@ -4,10 +4,9 @@ import (
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
+	"github.com/linxGnu/gosmpp/utils"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 func TestAlertNotification(t *testing.T) {
@@ -26,9 +25,5 @@ func TestAlertNotification(t *testing.T) {
 	a.Marshal(b)
 	b.WriteInt(119)
 
-	c, err := Parse(b)
-	require.Nil(t, err)
-	require.Equal(t, a, c)
-	require.EqualValues(t, data.ALERT_NOTIFICATION, c.(*AlertNotification).CommandID)
-
+	expectAfterParse(t, b, a, data.ALERT_NOTIFICATION)
 }

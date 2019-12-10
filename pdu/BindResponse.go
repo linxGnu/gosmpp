@@ -74,6 +74,7 @@ func (c *BindResp) GetResponse() PDU {
 func (c *BindResp) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(w *utils.ByteBuffer) {
 		w.Grow(len(c.SystemID) + 1)
+
 		_ = w.WriteCString(c.SystemID)
 	})
 }
