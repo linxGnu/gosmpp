@@ -103,12 +103,11 @@ func (c *base) unmarshal(b *utils.ByteBuffer, bodyReader func(*utils.ByteBuffer)
 
 				// the rest is optional body
 				var optionalBody []byte
-				optionalBody, err = b.ReadN(cmdLength - got)
-				if err != nil {
-					return
+				if optionalBody, err = b.ReadN(cmdLength - got); err == nil {
+					err = c.unmarshalOptionalBody(optionalBody)
 				}
 
-				if err = c.unmarshalOptionalBody(optionalBody); err != nil {
+				if err != nil {
 					return
 				}
 			}
@@ -127,10 +126,9 @@ func (c *base) unmarshalOptionalBody(body []byte) (err error) {
 	buf := utils.NewBuffer(body)
 	for buf.Len() > 0 {
 		var field Field
-		if err = field.Unmarshal(buf); err != nil {
-			return
+		if err = field.Unmarshal(buf); err == nil {
+			c.OptionalParameters[field.Tag] = field
 		}
-		c.OptionalParameters[field.Tag] = field
 	}
 	return
 }
@@ -181,13 +179,7 @@ func Parse(r io.Reader) (pdu PDU, err error) {
 	}
 
 	header := ParseHeader(headerBytes)
-	if header.CommandLength < 16 {
-		err = errors.ErrInvalidPDU
-		return
-	}
-
-	// too large?
-	if header.CommandLength > data.MAX_PDU_LEN {
+	if header.CommandLength < 16 || header.CommandLength > data.MAX_PDU_LEN {
 		err = errors.ErrInvalidPDU
 		return
 	}
