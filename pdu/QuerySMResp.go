@@ -8,7 +8,6 @@ import (
 // QuerySMResp PDU.
 type QuerySMResp struct {
 	base
-	Request      QuerySM
 	MessageID    string
 	FinalDate    string
 	MessageState byte
@@ -25,20 +24,6 @@ func NewQuerySMResp() PDU {
 	}
 	c.CommandID = data.QUERY_SM_RESP
 	return c
-}
-
-// NewQuerySMRespFromReq returns new QuerySM PDU.
-func NewQuerySMRespFromReq(req QuerySM) (c *QuerySMResp) {
-	c = &QuerySMResp{
-		base:         newBase(),
-		Request:      req,
-		MessageID:    req.MessageID,
-		FinalDate:    data.DFLT_DATE,
-		MessageState: data.DFLT_MSG_STATE,
-		ErrorCode:    data.DFLT_ERR,
-	}
-	c.CommandID = data.QUERY_SM_RESP
-	return
 }
 
 // CanResponse implements PDU interface.

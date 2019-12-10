@@ -5,7 +5,10 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// QuerySM PDU.
+// QuerySM PDU is issued by the ESME to query the status of a previously submitted short message.
+// The matching mechanism is based on the SMSC assigned message_id and source address. Where the
+// original submit_sm, data_sm or submit_multi ‘source address’ was defaulted to NULL, then the
+// source address in the query_sm command should also be set to NULL.
 type QuerySM struct {
 	base
 	MessageID  string
@@ -28,7 +31,7 @@ func (c *QuerySM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *QuerySM) GetResponse() PDU {
-	return NewQuerySMRespFromReq(*c)
+	return NewQuerySMResp()
 }
 
 // Marshal implements PDU interface.
