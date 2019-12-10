@@ -23,7 +23,6 @@ func TestAlertNotification(t *testing.T) {
 
 	b := utils.NewBuffer(nil)
 	a.Marshal(b)
-	b.WriteInt(119)
 
 	expectAfterParse(t, b, a, data.ALERT_NOTIFICATION)
 }
