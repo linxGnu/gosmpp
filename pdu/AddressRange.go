@@ -26,8 +26,8 @@ func NewAddressRangeWithAddr(addr string) (a *AddressRange, err error) {
 	return
 }
 
-// NewAddressRangeWithTonNpiLen create new AddressRange with ton, npi, max length.
-func NewAddressRangeWithTonNpiLen(ton, npi byte) *AddressRange {
+// NewAddressRangeWithTonNpi create new AddressRange with ton, npi.
+func NewAddressRangeWithTonNpi(ton, npi byte) *AddressRange {
 	return &AddressRange{ton: ton, npi: npi}
 }
 
@@ -58,6 +58,16 @@ func (c *AddressRange) SetAddressRange(addr string) (err error) {
 		c.addressRange = addr
 	}
 	return
+}
+
+// SetTon sets ton.
+func (c *AddressRange) SetTon(ton byte) {
+	c.ton = ton
+}
+
+// SetNpi sets npi.
+func (c *AddressRange) SetNpi(npi byte) {
+	c.npi = npi
 }
 
 // AddressRange returns assigned address range (in string).

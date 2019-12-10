@@ -1,8 +1,6 @@
 package pdu
 
 import (
-	"encoding/hex"
-	"log"
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -11,15 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var submitSMPayload []byte
-
-func init() {
-	var err error
-	submitSMPayload, err = hex.DecodeString("0000003f00000004000000000000000200010034363730313133333131310001013436373039373731333337004000000000000001000803240103747B7374")
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+var submitSMPayload = fromHex("0000003f00000004000000000000000200010034363730313133333131310001013436373039373731333337004000000000000001000803240103747B7374")
 
 func TestSubmitSM(t *testing.T) {
 	check := func(s *SubmitSM) {
