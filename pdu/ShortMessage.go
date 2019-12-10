@@ -8,10 +8,11 @@ import (
 
 // ShortMessage message.
 type ShortMessage struct {
-	SmDefaultMsgID byte
-	message        string
-	enc            data.Encoding
-	messageData    []byte
+	SmDefaultMsgID    byte
+	message           string
+	enc               data.Encoding
+	messageData       []byte
+	withoutDataCoding bool
 }
 
 // NewShortMessage returns new ShortMessage.
@@ -87,7 +88,10 @@ func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
 	} else {
 		coding = c.enc.DataCoding()
 	}
-	_ = b.WriteByte(coding)
+
+	if !c.withoutDataCoding {
+		_ = b.WriteByte(coding)
+	}
 
 	_ = b.WriteByte(c.SmDefaultMsgID)
 
@@ -98,11 +102,21 @@ func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
 // Unmarshal implements PDU interface.
 func (c *ShortMessage) Unmarshal(b *utils.ByteBuffer) (err error) {
 	var dataCoding, n byte
-	if dataCoding, err = b.ReadByte(); err == nil {
+	if !c.withoutDataCoding {
+		if dataCoding, err = b.ReadByte(); err == nil {
+			if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
+				if n, err = b.ReadByte(); err == nil {
+					if c.messageData, err = b.ReadN(int(n)); err == nil {
+						c.enc = data.FromDataCoding(dataCoding)
+					}
+				}
+			}
+		}
+	} else {
 		if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
 			if n, err = b.ReadByte(); err == nil {
 				if c.messageData, err = b.ReadN(int(n)); err == nil {
-					c.enc = data.FromDataCoding(dataCoding)
+					c.enc = data.FromDataCoding(0)
 				}
 			}
 		}

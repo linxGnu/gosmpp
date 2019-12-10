@@ -44,11 +44,11 @@ func decode(data []byte, decoder *encoding.Decoder) (string, error) {
 type gsm7bit struct{}
 
 func (c gsm7bit) Encode(str string) ([]byte, error) {
-	return Encode7Bit(str), nil
+	return encode(str, gsm7Encoding{}.NewEncoder())
 }
 
 func (c gsm7bit) Decode(data []byte) (string, error) {
-	return Decode7Bit(data)
+	return decode(data, gsm7Encoding{}.NewDecoder())
 }
 
 func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }

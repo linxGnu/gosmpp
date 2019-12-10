@@ -8,7 +8,6 @@ import (
 // ReplaceSMResp PDU.
 type ReplaceSMResp struct {
 	base
-	Request ReplaceSM
 }
 
 // NewReplaceSMResp returns ReplaceSMResp.
@@ -18,16 +17,6 @@ func NewReplaceSMResp() PDU {
 	}
 	c.CommandID = data.REPLACE_SM_RESP
 	return c
-}
-
-// NewReplaceSMRespFromReq returns ReplaceSMResp.
-func NewReplaceSMRespFromReq(req ReplaceSM) (c *ReplaceSMResp) {
-	c = &ReplaceSMResp{
-		base:    newBase(),
-		Request: req,
-	}
-	c.CommandID = data.REPLACE_SM_RESP
-	return
 }
 
 // CanResponse implements PDU interface.
