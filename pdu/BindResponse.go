@@ -8,15 +8,13 @@ import (
 // BindResp PDU.
 type BindResp struct {
 	base
-	Request  BindRequest
 	SystemID string
 }
 
 // NewBindResp returns BindResp.
 func NewBindResp(req BindRequest) (c *BindResp) {
 	c = &BindResp{
-		base:    newBase(),
-		Request: req,
+		base: newBase(),
 	}
 
 	switch req.BindingType {

@@ -12,9 +12,11 @@ func TestDeliverSM(t *testing.T) {
 	v := NewDeliverSM().(*DeliverSM)
 	require.True(t, v.CanResponse())
 
-	resp := v.GetResponse()
-	require.NotNil(t, resp)
-	require.EqualValues(t, data.DELIVER_SM_RESP, resp.GetHeader().CommandID)
+	validate(t,
+		v.GetResponse(),
+		"0000001180000005000000000000000100",
+		data.DELIVER_SM_RESP,
+	)
 
 	v.ServiceType = "abc"
 	_ = v.SourceAddr.SetAddress("Alicer")

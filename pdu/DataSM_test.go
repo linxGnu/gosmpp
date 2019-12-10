@@ -12,9 +12,11 @@ func TestDataSM(t *testing.T) {
 	v := NewDataSM().(*DataSM)
 	require.True(t, v.CanResponse())
 
-	resp := v.GetResponse()
-	require.NotNil(t, resp)
-	require.EqualValues(t, data.DATA_SM_RESP, resp.GetHeader().CommandID)
+	validate(t,
+		v.GetResponse(),
+		"0000001180000103000000000000000100",
+		data.DATA_SM_RESP,
+	)
 
 	v.ServiceType = "abc"
 	_ = v.SourceAddr.SetAddress("Alicer")

@@ -12,9 +12,11 @@ func TestCancelSM(t *testing.T) {
 	v := NewCancelSM().(*CancelSM)
 	require.True(t, v.CanResponse())
 
-	resp := v.GetResponse()
-	require.NotNil(t, resp)
-	require.EqualValues(t, data.CANCEL_SM_RESP, resp.GetHeader().CommandID)
+	validate(t,
+		v.GetResponse(),
+		"00000010800000080000000000000001",
+		data.CANCEL_SM_RESP,
+	)
 
 	v.ServiceType = "abc"
 	v.MessageID = "def"

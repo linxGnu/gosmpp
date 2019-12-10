@@ -13,9 +13,7 @@ func TestBindRequest(t *testing.T) {
 		req := NewBindReceiver().(*BindRequest)
 		require.True(t, req.CanResponse())
 
-		resp := req.GetResponse()
-		require.NotNil(t, resp)
-		require.EqualValues(t, data.BIND_RECEIVER_RESP, resp.GetHeader().CommandID)
+		validate(t, req.GetResponse(), "0000001180000001000000000000000100", data.BIND_RECEIVER_RESP)
 
 		req.SystemID = "system_id_fake"
 		req.Password = "password"
@@ -36,9 +34,7 @@ func TestBindRequest(t *testing.T) {
 		req := NewBindTransmitter().(*BindRequest)
 		require.True(t, req.CanResponse())
 
-		resp := req.GetResponse()
-		require.NotNil(t, resp)
-		require.EqualValues(t, data.BIND_TRANSMITTER_RESP, resp.GetHeader().CommandID)
+		validate(t, req.GetResponse(), "0000001180000002000000000000000100", data.BIND_TRANSMITTER_RESP)
 
 		req.SystemID = "system_id_fake"
 		req.Password = "password"
@@ -59,9 +55,7 @@ func TestBindRequest(t *testing.T) {
 		req := NewBindTransceiver().(*BindRequest)
 		require.True(t, req.CanResponse())
 
-		resp := req.GetResponse()
-		require.NotNil(t, resp)
-		require.EqualValues(t, data.BIND_TRANSCEIVER_RESP, resp.GetHeader().CommandID)
+		validate(t, req.GetResponse(), "0000001180000009000000000000000100", data.BIND_TRANSCEIVER_RESP)
 
 		req.SystemID = "system_id_fake"
 		req.Password = "password"

@@ -26,7 +26,7 @@ func (c *EnquireLink) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *EnquireLink) GetResponse() PDU {
-	return NewEnquireLinkRespFromReq(*c)
+	return NewEnquireLinkResp()
 }
 
 // Marshal implements PDU interface.
