@@ -1,4 +1,4 @@
-package tlv
+package pdu
 
 // Copied from: https://github.com/fiorix/go-smpp/blob/master/smpp/pdu/pdutlv/tlv_types.go
 import (

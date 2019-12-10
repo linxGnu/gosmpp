@@ -6,7 +6,6 @@ import (
 
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/errors"
-	"github.com/linxGnu/gosmpp/pdu/tlv"
 	"github.com/linxGnu/gosmpp/utils"
 )
 
@@ -33,11 +32,11 @@ type PDU interface {
 
 type base struct {
 	Header
-	OptionalParameters map[tlv.Tag]tlv.Field
+	OptionalParameters map[Tag]Field
 }
 
 func newBase() (v base) {
-	v.OptionalParameters = make(map[tlv.Tag]tlv.Field)
+	v.OptionalParameters = make(map[Tag]Field)
 	v.AssignSequenceNumber()
 	return
 }
@@ -91,7 +90,7 @@ func (c *base) unmarshal(b *utils.ByteBuffer, bodyReader func(*utils.ByteBuffer)
 func (c *base) unmarshalOptionalBody(body []byte) (err error) {
 	buf := utils.NewBuffer(body)
 	for buf.Len() > 0 {
-		var field tlv.Field
+		var field Field
 		if err = field.Unmarshal(buf); err != nil {
 			return
 		}
@@ -123,7 +122,7 @@ func (c *base) marshal(b *utils.ByteBuffer, bodyWriter func(*utils.ByteBuffer)) 
 }
 
 // RegisterOptionalParam register optional param.
-func (c *base) RegisterOptionalParam(tlv tlv.Field) {
+func (c *base) RegisterOptionalParam(tlv Field) {
 	c.OptionalParameters[tlv.Tag] = tlv
 }
 
