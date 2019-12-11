@@ -17,4 +17,4 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Test
-      run: go get github.com/mattn/goveralls && go test -count=1 -v -race ./... && $HOME/gopath/bin/goveralls -service=travis-ci
+      run: go get github.com/mattn/goveralls && go test -count=1 -v -race ./... && goveralls -service=travis-ci
