@@ -143,19 +143,12 @@ type gsm7Decoder struct {
 
 func (g *gsm7Decoder) Reset() { /* not needed */ }
 
-func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-	if len(src) == 0 {
-		return 0, 0, nil
-	}
-
-	septets := src
-	if g.packed {
+func unpack(src []byte, packed bool) (septets []byte) {
+	septets = src
+	if packed {
 		septets = make([]byte, 0, len(src))
 		count := 0
-		remain := len(src) - count
-
-	loop:
-		for remain > 0 {
+		for remain := len(src) - count; remain > 0; {
 			// Unpack by converting octets into septets.
 			switch {
 			case remain >= 7:
@@ -204,11 +197,20 @@ func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 				septets = append(septets, src[count+0]&0x7F<<0)
 				count++
 			default:
-				break loop
+				return
 			}
 			remain = len(src) - count
 		}
 	}
+	return
+}
+
+func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
+	if len(src) == 0 {
+		return 0, 0, nil
+	}
+
+	septets := unpack(src, g.packed)
 
 	nSeptet := 0
 	builder := bytes.NewBufferString("")
@@ -240,7 +242,7 @@ func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 	}
 
 	copy(dst, text)
-	return nDst, nSrc, err
+	return
 }
 
 type gsm7Encoder struct {
@@ -251,43 +253,9 @@ func (g *gsm7Encoder) Reset() {
 	/* no needed */
 }
 
-func (g *gsm7Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-	if len(src) == 0 {
-		return 0, 0, nil
-	}
-
-	text := string(src) // work with []rune (a.k.a string) instead of []byte
-	septets := make([]byte, 0, len(text))
-	for _, r := range text {
-		if v, ok := forwardLookup[r]; ok {
-			septets = append(septets, v)
-		} else if v, ok := forwardEscape[r]; ok {
-			septets = append(septets, escapeSequence, v)
-		} else {
-			return 0, 0, ErrInvalidCharacter
-		}
-		nSrc++
-	}
-
-	nDst = len(septets)
-	if g.packed {
-		nDst = int(math.Ceil(float64(len(septets)) * 7 / 8))
-	}
-	if len(dst) < nDst {
-		return 0, 0, transform.ErrShortDst
-	}
-
-	if !g.packed {
-		copy(dst, septets)
-		return nDst, nSrc, nil
-	}
-
-	nDst = 0
+func pack(dst []byte, septets []byte) (nDst int) {
 	nSeptet := 0
-	remain := len(septets) - nSeptet
-
-loop:
-	for remain > 0 {
+	for remain := len(septets); remain > 0; {
 		// Pack by converting septets into octets.
 		switch {
 		case remain >= 8:
@@ -350,9 +318,44 @@ loop:
 			nSeptet++
 			nDst++
 		default:
-			break loop
+			return
 		}
 		remain = len(septets) - nSeptet
 	}
-	return nDst, nSrc, err
+	return
+}
+
+func (g *gsm7Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
+	if len(src) == 0 {
+		return 0, 0, nil
+	}
+
+	text := string(src) // work with []rune (a.k.a string) instead of []byte
+	septets := make([]byte, 0, len(text))
+	for _, r := range text {
+		if v, ok := forwardLookup[r]; ok {
+			septets = append(septets, v)
+		} else if v, ok := forwardEscape[r]; ok {
+			septets = append(septets, escapeSequence, v)
+		} else {
+			return 0, 0, ErrInvalidCharacter
+		}
+		nSrc++
+	}
+
+	nDst = len(septets)
+	if g.packed {
+		nDst = int(math.Ceil(float64(len(septets)) * 7 / 8))
+	}
+	if len(dst) < nDst {
+		return 0, 0, transform.ErrShortDst
+	}
+
+	if !g.packed {
+		copy(dst, septets)
+		return nDst, nSrc, nil
+	}
+
+	nDst = pack(dst, septets)
+	return
 }

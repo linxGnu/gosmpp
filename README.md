@@ -1,6 +1,6 @@
 # gosmpp
 
-[![](https://github.com/linxGnu/gosmpp/workflows/Go/badge.svg)]()
+[![](https://github.com/linxGnu/gosmpp/workflows/Build/badge.svg)]()
 [![Go Report Card](https://goreportcard.com/badge/github.com/linxGnu/gosmpp)](https://goreportcard.com/report/github.com/linxGnu/gosmpp)
 [![Coverage Status](https://coveralls.io/repos/github/linxGnu/gosmpp/badge.svg?branch=master)](https://coveralls.io/github/linxGnu/gosmpp?branch=master)
 [![godoc](https://img.shields.io/badge/docs-GoDoc-green.svg)](https://godoc.org/github.com/linxGnu/gosmpp)
