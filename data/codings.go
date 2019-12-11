@@ -21,10 +21,15 @@ const (
 	UCS2Coding byte = 0x08
 )
 
-// Encoding interface.
-type Encoding interface {
+// EncDec wraps encoder and decoder interface.
+type EncDec interface {
 	Encode(str string) ([]byte, error)
 	Decode([]byte) (string, error)
+}
+
+// Encoding interface.
+type Encoding interface {
+	EncDec
 	DataCoding() byte
 }
 
@@ -32,13 +37,12 @@ func encode(str string, encoder *encoding.Encoder) ([]byte, error) {
 	return encoder.Bytes([]byte(str))
 }
 
-func decode(data []byte, decoder *encoding.Decoder) (string, error) {
+func decode(data []byte, decoder *encoding.Decoder) (st string, err error) {
 	tmp, err := decoder.Bytes(data)
-	if err != nil {
-		return "", err
+	if err == nil {
+		st = string(tmp)
 	}
-
-	return string(tmp), nil
+	return
 }
 
 type gsm7bit struct{}
@@ -64,16 +68,6 @@ func (c ascii) Decode(data []byte) (string, error) {
 }
 
 func (c ascii) DataCoding() byte { return ASCIICoding }
-
-type utf8 struct{}
-
-func (c utf8) Encode(str string) ([]byte, error) {
-	return []byte(str), nil
-}
-
-func (c utf8) Decode(data []byte) (string, error) {
-	return string(data), nil
-}
 
 type iso88591 struct{}
 
@@ -155,9 +149,7 @@ var codingMap = map[byte]Encoding{
 }
 
 // FromDataCoding returns encoding from DataCoding value.
-func FromDataCoding(code byte) Encoding {
-	if enc, ok := codingMap[code]; ok {
-		return enc
-	}
-	return nil
+func FromDataCoding(code byte) (enc Encoding) {
+	enc = codingMap[code]
+	return
 }

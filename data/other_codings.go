@@ -5,9 +5,6 @@ import (
 )
 
 var (
-	// UTF8 encoding.
-	UTF8 = &utf8{}
-
 	// UTF16BEM is UTF-16 Big Endian with BOM (byte order mark).
 	UTF16BEM = &utf16BEM{}
 
