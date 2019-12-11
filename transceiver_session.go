@@ -30,43 +30,39 @@ type TransceiverSession struct {
 //
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
 func NewTransceiverSession(dialer Dialer, auth Auth, settings TransceiveSettings, rebindingInterval time.Duration) (session *TransceiverSession, err error) {
-	conn, err := ConnectAsTransceiver(dialer, auth)
-	if err != nil {
-		return
-	}
-
-	session = &TransceiverSession{
-		dialer:            dialer,
-		auth:              auth,
-		rebindingInterval: rebindingInterval,
-		originalOnClosed:  settings.OnClosed,
-	}
-
-	if rebindingInterval > 0 {
-		newSettings := settings
-		newSettings.OnClosed = func(state State) {
-			switch state {
-			case ExplicitClosing:
-				return
-
-			default:
-				if session.originalOnClosed != nil {
-					session.originalOnClosed(state)
-				}
-				session.rebind()
-			}
+	if conn, err := ConnectAsTransceiver(dialer, auth); err == nil {
+		session = &TransceiverSession{
+			dialer:            dialer,
+			auth:              auth,
+			rebindingInterval: rebindingInterval,
+			originalOnClosed:  settings.OnClosed,
 		}
-		session.settings = newSettings
-	} else {
-		session.settings = settings
+
+		if rebindingInterval > 0 {
+			newSettings := settings
+			newSettings.OnClosed = func(state State) {
+				switch state {
+				case ExplicitClosing:
+					return
+
+				default:
+					if session.originalOnClosed != nil {
+						session.originalOnClosed(state)
+					}
+					session.rebind()
+				}
+			}
+			session.settings = newSettings
+		} else {
+			session.settings = settings
+		}
+
+		// create new Transceiver
+		r := NewTransceiver(conn, session.settings)
+
+		// bind to session
+		session.r.Store(r)
 	}
-
-	// create new Transceiver
-	r := NewTransceiver(conn, session.settings)
-
-	// bind to session
-	session.r.Store(r)
-
 	return
 }
 

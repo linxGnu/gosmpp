@@ -30,43 +30,39 @@ type TransmitterSession struct {
 //
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
 func NewTransmitterSession(dialer Dialer, auth Auth, settings TransmitSettings, rebindingInterval time.Duration) (session *TransmitterSession, err error) {
-	conn, err := ConnectAsTransmitter(dialer, auth)
-	if err != nil {
-		return
-	}
-
-	session = &TransmitterSession{
-		dialer:            dialer,
-		auth:              auth,
-		rebindingInterval: rebindingInterval,
-		originalOnClosed:  settings.OnClosed,
-	}
-
-	if rebindingInterval > 0 {
-		newSettings := settings
-		newSettings.OnClosed = func(state State) {
-			switch state {
-			case ExplicitClosing:
-				return
-
-			default:
-				if session.originalOnClosed != nil {
-					session.originalOnClosed(state)
-				}
-				session.rebind()
-			}
+	if conn, err := ConnectAsTransmitter(dialer, auth); err == nil {
+		session = &TransmitterSession{
+			dialer:            dialer,
+			auth:              auth,
+			rebindingInterval: rebindingInterval,
+			originalOnClosed:  settings.OnClosed,
 		}
-		session.settings = newSettings
-	} else {
-		session.settings = settings
+
+		if rebindingInterval > 0 {
+			newSettings := settings
+			newSettings.OnClosed = func(state State) {
+				switch state {
+				case ExplicitClosing:
+					return
+
+				default:
+					if session.originalOnClosed != nil {
+						session.originalOnClosed(state)
+					}
+					session.rebind()
+				}
+			}
+			session.settings = newSettings
+		} else {
+			session.settings = settings
+		}
+
+		// create new Transmitter
+		r := NewTransmitter(conn, session.settings)
+
+		// bind to session
+		session.r.Store(r)
 	}
-
-	// create new Transmitter
-	r := NewTransmitter(conn, session.settings)
-
-	// bind to session
-	session.r.Store(r)
-
 	return
 }
 

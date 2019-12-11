@@ -192,6 +192,8 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 	if n == 0 {
 		if nErr, ok := err.(net.Error); ok {
 			closing = nErr.Timeout() || !nErr.Temporary()
+		} else {
+			closing = true
 		}
 	} else {
 		closing = true // force closing
