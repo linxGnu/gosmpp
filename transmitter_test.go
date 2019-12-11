@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -65,9 +66,9 @@ func TestTransmitter(t *testing.T) {
 		tr.conn = c
 		tr.ctx, tr.cancel = context.WithCancel(context.Background())
 
-		var count int
+		var count int32
 		tr.settings.OnClosed = func(state State) {
-			count++
+			atomic.AddInt32(&count, 1)
 		}
 
 		tr.settings.OnSubmitError = func(p pdu.PDU, err error) {
@@ -81,7 +82,7 @@ func TestTransmitter(t *testing.T) {
 		trigger(&tr)
 
 		time.Sleep(300 * time.Millisecond)
-		require.NotZero(t, count)
+		require.NotZero(t, atomic.LoadInt32(&count))
 	}
 
 	t.Run("errorHandling1", func(t *testing.T) {
