@@ -110,13 +110,13 @@ func (c *ByteBuffer) writeString(st string, isCString bool, enc data.Encoding) (
 }
 
 // WriteCString writes c-string.
-func (c *ByteBuffer) WriteCString(String string) error {
-	return c.writeString(String, true, data.ASCII)
+func (c *ByteBuffer) WriteCString(s string) error {
+	return c.writeString(s, true, data.ASCII)
 }
 
 // WriteCStringWithEnc write c-string with encoding.
-func (c *ByteBuffer) WriteCStringWithEnc(String string, enc data.Encoding) error {
-	return c.writeString(String, true, enc)
+func (c *ByteBuffer) WriteCStringWithEnc(s string, enc data.Encoding) error {
+	return c.writeString(s, true, enc)
 }
 
 // ReadCString read c-string.

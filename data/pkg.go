@@ -4,6 +4,7 @@ import (
 	"sync/atomic"
 )
 
+//nolint
 const (
 	SM_CONNID_LEN        = 16
 	SM_MSG_LEN           = 254
@@ -149,8 +150,8 @@ const (
 	ESME_RINVPGALERTLEN    = 0x00000090 // Paging Alerts Length Invalid
 	ESME_RINVSMUSERLEN     = 0x00000091 // int16 Message User Group Length Invalid
 	ESME_RINVRTDBLEN       = 0x00000092 // Real Time Data broadcasts Length Invalid
-	ESME_RINVREGDELLEN     = 0x00000093 // Registered Delivery Lenght Invalid
-	ESME_RINVMSGDISTLEN    = 0x00000094 // Message Distribution Lenght Invalid
+	ESME_RINVREGDELLEN     = 0x00000093 // Registered Delivery Length Invalid
+	ESME_RINVMSGDISTLEN    = 0x00000094 // Message Distribution Length Invalid
 	ESME_RINVPRIORMSG      = 0x00000095 // Priority Message Length Invalid
 	ESME_RINVMDT           = 0x00000096 // Message delivery time Invalid
 	ESME_RINVPERMSG        = 0x00000097 // Periodic Messages Invalid

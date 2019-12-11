@@ -69,7 +69,7 @@ var reverseEscape = map[byte]rune{
 	0x0A: '\f', 0x14: '^', 0x28: '{', 0x29: '}', 0x2F: '\\', 0x3C: '[', 0x3D: '~', 0x3E: ']', 0x40: '|', 0x65: '€',
 }
 
-// Returns the characters, in the given text, that can not be represented in GSM 7-bit encoding.
+// ValidateGSM7String returns the characters, in the given text, that can not be represented in GSM 7-bit encoding.
 func ValidateGSM7String(text string) []rune {
 	invalidChars := make([]rune, 0, 4)
 	for _, r := range text {
@@ -82,7 +82,7 @@ func ValidateGSM7String(text string) []rune {
 	return invalidChars
 }
 
-// Returns the bytes, in the given buffer, that are outside of the GSM 7-bit encoding range.
+// ValidateGSM7Buffer returns the bytes, in the given buffer, that are outside of the GSM 7-bit encoding range.
 func ValidateGSM7Buffer(buffer []byte) []byte {
 	invalidBytes := make([]byte, 0, 4)
 	count := 0
@@ -141,9 +141,7 @@ type gsm7Decoder struct {
 	packed bool
 }
 
-func (g *gsm7Decoder) Reset() {
-	/* not needed */
-}
+func (g *gsm7Decoder) Reset() { /* not needed */ }
 
 func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
 	if len(src) == 0 {
@@ -155,9 +153,12 @@ func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 		septets = make([]byte, 0, len(src))
 		count := 0
 		remain := len(src) - count
+
+	loop:
 		for remain > 0 {
 			// Unpack by converting octets into septets.
-			if remain >= 7 {
+			switch {
+			case remain >= 7:
 				septets = append(septets, src[count+0]&0x7F<<0)
 				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
 				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
@@ -169,7 +170,7 @@ func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 					septets = append(septets, src[count+6]&0xFE>>1)
 				}
 				count += 7
-			} else if remain >= 6 {
+			case remain >= 6:
 				septets = append(septets, src[count+0]&0x7F<<0)
 				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
 				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
@@ -177,33 +178,33 @@ func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 				septets = append(septets, (src[count+4]&0x07<<4)|(src[count+3]&0xF0>>4))
 				septets = append(septets, (src[count+5]&0x03<<5)|(src[count+4]&0xF8>>3))
 				count += 6
-			} else if remain >= 5 {
+			case remain >= 5:
 				septets = append(septets, src[count+0]&0x7F<<0)
 				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
 				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
 				septets = append(septets, (src[count+3]&0x0F<<3)|(src[count+2]&0xE0>>5))
 				septets = append(septets, (src[count+4]&0x07<<4)|(src[count+3]&0xF0>>4))
 				count += 5
-			} else if remain >= 4 {
+			case remain >= 4:
 				septets = append(septets, src[count+0]&0x7F<<0)
 				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
 				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
 				septets = append(septets, (src[count+3]&0x0F<<3)|(src[count+2]&0xE0>>5))
 				count += 4
-			} else if remain >= 3 {
+			case remain >= 3:
 				septets = append(septets, src[count+0]&0x7F<<0)
 				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
 				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
 				count += 3
-			} else if remain >= 2 {
+			case remain >= 2:
 				septets = append(septets, src[count+0]&0x7F<<0)
 				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
 				count += 2
-			} else if remain >= 1 {
+			case remain >= 1:
 				septets = append(septets, src[count+0]&0x7F<<0)
-				count += 1
-			} else {
-				break
+				count++
+			default:
+				break loop
 			}
 			remain = len(src) - count
 		}
@@ -284,9 +285,12 @@ func (g *gsm7Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 	nDst = 0
 	nSeptet := 0
 	remain := len(septets) - nSeptet
+
+loop:
 	for remain > 0 {
 		// Pack by converting septets into octets.
-		if remain >= 8 {
+		switch {
+		case remain >= 8:
 			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
 			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
 			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
@@ -296,7 +300,7 @@ func (g *gsm7Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 			dst[nDst+6] = (septets[nSeptet+6] & 0x40 >> 6) | (septets[nSeptet+7] & 0x7F << 1)
 			nSeptet += 8
 			nDst += 7
-		} else if remain >= 7 {
+		case remain >= 7:
 			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
 			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
 			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
@@ -306,7 +310,7 @@ func (g *gsm7Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 			dst[nDst+6] = septets[nSeptet+6] & 0x40 >> 6
 			nSeptet += 7
 			nDst += 7
-		} else if remain >= 6 {
+		case remain >= 6:
 			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
 			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
 			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
@@ -315,7 +319,7 @@ func (g *gsm7Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 			dst[nDst+5] = septets[nSeptet+5] & 0x60 >> 5
 			nSeptet += 6
 			nDst += 6
-		} else if remain >= 5 {
+		case remain >= 5:
 			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
 			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
 			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
@@ -323,30 +327,30 @@ func (g *gsm7Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, er
 			dst[nDst+4] = septets[nSeptet+4] & 0x70 >> 4
 			nSeptet += 5
 			nDst += 5
-		} else if remain >= 4 {
+		case remain >= 4:
 			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
 			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
 			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
 			dst[nDst+3] = septets[nSeptet+3] & 0x78 >> 3
 			nSeptet += 4
 			nDst += 4
-		} else if remain >= 3 {
+		case remain >= 3:
 			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
 			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
 			dst[nDst+2] = septets[nSeptet+2] & 0x7C >> 2
 			nSeptet += 3
 			nDst += 3
-		} else if remain >= 2 {
+		case remain >= 2:
 			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
 			dst[nDst+1] = septets[nSeptet+1] & 0x7E >> 1
 			nSeptet += 2
 			nDst += 2
-		} else if remain >= 1 {
+		case remain >= 1:
 			dst[nDst+0] = septets[nSeptet+0] & 0x7F >> 0
-			nSeptet += 1
-			nDst += 1
-		} else {
-			break
+			nSeptet++
+			nDst++
+		default:
+			break loop
 		}
 		remain = len(septets) - nSeptet
 	}
