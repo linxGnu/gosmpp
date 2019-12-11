@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +20,7 @@ func TestAlertNotification(t *testing.T) {
 	a.EsmeAddr.SetTon(19)
 	a.EsmeAddr.SetNpi(7)
 
-	b := utils.NewBuffer(nil)
+	b := NewBuffer(nil)
 	a.Marshal(b)
 
 	expectAfterParse(t, b, a, data.ALERT_NOTIFICATION)

@@ -3,8 +3,6 @@ package pdu
 import (
 	"encoding/binary"
 	"sync/atomic"
-
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 func nextSequenceNumber(s *int32) (v int32) {
@@ -36,7 +34,7 @@ func ParseHeader(v [16]byte) (h Header) {
 }
 
 // Unmarshal from buffer.
-func (c *Header) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *Header) Unmarshal(b *ByteBuffer) (err error) {
 	c.CommandLength, err = b.ReadInt()
 	if err == nil {
 		c.CommandID, err = b.ReadInt()
@@ -72,7 +70,7 @@ func (c *Header) SetSequenceNumber(v int32) {
 }
 
 // Marshal to buffer.
-func (c *Header) Marshal(b *utils.ByteBuffer) {
+func (c *Header) Marshal(b *ByteBuffer) {
 	b.Grow(16)
 	b.WriteInt(c.CommandLength)
 	b.WriteInt(c.CommandID)

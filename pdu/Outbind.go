@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // Outbind PDU is used by the SMSC to signal an ESME to originate a bind_receiver request to the SMSC.
@@ -32,8 +31,8 @@ func (c *Outbind) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *Outbind) Marshal(b *utils.ByteBuffer) {
-	c.base.marshal(b, func(b *utils.ByteBuffer) {
+func (c *Outbind) Marshal(b *ByteBuffer) {
+	c.base.marshal(b, func(b *ByteBuffer) {
 		b.Grow(len(c.SystemID) + len(c.Password) + 2)
 
 		_ = b.WriteCString(c.SystemID)
@@ -42,8 +41,8 @@ func (c *Outbind) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *Outbind) Unmarshal(b *utils.ByteBuffer) error {
-	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+func (c *Outbind) Unmarshal(b *ByteBuffer) error {
+	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		if c.SystemID, err = b.ReadCString(); err == nil {
 			c.Password, err = b.ReadCString()
 		}

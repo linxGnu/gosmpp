@@ -5,16 +5,15 @@ import (
 
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/errors"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // PDU represents PDU interface.
 type PDU interface {
 	// Marshal PDU to buffer.
-	Marshal(*utils.ByteBuffer)
+	Marshal(*ByteBuffer)
 
 	// Unmarshal PDU from buffer.
-	Unmarshal(*utils.ByteBuffer) error
+	Unmarshal(*ByteBuffer) error
 
 	// CanResponse indicates that PDU could response to SMSC.
 	CanResponse() bool
@@ -63,7 +62,7 @@ func (c *base) GetHeader() Header {
 	return c.Header
 }
 
-func (c *base) unmarshal(b *utils.ByteBuffer, bodyReader func(*utils.ByteBuffer) error) (err error) {
+func (c *base) unmarshal(b *ByteBuffer, bodyReader func(*ByteBuffer) error) (err error) {
 	fullLen := b.Len()
 
 	if err = c.Header.Unmarshal(b); err == nil {
@@ -109,7 +108,7 @@ func (c *base) unmarshal(b *utils.ByteBuffer, bodyReader func(*utils.ByteBuffer)
 }
 
 func (c *base) unmarshalOptionalBody(body []byte) (err error) {
-	buf := utils.NewBuffer(body)
+	buf := NewBuffer(body)
 	for buf.Len() > 0 {
 		var field Field
 		if err = field.Unmarshal(buf); err == nil {
@@ -122,8 +121,8 @@ func (c *base) unmarshalOptionalBody(body []byte) (err error) {
 }
 
 // Marshal to buffer.
-func (c *base) marshal(b *utils.ByteBuffer, bodyWriter func(*utils.ByteBuffer)) {
-	bodyBuf := utils.NewBuffer(nil)
+func (c *base) marshal(b *ByteBuffer, bodyWriter func(*ByteBuffer)) {
+	bodyBuf := NewBuffer(nil)
 
 	// body
 	if bodyWriter != nil {
@@ -182,7 +181,7 @@ func Parse(r io.Reader) (pdu PDU, err error) {
 
 	// try to create pdu
 	if pdu, err = CreatePDUFromCmdID(header.CommandID); err == nil {
-		buf := utils.NewBuffer(make([]byte, 0, header.CommandLength))
+		buf := NewBuffer(make([]byte, 0, header.CommandLength))
 		_, _ = buf.Write(headerBytes[:])
 		if len(bodyBytes) > 0 {
 			_, _ = buf.Write(bodyBytes)

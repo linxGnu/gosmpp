@@ -1,4 +1,4 @@
-package utils
+package pdu
 
 import (
 	"bytes"
@@ -97,13 +97,7 @@ func (c *ByteBuffer) WriteBuffer(d *ByteBuffer) {
 func (c *ByteBuffer) writeString(st string, isCString bool, enc data.Encoding) (err error) {
 	if len(st) > 0 {
 		var payload []byte
-		if enc == nil {
-			payload = []byte(st)
-		} else {
-			payload, err = enc.Encode(st)
-		}
-
-		if err == nil {
+		if payload, err = enc.Encode(st); err == nil {
 			_, _ = c.Write(payload)
 		}
 	}
@@ -130,15 +124,6 @@ func (c *ByteBuffer) ReadCString() (st string, err error) {
 	buf, err := c.ReadBytes(0)
 	if err == nil && len(buf) > 0 { // optimistic branching
 		st = string(buf[:len(buf)-1])
-	}
-	return
-}
-
-// ReadStringSize reads string with limited size.
-func (c *ByteBuffer) ReadStringSize(size int) (st string, err error) {
-	buf, err := c.ReadN(size)
-	if err == nil {
-		st = string(buf)
 	}
 	return
 }

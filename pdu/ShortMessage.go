@@ -3,7 +3,6 @@ package pdu
 import (
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/errors"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // ShortMessage message.
@@ -17,22 +16,13 @@ type ShortMessage struct {
 
 // NewShortMessage returns new ShortMessage.
 func NewShortMessage(message string) (s ShortMessage, err error) {
-	err = s.SetMessage(message)
+	err = s.SetMessageWithEncoding(message, data.GSM7BIT)
 	return
 }
 
 // NewShortMessageWithEncoding returns new ShortMessage with predefined encoding.
 func NewShortMessageWithEncoding(message string, enc data.Encoding) (s ShortMessage, err error) {
 	err = s.SetMessageWithEncoding(message, enc)
-	return
-}
-
-// SetMessage set message and its encoded data.
-func (c *ShortMessage) SetMessage(message string) (err error) {
-	err = c.SetMessageWithEncoding(message, data.GSM7BIT)
-	if err != nil {
-		err = c.SetMessageWithEncoding(message, data.ASCII)
-	}
 	return
 }
 
@@ -50,35 +40,25 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 }
 
 // GetMessage returns underlying message.
-func (c *ShortMessage) GetMessage() (string, error) {
+func (c *ShortMessage) GetMessage() (st string, err error) {
 	enc := c.enc
 	if enc == nil {
 		enc = data.GSM7BIT
 	}
-
-	tmp, err := c.GetMessageWithEncoding(enc)
-	if err != nil {
-		return c.GetMessageWithEncoding(data.ASCII)
-	}
-
-	return tmp, err
+	st, err = c.GetMessageWithEncoding(enc)
+	return
 }
 
 // GetMessageWithEncoding returns (decoded) underlying message.
-func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (string, error) {
-	if len(c.messageData) == 0 {
-		return "", nil
+func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err error) {
+	if len(c.messageData) > 0 {
+		st, err = enc.Decode(c.messageData)
 	}
-
-	if enc == nil {
-		return string(c.messageData), nil
-	}
-
-	return enc.Decode(c.messageData)
+	return
 }
 
 // Marshal implements PDU interface.
-func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
+func (c *ShortMessage) Marshal(b *ByteBuffer) {
 	n := byte(len(c.messageData))
 	b.Grow(int(n) + 3)
 
@@ -100,7 +80,7 @@ func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *ShortMessage) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *ShortMessage) Unmarshal(b *ByteBuffer) (err error) {
 	var dataCoding, n byte
 	if !c.withoutDataCoding {
 		if dataCoding, err = b.ReadByte(); err == nil {

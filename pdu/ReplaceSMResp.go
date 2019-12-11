@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // ReplaceSMResp PDU.
@@ -30,11 +29,11 @@ func (c *ReplaceSMResp) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *ReplaceSMResp) Marshal(b *utils.ByteBuffer) {
+func (c *ReplaceSMResp) Marshal(b *ByteBuffer) {
 	c.base.marshal(b, nil)
 }
 
 // Unmarshal implements PDU interface.
-func (c *ReplaceSMResp) Unmarshal(b *utils.ByteBuffer) error {
+func (c *ReplaceSMResp) Unmarshal(b *ByteBuffer) error {
 	return c.base.unmarshal(b, nil)
 }

@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // UnsuccessSME indicates submission was unsuccessful and the respective errors.
@@ -38,7 +37,7 @@ func NewUnsuccessSMEWithTonNpi(ton, npi byte, errCode int32) UnsuccessSME {
 }
 
 // Unmarshal from buffer.
-func (c *UnsuccessSME) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *UnsuccessSME) Unmarshal(b *ByteBuffer) (err error) {
 	if err = c.Address.Unmarshal(b); err == nil {
 		c.errorStatusCode, err = b.ReadInt()
 	}
@@ -46,7 +45,7 @@ func (c *UnsuccessSME) Unmarshal(b *utils.ByteBuffer) (err error) {
 }
 
 // Marshal to buffer.
-func (c *UnsuccessSME) Marshal(b *utils.ByteBuffer) {
+func (c *UnsuccessSME) Marshal(b *ByteBuffer) {
 	c.Address.Marshal(b)
 	b.WriteInt(c.errorStatusCode)
 }
@@ -83,7 +82,7 @@ func (c *UnsuccessSMEs) Get() []UnsuccessSME {
 }
 
 // Unmarshal from buffer.
-func (c *UnsuccessSMEs) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *UnsuccessSMEs) Unmarshal(b *ByteBuffer) (err error) {
 	var n byte
 	if n, err = b.ReadByte(); err == nil {
 		c.l = make([]UnsuccessSME, n)
@@ -99,7 +98,7 @@ func (c *UnsuccessSMEs) Unmarshal(b *utils.ByteBuffer) (err error) {
 }
 
 // Marshal to buffer.
-func (c *UnsuccessSMEs) Marshal(b *utils.ByteBuffer) {
+func (c *UnsuccessSMEs) Marshal(b *ByteBuffer) {
 	n := byte(len(c.l))
 	_ = b.WriteByte(n)
 

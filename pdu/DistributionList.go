@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // DistributionList represents group of contacts.
@@ -19,13 +18,13 @@ func NewDistributionList(name string) (c DistributionList, err error) {
 }
 
 // Unmarshal from buffer.
-func (c *DistributionList) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *DistributionList) Unmarshal(b *ByteBuffer) (err error) {
 	c.name, err = b.ReadCString()
 	return
 }
 
 // Marshal to buffer.
-func (c *DistributionList) Marshal(b *utils.ByteBuffer) {
+func (c *DistributionList) Marshal(b *ByteBuffer) {
 	b.Grow(1 + len(c.name))
 
 	_ = b.WriteCString(c.name)

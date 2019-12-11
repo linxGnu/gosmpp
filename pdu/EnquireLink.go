@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // EnquireLink PDU. This message can be sent by either the ESME or SMSC
@@ -35,11 +34,11 @@ func (c *EnquireLink) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *EnquireLink) Marshal(b *utils.ByteBuffer) {
+func (c *EnquireLink) Marshal(b *ByteBuffer) {
 	c.base.marshal(b, nil)
 }
 
 // Unmarshal implements PDU interface.
-func (c *EnquireLink) Unmarshal(b *utils.ByteBuffer) error {
+func (c *EnquireLink) Unmarshal(b *ByteBuffer) error {
 	return c.base.unmarshal(b, nil)
 }

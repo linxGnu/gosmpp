@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // QuerySM PDU is issued by the ESME to query the status of a previously submitted short message.
@@ -35,8 +34,8 @@ func (c *QuerySM) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *QuerySM) Marshal(b *utils.ByteBuffer) {
-	c.base.marshal(b, func(b *utils.ByteBuffer) {
+func (c *QuerySM) Marshal(b *ByteBuffer) {
+	c.base.marshal(b, func(b *ByteBuffer) {
 		b.Grow(len(c.MessageID) + 1)
 
 		_ = b.WriteCString(c.MessageID)
@@ -45,8 +44,8 @@ func (c *QuerySM) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *QuerySM) Unmarshal(b *utils.ByteBuffer) error {
-	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+func (c *QuerySM) Unmarshal(b *ByteBuffer) error {
+	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		if c.MessageID, err = b.ReadCString(); err == nil {
 			err = c.SourceAddr.Unmarshal(b)
 		}

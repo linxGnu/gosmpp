@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // SubmitSMResp PDU.
@@ -32,8 +31,8 @@ func (c *SubmitSMResp) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *SubmitSMResp) Marshal(b *utils.ByteBuffer) {
-	c.base.marshal(b, func(b *utils.ByteBuffer) {
+func (c *SubmitSMResp) Marshal(b *ByteBuffer) {
+	c.base.marshal(b, func(b *ByteBuffer) {
 		b.Grow(len(c.MessageID) + 1)
 
 		_ = b.WriteCString(c.MessageID)
@@ -41,8 +40,8 @@ func (c *SubmitSMResp) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *SubmitSMResp) Unmarshal(b *utils.ByteBuffer) error {
-	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+func (c *SubmitSMResp) Unmarshal(b *ByteBuffer) error {
+	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		if c.CommandStatus == data.ESME_ROK {
 			c.MessageID, err = b.ReadCString()
 		}

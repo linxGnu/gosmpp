@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // QuerySMResp PDU.
@@ -37,8 +36,8 @@ func (c *QuerySMResp) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *QuerySMResp) Marshal(b *utils.ByteBuffer) {
-	c.base.marshal(b, func(b *utils.ByteBuffer) {
+func (c *QuerySMResp) Marshal(b *ByteBuffer) {
+	c.base.marshal(b, func(b *ByteBuffer) {
 		b.Grow(len(c.MessageID) + len(c.FinalDate) + 4)
 
 		_ = b.WriteCString(c.MessageID)
@@ -49,8 +48,8 @@ func (c *QuerySMResp) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *QuerySMResp) Unmarshal(b *utils.ByteBuffer) error {
-	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+func (c *QuerySMResp) Unmarshal(b *ByteBuffer) error {
+	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		if c.MessageID, err = b.ReadCString(); err == nil {
 			if c.FinalDate, err = b.ReadCString(); err == nil {
 				if c.MessageState, err = b.ReadByte(); err == nil {

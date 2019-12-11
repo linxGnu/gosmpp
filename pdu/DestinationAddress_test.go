@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 
 	"github.com/stretchr/testify/require"
 )
@@ -43,14 +42,14 @@ func TestDestinationAddress(t *testing.T) {
 	})
 
 	t.Run("invalidDEST", func(t *testing.T) {
-		buf := utils.NewBuffer(nil)
+		buf := NewBuffer(nil)
 		_ = buf.WriteByte(51)
 		var d DestinationAddress
 		require.NotNil(t, d.Unmarshal(buf))
 	})
 
 	t.Run("invalidDESTs", func(t *testing.T) {
-		buf := utils.NewBuffer(nil)
+		buf := NewBuffer(nil)
 		_ = buf.WriteByte(1)
 		_ = buf.WriteByte(51)
 		var d DestinationAddresses

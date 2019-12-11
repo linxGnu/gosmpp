@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // Unbind PDU is to deregister an instance of an ESME from the SMSC and inform the SMSC
@@ -32,11 +31,11 @@ func (c *Unbind) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *Unbind) Marshal(b *utils.ByteBuffer) {
+func (c *Unbind) Marshal(b *ByteBuffer) {
 	c.base.marshal(b, nil)
 }
 
 // Unmarshal implements PDU interface.
-func (c *Unbind) Unmarshal(b *utils.ByteBuffer) error {
+func (c *Unbind) Unmarshal(b *ByteBuffer) error {
 	return c.base.unmarshal(b, nil)
 }

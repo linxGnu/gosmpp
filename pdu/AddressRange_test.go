@@ -3,8 +3,6 @@ package pdu
 import (
 	"testing"
 
-	"github.com/linxGnu/gosmpp/utils"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,7 +43,7 @@ func TestAddressRange(t *testing.T) {
 	})
 
 	t.Run("unmarshal", func(t *testing.T) {
-		buf := utils.NewBuffer(fromHex("315b7068616e746f6d537472696b6500"))
+		buf := NewBuffer(fromHex("315b7068616e746f6d537472696b6500"))
 		var a AddressRange
 		require.Nil(t, a.Unmarshal(buf))
 		require.Zero(t, buf.Len())
@@ -60,7 +58,7 @@ func TestAddressRange(t *testing.T) {
 		a.SetTon(95)
 		a.SetNpi(13)
 
-		buf := utils.NewBuffer(nil)
+		buf := NewBuffer(nil)
 		a.Marshal(buf)
 
 		require.Equal(t, fromHex("5f0d7068616e746f6d4f7065726100"), buf.Bytes())

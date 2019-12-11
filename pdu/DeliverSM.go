@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // DeliverSM PDU is issued by the SMSC to send a message to an ESME.
@@ -54,8 +53,8 @@ func (c *DeliverSM) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *DeliverSM) Marshal(b *utils.ByteBuffer) {
-	c.base.marshal(b, func(b *utils.ByteBuffer) {
+func (c *DeliverSM) Marshal(b *ByteBuffer) {
+	c.base.marshal(b, func(b *ByteBuffer) {
 		b.Grow(len(c.ServiceType) + len(c.ScheduleDeliveryTime) + len(c.ValidityPeriod) + 10)
 
 		_ = b.WriteCString(c.ServiceType)
@@ -73,8 +72,8 @@ func (c *DeliverSM) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *DeliverSM) Unmarshal(b *utils.ByteBuffer) error {
-	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+func (c *DeliverSM) Unmarshal(b *ByteBuffer) error {
+	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		if c.ServiceType, err = b.ReadCString(); err == nil {
 			if err = c.SourceAddr.Unmarshal(b); err == nil {
 				if err = c.DestAddr.Unmarshal(b); err == nil {
