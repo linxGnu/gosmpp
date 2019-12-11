@@ -5,7 +5,9 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// Unbind PDU.
+// Unbind PDU is to deregister an instance of an ESME from the SMSC and inform the SMSC
+// that the ESME no longer wishes to use this network connection for the submission or
+// delivery of messages.
 type Unbind struct {
 	base
 }

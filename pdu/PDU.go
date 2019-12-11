@@ -2,25 +2,11 @@ package pdu
 
 import (
 	"io"
-	"sync/atomic"
 
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/errors"
 	"github.com/linxGnu/gosmpp/utils"
 )
-
-var sequenceNumber int32
-
-func nextSequenceNumber() (v int32) {
-	// & 0x7FFFFFFF: cater for integer overflow
-	// Allowed range is 0x01 to 0x7FFFFFFF. This
-	// will still result in a single invalid value
-	// of 0x00 every ~2 billion PDUs (not too bad):
-	if v = atomic.AddInt32(&sequenceNumber, 1) & 0x7FFFFFFF; v <= 0 {
-		v = 1
-	}
-	return
-}
 
 // PDU represents PDU interface.
 type PDU interface {
@@ -128,6 +114,8 @@ func (c *base) unmarshalOptionalBody(body []byte) (err error) {
 		var field Field
 		if err = field.Unmarshal(buf); err == nil {
 			c.OptionalParameters[field.Tag] = field
+		} else {
+			return
 		}
 	}
 	return
@@ -196,7 +184,9 @@ func Parse(r io.Reader) (pdu PDU, err error) {
 	if pdu, err = CreatePDUFromCmdID(header.CommandID); err == nil {
 		buf := utils.NewBuffer(make([]byte, 0, header.CommandLength))
 		_, _ = buf.Write(headerBytes[:])
-		_, _ = buf.Write(bodyBytes)
+		if len(bodyBytes) > 0 {
+			_, _ = buf.Write(bodyBytes)
+		}
 		err = pdu.Unmarshal(buf)
 	}
 

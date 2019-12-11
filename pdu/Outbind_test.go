@@ -11,6 +11,7 @@ import (
 func TestOutbind(t *testing.T) {
 	v := NewOutbind().(*Outbind)
 	require.False(t, v.CanResponse())
+	require.Nil(t, v.GetResponse())
 	require.True(t, v.IsOk())
 
 	v.SystemID = "inventory"

@@ -5,7 +5,7 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// DeliverSMResp represents deliver_sm resp.
+// DeliverSMResp PDU.
 type DeliverSMResp struct {
 	base
 	MessageID string

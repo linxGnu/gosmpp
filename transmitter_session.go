@@ -98,7 +98,7 @@ func (s *TransmitterSession) rebind() {
 		// close underlying Transmitter
 		_ = s.close()
 
-		for {
+		for atomic.LoadInt32(&s.state) == 0 {
 			conn, err := ConnectAsTransmitter(s.dialer, s.auth)
 			if err != nil {
 				if s.settings.OnRebindingError != nil {

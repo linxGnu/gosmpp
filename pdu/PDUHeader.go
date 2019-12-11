@@ -2,9 +2,21 @@ package pdu
 
 import (
 	"encoding/binary"
+	"sync/atomic"
 
 	"github.com/linxGnu/gosmpp/utils"
 )
+
+func nextSequenceNumber(s *int32) (v int32) {
+	// & 0x7FFFFFFF: cater for integer overflow
+	// Allowed range is 0x01 to 0x7FFFFFFF. This
+	// will still result in a single invalid value
+	// of 0x00 every ~2 billion PDUs (not too bad):
+	if v = atomic.AddInt32(s, 1) & 0x7FFFFFFF; v <= 0 {
+		v = 1
+	}
+	return
+}
 
 // Header represents PDU header.
 type Header struct {
@@ -37,9 +49,11 @@ func (c *Header) Unmarshal(b *utils.ByteBuffer) (err error) {
 	return
 }
 
+var sequenceNumber int32
+
 // AssignSequenceNumber assigns sequence number auto-incrementally.
 func (c *Header) AssignSequenceNumber() {
-	c.SetSequenceNumber(nextSequenceNumber())
+	c.SetSequenceNumber(nextSequenceNumber(&sequenceNumber))
 }
 
 // ResetSequenceNumber resets sequence number.
