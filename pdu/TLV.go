@@ -1,6 +1,6 @@
-package tlv
+package pdu
 
-// Copied from: https://github.com/fiorix/go-smpp/blob/master/smpp/pdu/pdutlv/tlv_types.go
+// Source code in this file is copied from: https://github.com/fiorix
 import (
 	"encoding/binary"
 	"encoding/hex"
@@ -83,6 +83,7 @@ func (t *Field) String() string {
 func (t *Field) Marshal(w *utils.ByteBuffer) {
 	if len(t.Data) > 0 {
 		w.Grow(4 + len(t.Data))
+
 		w.WriteShort(int16(t.Tag))
 		w.WriteShort(int16(len(t.Data)))
 		_, _ = w.Write(t.Data)

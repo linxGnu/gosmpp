@@ -5,10 +5,9 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// SubmitSMResp represents deliver_sm resp.
+// SubmitSMResp PDU.
 type SubmitSMResp struct {
 	base
-	Request   SubmitSM
 	MessageID string
 }
 
@@ -20,17 +19,6 @@ func NewSubmitSMResp() PDU {
 	}
 	c.CommandID = data.SUBMIT_SM_RESP
 	return c
-}
-
-// NewSubmitSMRespFromReq returns new SubmitSMResp.
-func NewSubmitSMRespFromReq(req SubmitSM) (c *SubmitSMResp) {
-	c = &SubmitSMResp{
-		base:      newBase(),
-		Request:   req,
-		MessageID: data.DFLT_MSGID,
-	}
-	c.CommandID = data.SUBMIT_SM_RESP
-	return
 }
 
 // CanResponse implements PDU interface.

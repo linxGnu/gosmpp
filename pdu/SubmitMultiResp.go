@@ -8,7 +8,6 @@ import (
 // SubmitMultiResp PDU.
 type SubmitMultiResp struct {
 	base
-	Request       SubmitMulti
 	MessageID     string
 	UnsuccessSMEs UnsuccessSMEs
 }
@@ -16,22 +15,12 @@ type SubmitMultiResp struct {
 // NewSubmitMultiResp returns new SubmitMultiResp.
 func NewSubmitMultiResp() PDU {
 	c := &SubmitMultiResp{
-		base:      newBase(),
-		MessageID: data.DFLT_MSGID,
+		base:          newBase(),
+		MessageID:     data.DFLT_MSGID,
+		UnsuccessSMEs: NewUnsuccessSMEs(),
 	}
 	c.CommandID = data.SUBMIT_MULTI_RESP
 	return c
-}
-
-// NewSubmitMultiRespFromReq returns new SubmitMultiResp.
-func NewSubmitMultiRespFromReq(req SubmitMulti) (c *SubmitMultiResp) {
-	c = &SubmitMultiResp{
-		base:      newBase(),
-		Request:   req,
-		MessageID: data.DFLT_MSGID,
-	}
-	c.CommandID = data.SUBMIT_MULTI_RESP
-	return
 }
 
 // CanResponse implements PDU interface.

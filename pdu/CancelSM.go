@@ -5,7 +5,9 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// CancelSM PDU.
+// CancelSM PDU is issued by the ESME to cancel one or more previously submitted short messages
+// that are still pending delivery. The command may specify a particular message to cancel, or
+// all messages for a particular source, destination and service_type are to be cancelled.
 type CancelSM struct {
 	base
 	ServiceType string
@@ -34,7 +36,7 @@ func (c *CancelSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *CancelSM) GetResponse() PDU {
-	return NewCancelSMRespFromReq(*c)
+	return NewCancelSMResp()
 }
 
 // Marshal implements PDU interface.

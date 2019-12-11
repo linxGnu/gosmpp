@@ -5,7 +5,8 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// DataSM PDU.
+// DataSM PDU is used to transfer data between the SMSC and the ESME.
+// It may be used by both the ESME and SMSC.
 type DataSM struct {
 	base
 	ServiceType        string
@@ -21,8 +22,8 @@ func NewDataSM() PDU {
 	c := &DataSM{
 		base:               newBase(),
 		ServiceType:        data.DFLT_SRVTYPE,
-		SourceAddr:         NewAddressWithMaxLength(data.SM_DATA_ADDR_LEN),
-		DestAddr:           NewAddressWithMaxLength(data.SM_DATA_ADDR_LEN),
+		SourceAddr:         NewAddress(),
+		DestAddr:           NewAddress(),
 		EsmClass:           data.DFLT_ESM_CLASS,
 		RegisteredDelivery: data.DFLT_REG_DELIVERY,
 		DataCoding:         data.DFLT_DATA_CODING,
@@ -38,7 +39,7 @@ func (c *DataSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *DataSM) GetResponse() PDU {
-	return NewDataSMRespFromReq(*c)
+	return NewDataSMResp()
 }
 
 // Marshal implements PDU interface.

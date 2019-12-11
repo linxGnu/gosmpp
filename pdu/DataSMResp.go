@@ -8,7 +8,6 @@ import (
 // DataSMResp PDU.
 type DataSMResp struct {
 	base
-	Request   DataSM
 	MessageID string
 }
 
@@ -20,17 +19,6 @@ func NewDataSMResp() PDU {
 	}
 	c.CommandID = data.DATA_SM_RESP
 	return c
-}
-
-// NewDataSMRespFromReq returns DataSMResp.
-func NewDataSMRespFromReq(req DataSM) (c *DataSMResp) {
-	c = &DataSMResp{
-		base:      newBase(),
-		Request:   req,
-		MessageID: data.DFLT_MSGID,
-	}
-	c.CommandID = data.DATA_SM_RESP
-	return
 }
 
 // CanResponse implements PDU interface.

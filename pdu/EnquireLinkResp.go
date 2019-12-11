@@ -8,7 +8,6 @@ import (
 // EnquireLinkResp PDU.
 type EnquireLinkResp struct {
 	base
-	Request EnquireLink
 }
 
 // NewEnquireLinkResp returns EnquireLinkResp.
@@ -18,16 +17,6 @@ func NewEnquireLinkResp() PDU {
 	}
 	c.CommandID = data.ENQUIRE_LINK_RESP
 	return c
-}
-
-// NewEnquireLinkRespFromReq returns EnquireLinkResp.
-func NewEnquireLinkRespFromReq(req EnquireLink) (c *EnquireLinkResp) {
-	c = &EnquireLinkResp{
-		base:    newBase(),
-		Request: req,
-	}
-	c.CommandID = data.ENQUIRE_LINK_RESP
-	return
 }
 
 // CanResponse implements PDU interface.

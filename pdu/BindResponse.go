@@ -8,15 +8,13 @@ import (
 // BindResp PDU.
 type BindResp struct {
 	base
-	Request  BindRequest
 	SystemID string
 }
 
 // NewBindResp returns BindResp.
 func NewBindResp(req BindRequest) (c *BindResp) {
 	c = &BindResp{
-		base:    newBase(),
-		Request: req,
+		base: newBase(),
 	}
 
 	switch req.BindingType {
@@ -74,6 +72,7 @@ func (c *BindResp) GetResponse() PDU {
 func (c *BindResp) Marshal(b *utils.ByteBuffer) {
 	c.base.marshal(b, func(w *utils.ByteBuffer) {
 		w.Grow(len(c.SystemID) + 1)
+
 		_ = w.WriteCString(c.SystemID)
 	})
 }

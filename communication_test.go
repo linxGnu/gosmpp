@@ -9,6 +9,7 @@ import (
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/pdu"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -164,7 +165,7 @@ func TestSubmitSM(t *testing.T) {
 				require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
 
 				_mess, err := pd.Message.GetMessageWithEncoding(data.UCS2)
-				require.Nil(t, err)
+				assert.Nil(t, err)
 				if mess == _mess {
 					atomic.AddInt32(&countDeliverSM, 1)
 				}
@@ -189,7 +190,7 @@ func TestSubmitSM(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	time.Sleep(30 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	// wait response received
 	require.True(t, atomic.LoadInt32(&countSubmitSMResp) == 10)

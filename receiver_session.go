@@ -98,7 +98,7 @@ func (s *ReceiverSession) rebind() {
 		// close underlying Receiver
 		_ = s.close()
 
-		for {
+		for atomic.LoadInt32(&s.state) == 0 {
 			conn, err := ConnectAsReceiver(s.dialer, s.auth)
 			if err != nil {
 				if s.settings.OnRebindingError != nil {
