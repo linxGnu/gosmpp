@@ -40,9 +40,7 @@ func TestBindRequest(t *testing.T) {
 		req.Password = "password"
 		req.SystemType = "only"
 		req.InterfaceVersion = 44
-		require.Nil(t, req.AddressRange.SetAddressRange("emptY"))
-		req.AddressRange.SetTon(23)
-		req.AddressRange.SetNpi(101)
+		req.AddressRange, _ = NewAddressRangeWithTonNpiAddr(23, 101, "emptY")
 
 		validate(t,
 			req,

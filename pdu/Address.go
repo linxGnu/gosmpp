@@ -31,6 +31,13 @@ func NewAddressWithTonNpi(ton, npi byte) Address {
 	return Address{ton: ton, npi: npi}
 }
 
+// NewAddressWithTonNpiAddr returns new address with ton, npi, addr string.
+func NewAddressWithTonNpiAddr(ton, npi byte, addr string) (a Address, err error) {
+	a = NewAddressWithTonNpi(ton, npi)
+	err = a.SetAddress(addr)
+	return
+}
+
 // Unmarshal from buffer.
 func (c *Address) Unmarshal(b *utils.ByteBuffer) (err error) {
 	if c.ton, err = b.ReadByte(); err == nil {

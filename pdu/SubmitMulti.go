@@ -5,7 +5,9 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// SubmitMulti PDU.
+// SubmitMulti PDU is used to submit an SMPP message for delivery to multiple recipients
+// or to one or more Distribution Lists. The submit_multi PDU does not support
+// the transaction message mode.
 type SubmitMulti struct {
 	base
 	ServiceType          string

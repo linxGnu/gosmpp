@@ -5,7 +5,9 @@ import (
 	"github.com/linxGnu/gosmpp/utils"
 )
 
-// SubmitSM PDU.
+// SubmitSM PDU is used by an ESME to submit a short message to the SMSC for onward
+// transmission to a specified short message entity (SME). The submit_sm PDU does
+// not support the transaction message mode.
 type SubmitSM struct {
 	base
 	ServiceType          string

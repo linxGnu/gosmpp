@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +37,9 @@ func TestSubmitMulti(t *testing.T) {
 	v.ProtocolID = 99
 	v.PriorityFlag = 61
 	v.RegisteredDelivery = 83
-	_ = v.Message.SetMessageWithEncoding("nghắ nghiêng nghiễng ngả", data.UCS2)
+
+	v.Message, err = NewShortMessageWithEncoding("nghắ nghiêng nghiễng ngả", data.UCS2)
+	require.Nil(t, err)
 	v.Message.message = ""
 
 	validate(t,

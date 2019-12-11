@@ -4,62 +4,39 @@ import (
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 
 	"github.com/stretchr/testify/require"
 )
 
-var submitSMPayload = fromHex("0000003f00000004000000000000000200010034363730313133333131310001013436373039373731333337004000000000000001000803240103747B7374")
-
 func TestSubmitSM(t *testing.T) {
-	check := func(s *SubmitSM) {
-		require.True(t, s.CanResponse())
-		resp := s.GetResponse().(*SubmitSMResp)
-		require.Empty(t, resp.MessageID)
-		require.EqualValues(t, data.SUBMIT_SM_RESP, resp.CommandID)
+	v := NewSubmitSM().(*SubmitSM)
+	require.True(t, v.CanResponse())
 
-		require.EqualValues(t, 63, s.CommandLength)
-		require.EqualValues(t, 4, s.CommandID)
-		require.EqualValues(t, 0, s.CommandStatus)
-		require.EqualValues(t, 2, s.SequenceNumber)
-		require.Equal(t, "", s.ServiceType)
-		require.EqualValues(t, 1, s.SourceAddr.ton)
-		require.EqualValues(t, 0, s.SourceAddr.npi)
-		require.EqualValues(t, "46701133111", s.SourceAddr.Address())
-		require.EqualValues(t, 1, s.DestAddr.ton)
-		require.EqualValues(t, 1, s.DestAddr.npi)
-		require.EqualValues(t, "46709771337", s.DestAddr.Address())
-		require.EqualValues(t, 64, s.EsmClass)
-		require.EqualValues(t, 0, s.ProtocolID)
-		require.EqualValues(t, 0, s.PriorityFlag)
-		require.Equal(t, "", s.ScheduleDeliveryTime)
-		require.Equal(t, "", s.ValidityPeriod)
-		require.EqualValues(t, 0, s.RegisteredDelivery)
-		require.EqualValues(t, 0, s.ReplaceIfPresentFlag)
-		require.EqualValues(t, 0, s.Message.SmDefaultMsgID)
-		require.Equal(t, data.ASCII, s.Message.enc)
-		message, err := s.Message.GetMessageWithEncoding(data.ASCII)
-		require.Nil(t, err)
-		require.EqualValues(t, "$t{st", message)
+	validate(t,
+		v.GetResponse(),
+		"0000001180000004000000000000000100",
+		data.SUBMIT_SM_RESP,
+	)
 
-	}
+	v.ServiceType = "abc"
+	_ = v.SourceAddr.SetAddress("Alicer")
+	v.SourceAddr.SetTon(28)
+	v.SourceAddr.SetNpi(29)
 
-	{
-		b := utils.NewBuffer(submitSMPayload)
-		pdu, err := Parse(b)
-		require.Nil(t, err)
-		check(pdu.(*SubmitSM))
-	}
+	_ = v.DestAddr.SetAddress("Bob")
+	v.DestAddr.SetTon(79)
+	v.DestAddr.SetNpi(80)
 
-	{
-		b := utils.NewBuffer(submitSMPayload)
-		s := NewSubmitSM().(*SubmitSM)
-		require.Nil(t, s.Unmarshal(b))
-		check(s)
+	v.EsmClass = 77
+	v.ProtocolID = 99
+	v.PriorityFlag = 61
+	v.RegisteredDelivery = 83
+	_ = v.Message.SetMessageWithEncoding("nghắ nghiêng nghiễng ngả", data.UCS2)
+	v.Message.message = ""
 
-		// Check marshaling
-		vb := utils.NewBuffer(nil)
-		s.Marshal(vb)
-		require.Equal(t, submitSMPayload, vb.Bytes())
-	}
+	validate(t,
+		v,
+		"0000005d000000040000000000000001616263001c1d416c69636572004f50426f62004d633d00005300080030006e006700681eaf0020006e00670068006900ea006e00670020006e0067006800691ec5006e00670020006e00671ea3",
+		data.SUBMIT_SM,
+	)
 }

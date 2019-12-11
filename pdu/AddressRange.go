@@ -15,20 +15,27 @@ type AddressRange struct {
 }
 
 // NewAddressRange create new AddressRange with default max length.
-func NewAddressRange() *AddressRange {
-	return &AddressRange{ton: data.GetDefaultTon(), npi: data.GetDefaultNpi()}
+func NewAddressRange() AddressRange {
+	return AddressRange{ton: data.GetDefaultTon(), npi: data.GetDefaultNpi()}
 }
 
 // NewAddressRangeWithAddr create new AddressRange.
-func NewAddressRangeWithAddr(addr string) (a *AddressRange, err error) {
+func NewAddressRangeWithAddr(addr string) (a AddressRange, err error) {
 	a = NewAddressRange()
 	err = a.SetAddressRange(addr)
 	return
 }
 
 // NewAddressRangeWithTonNpi create new AddressRange with ton, npi.
-func NewAddressRangeWithTonNpi(ton, npi byte) *AddressRange {
-	return &AddressRange{ton: ton, npi: npi}
+func NewAddressRangeWithTonNpi(ton, npi byte) AddressRange {
+	return AddressRange{ton: ton, npi: npi}
+}
+
+// NewAddressRangeWithTonNpiAddr returns new address with ton, npi, addr string.
+func NewAddressRangeWithTonNpiAddr(ton, npi byte, addr string) (a AddressRange, err error) {
+	a = NewAddressRangeWithTonNpi(ton, npi)
+	err = a.SetAddressRange(addr)
+	return
 }
 
 // Unmarshal from buffer.

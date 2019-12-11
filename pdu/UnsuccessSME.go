@@ -21,17 +21,19 @@ func NewUnsuccessSME() (c UnsuccessSME) {
 }
 
 // NewUnsuccessSMEWithAddr returns new UnsuccessSME with address.
-func NewUnsuccessSMEWithAddr(addr string) (c UnsuccessSME, err error) {
+func NewUnsuccessSMEWithAddr(addr string, errCode int32) (c UnsuccessSME, err error) {
 	c = NewUnsuccessSME()
-	err = c.SetAddress(addr)
+	if err = c.SetAddress(addr); err == nil {
+		c.SetErrorStatusCode(errCode)
+	}
 	return
 }
 
-// NewUnsuccessSMEWithTonNpi create new address with ton, npi.
-func NewUnsuccessSMEWithTonNpi(ton, npi byte) UnsuccessSME {
+// NewUnsuccessSMEWithTonNpi create new address with ton, npi and error code.
+func NewUnsuccessSMEWithTonNpi(ton, npi byte, errCode int32) UnsuccessSME {
 	return UnsuccessSME{
 		Address:         NewAddressWithTonNpi(ton, npi),
-		errorStatusCode: data.ESME_ROK,
+		errorStatusCode: errCode,
 	}
 }
 
@@ -71,8 +73,8 @@ func NewUnsuccessSMEs() (u UnsuccessSMEs) {
 }
 
 // Add to list.
-func (c *UnsuccessSMEs) Add(u UnsuccessSME) {
-	c.l = append(c.l, u)
+func (c *UnsuccessSMEs) Add(us ...UnsuccessSME) {
+	c.l = append(c.l, us...)
 }
 
 // Get list.
