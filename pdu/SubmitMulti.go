@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // SubmitMulti PDU is used to submit an SMPP message for delivery to multiple recipients
@@ -55,8 +54,8 @@ func (c *SubmitMulti) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *SubmitMulti) Marshal(b *utils.ByteBuffer) {
-	c.base.marshal(b, func(b *utils.ByteBuffer) {
+func (c *SubmitMulti) Marshal(b *ByteBuffer) {
+	c.base.marshal(b, func(b *ByteBuffer) {
 		b.Grow(len(c.ServiceType) + len(c.ScheduleDeliveryTime) + len(c.ValidityPeriod) + 10)
 
 		_ = b.WriteCString(c.ServiceType)
@@ -74,8 +73,8 @@ func (c *SubmitMulti) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *SubmitMulti) Unmarshal(b *utils.ByteBuffer) error {
-	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+func (c *SubmitMulti) Unmarshal(b *ByteBuffer) error {
+	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		if c.ServiceType, err = b.ReadCString(); err == nil {
 			if err = c.SourceAddr.Unmarshal(b); err == nil {
 				if err = c.DestAddrs.Unmarshal(b); err == nil {

@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // GenerickNack PDU is a generic negative acknowledgement to an SMPP PDU submitted
@@ -39,11 +38,11 @@ func (c *GenerickNack) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *GenerickNack) Marshal(b *utils.ByteBuffer) {
+func (c *GenerickNack) Marshal(b *ByteBuffer) {
 	c.base.marshal(b, nil)
 }
 
 // Unmarshal implements PDU interface.
-func (c *GenerickNack) Unmarshal(b *utils.ByteBuffer) error {
+func (c *GenerickNack) Unmarshal(b *ByteBuffer) error {
 	return c.base.unmarshal(b, nil)
 }

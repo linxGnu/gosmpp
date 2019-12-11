@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // AddressRange smpp address range of src and dst.
@@ -39,7 +38,7 @@ func NewAddressRangeWithTonNpiAddr(ton, npi byte, addr string) (a AddressRange, 
 }
 
 // Unmarshal from buffer.
-func (c *AddressRange) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *AddressRange) Unmarshal(b *ByteBuffer) (err error) {
 	if c.ton, err = b.ReadByte(); err == nil {
 		if c.npi, err = b.ReadByte(); err == nil {
 			c.addressRange, err = b.ReadCString()
@@ -49,7 +48,7 @@ func (c *AddressRange) Unmarshal(b *utils.ByteBuffer) (err error) {
 }
 
 // Marshal to buffer.
-func (c *AddressRange) Marshal(b *utils.ByteBuffer) {
+func (c *AddressRange) Marshal(b *ByteBuffer) {
 	b.Grow(3 + len(c.addressRange))
 
 	_ = b.WriteByte(c.ton)

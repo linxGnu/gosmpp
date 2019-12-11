@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // DestinationAddress represents Address or Distribution List based on destination flag.
@@ -33,7 +32,7 @@ func NewDestinationAddressFromDistributionList(name string) (c DestinationAddres
 }
 
 // Unmarshal from buffer.
-func (c *DestinationAddress) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *DestinationAddress) Unmarshal(b *ByteBuffer) (err error) {
 	if c.destFlag, err = b.ReadByte(); err == nil {
 		switch c.destFlag {
 
@@ -52,7 +51,7 @@ func (c *DestinationAddress) Unmarshal(b *utils.ByteBuffer) (err error) {
 }
 
 // Marshal to buffer.
-func (c *DestinationAddress) Marshal(b *utils.ByteBuffer) {
+func (c *DestinationAddress) Marshal(b *ByteBuffer) {
 	switch c.destFlag {
 	case data.SM_DEST_DL_NAME:
 		_ = b.WriteByte(data.SM_DEST_DL_NAME)
@@ -125,7 +124,7 @@ func (c *DestinationAddresses) Get() []DestinationAddress {
 }
 
 // Unmarshal from buffer.
-func (c *DestinationAddresses) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *DestinationAddresses) Unmarshal(b *ByteBuffer) (err error) {
 	var n byte
 	if n, err = b.ReadByte(); err == nil {
 		c.l = make([]DestinationAddress, n)
@@ -141,7 +140,7 @@ func (c *DestinationAddresses) Unmarshal(b *utils.ByteBuffer) (err error) {
 }
 
 // Marshal to buffer.
-func (c *DestinationAddresses) Marshal(b *utils.ByteBuffer) {
+func (c *DestinationAddresses) Marshal(b *ByteBuffer) {
 	n := byte(len(c.l))
 	_ = b.WriteByte(n)
 

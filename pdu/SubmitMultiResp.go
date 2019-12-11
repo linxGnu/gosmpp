@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // SubmitMultiResp PDU.
@@ -34,8 +33,8 @@ func (c *SubmitMultiResp) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (c *SubmitMultiResp) Marshal(b *utils.ByteBuffer) {
-	c.base.marshal(b, func(b *utils.ByteBuffer) {
+func (c *SubmitMultiResp) Marshal(b *ByteBuffer) {
+	c.base.marshal(b, func(b *ByteBuffer) {
 		b.Grow(len(c.MessageID) + 1)
 
 		_ = b.WriteCString(c.MessageID)
@@ -44,8 +43,8 @@ func (c *SubmitMultiResp) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *SubmitMultiResp) Unmarshal(b *utils.ByteBuffer) error {
-	return c.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+func (c *SubmitMultiResp) Unmarshal(b *ByteBuffer) error {
+	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		if c.MessageID, err = b.ReadCString(); err == nil {
 			err = c.UnsuccessSMEs.Unmarshal(b)
 		}

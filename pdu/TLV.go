@@ -4,8 +4,6 @@ package pdu
 import (
 	"encoding/binary"
 	"encoding/hex"
-
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // Tag is the tag of a Tag-Length-Value (TLV) field.
@@ -80,7 +78,7 @@ func (t *Field) String() string {
 }
 
 // Marshal to writer.
-func (t *Field) Marshal(w *utils.ByteBuffer) {
+func (t *Field) Marshal(w *ByteBuffer) {
 	if len(t.Data) > 0 {
 		w.Grow(4 + len(t.Data))
 
@@ -91,7 +89,7 @@ func (t *Field) Marshal(w *utils.ByteBuffer) {
 }
 
 // Unmarshal from reader.
-func (t *Field) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (t *Field) Unmarshal(b *ByteBuffer) (err error) {
 	var tag, ln int16
 	if tag, err = b.ReadShort(); err == nil {
 		t.Tag = Tag(tag)

@@ -3,7 +3,6 @@ package pdu
 import (
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/errors"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // ShortMessage message.
@@ -78,7 +77,7 @@ func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (string, error)
 }
 
 // Marshal implements PDU interface.
-func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
+func (c *ShortMessage) Marshal(b *ByteBuffer) {
 	n := byte(len(c.messageData))
 	b.Grow(int(n) + 3)
 
@@ -100,7 +99,7 @@ func (c *ShortMessage) Marshal(b *utils.ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *ShortMessage) Unmarshal(b *utils.ByteBuffer) (err error) {
+func (c *ShortMessage) Unmarshal(b *ByteBuffer) (err error) {
 	var dataCoding, n byte
 	if !c.withoutDataCoding {
 		if dataCoding, err = b.ReadByte(); err == nil {

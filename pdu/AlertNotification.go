@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"github.com/linxGnu/gosmpp/data"
-	"github.com/linxGnu/gosmpp/utils"
 )
 
 // AlertNotification PDU is sent by the SMSC to the ESME, when the SMSC has detected that
@@ -34,16 +33,16 @@ func (a *AlertNotification) GetResponse() PDU {
 }
 
 // Marshal implements PDU interface.
-func (a *AlertNotification) Marshal(b *utils.ByteBuffer) {
-	a.base.marshal(b, func(b *utils.ByteBuffer) {
+func (a *AlertNotification) Marshal(b *ByteBuffer) {
+	a.base.marshal(b, func(b *ByteBuffer) {
 		a.SourceAddr.Marshal(b)
 		a.EsmeAddr.Marshal(b)
 	})
 }
 
 // Unmarshal implements PDU interface.
-func (a *AlertNotification) Unmarshal(b *utils.ByteBuffer) error {
-	return a.base.unmarshal(b, func(b *utils.ByteBuffer) (err error) {
+func (a *AlertNotification) Unmarshal(b *ByteBuffer) error {
+	return a.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		if err = a.SourceAddr.Unmarshal(b); err == nil {
 			err = a.EsmeAddr.Unmarshal(b)
 		}
