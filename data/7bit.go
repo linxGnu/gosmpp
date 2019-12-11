@@ -1,5 +1,6 @@
 package data
 
+// Source code in this file is copied from: https://github.com/fiorix
 import (
 	"bytes"
 	"errors"

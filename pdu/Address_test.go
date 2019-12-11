@@ -31,17 +31,11 @@ func TestAddress(t *testing.T) {
 		require.NotNil(t, err)
 	})
 
-	t.Run("newWithAddrLimit", func(t *testing.T) {
-		a := NewAddressWithMaxLength(10)
-		require.NotNil(t, a.SetAddress("12345678901"))
-	})
-
 	t.Run("newTonNpi", func(t *testing.T) {
-		a := NewAddressWithTonNpiLen(3, 7, 9)
+		a := NewAddressWithTonNpi(3, 7)
 		require.Nil(t, a.SetAddress("123456789"))
 		require.EqualValues(t, 3, a.Ton())
 		require.EqualValues(t, 7, a.Npi())
-		require.EqualValues(t, 9, a.maxAddressLength)
 		require.Equal(t, "123456789", a.Address())
 		a.SetTon(11)
 		a.SetNpi(19)

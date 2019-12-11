@@ -115,8 +115,8 @@ func NewDestinationAddresses() (u DestinationAddresses) {
 }
 
 // Add to list.
-func (c *DestinationAddresses) Add(u DestinationAddress) {
-	c.l = append(c.l, u)
+func (c *DestinationAddresses) Add(addresses ...DestinationAddress) {
+	c.l = append(c.l, addresses...)
 }
 
 // Get list.

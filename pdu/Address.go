@@ -9,15 +9,14 @@ import (
 
 // Address smpp address of src and dst.
 type Address struct {
-	ton              byte
-	npi              byte
-	address          string
-	maxAddressLength int
+	ton     byte
+	npi     byte
+	address string
 }
 
 // NewAddress returns new address with default max length.
 func NewAddress() Address {
-	return Address{ton: data.GetDefaultTon(), npi: data.GetDefaultNpi(), maxAddressLength: data.SM_ADDR_LEN}
+	return Address{ton: data.GetDefaultTon(), npi: data.GetDefaultNpi()}
 }
 
 // NewAddressWithAddr returns new address.
@@ -27,16 +26,9 @@ func NewAddressWithAddr(addr string) (a Address, err error) {
 	return
 }
 
-// NewAddressWithMaxLength returns new address, set max length in C of address
-func NewAddressWithMaxLength(len int) (a Address) {
-	a = NewAddress()
-	a.maxAddressLength = len
-	return
-}
-
-// NewAddressWithTonNpiLen returns new address with ton, npi, max length.
-func NewAddressWithTonNpiLen(ton, npi byte, len int) Address {
-	return Address{ton: ton, npi: npi, maxAddressLength: len}
+// NewAddressWithTonNpi returns new address with ton, npi.
+func NewAddressWithTonNpi(ton, npi byte) Address {
+	return Address{ton: ton, npi: npi}
 }
 
 // Unmarshal from buffer.
@@ -70,8 +62,8 @@ func (c *Address) SetNpi(npi byte) {
 
 // SetAddress sets address.
 func (c *Address) SetAddress(addr string) (err error) {
-	if c.maxAddressLength > 0 && len(addr) > c.maxAddressLength {
-		err = fmt.Errorf("Address len exceed limit. (%d > %d)", len(addr), c.maxAddressLength)
+	if len(addr) > data.SM_ADDR_LEN {
+		err = fmt.Errorf("Address len exceed limit. (%d > %d)", len(addr), data.SM_ADDR_LEN)
 	} else {
 		c.address = addr
 	}
@@ -79,16 +71,16 @@ func (c *Address) SetAddress(addr string) (err error) {
 }
 
 // Ton returns assigned ton.
-func (c *Address) Ton() byte {
+func (c Address) Ton() byte {
 	return c.ton
 }
 
 // Npi returns assigned npi.
-func (c *Address) Npi() byte {
+func (c Address) Npi() byte {
 	return c.npi
 }
 
 // Address returns assigned address (in string).
-func (c *Address) Address() string {
+func (c Address) Address() string {
 	return c.address
 }

@@ -15,8 +15,9 @@ type SubmitMultiResp struct {
 // NewSubmitMultiResp returns new SubmitMultiResp.
 func NewSubmitMultiResp() PDU {
 	c := &SubmitMultiResp{
-		base:      newBase(),
-		MessageID: data.DFLT_MSGID,
+		base:          newBase(),
+		MessageID:     data.DFLT_MSGID,
+		UnsuccessSMEs: NewUnsuccessSMEs(),
 	}
 	c.CommandID = data.SUBMIT_MULTI_RESP
 	return c

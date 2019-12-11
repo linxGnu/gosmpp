@@ -1,6 +1,6 @@
 package pdu
 
-// Copied from: https://github.com/fiorix/go-smpp/blob/master/smpp/pdu/pdutlv/tlv_types.go
+// Source code in this file is copied from: https://github.com/fiorix
 import (
 	"encoding/binary"
 	"encoding/hex"

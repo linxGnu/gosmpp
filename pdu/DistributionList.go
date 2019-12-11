@@ -42,6 +42,6 @@ func (c *DistributionList) SetName(name string) (err error) {
 }
 
 // Name returns name of DistributionList
-func (c *DistributionList) Name() string {
+func (c DistributionList) Name() string {
 	return c.name
 }

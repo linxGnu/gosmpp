@@ -27,17 +27,10 @@ func NewUnsuccessSMEWithAddr(addr string) (c UnsuccessSME, err error) {
 	return
 }
 
-// NewUnsuccessSMEWithMaxLength returns UnsuccessSME with max length in C of address.
-func NewUnsuccessSMEWithMaxLength(len int) (c UnsuccessSME) {
-	c = NewUnsuccessSME()
-	c.maxAddressLength = len
-	return
-}
-
-// NewUnsuccessSMEWithTonNpiLen create new address with ton, npi, max length.
-func NewUnsuccessSMEWithTonNpiLen(ton, npi byte, len int) UnsuccessSME {
+// NewUnsuccessSMEWithTonNpi create new address with ton, npi.
+func NewUnsuccessSMEWithTonNpi(ton, npi byte) UnsuccessSME {
 	return UnsuccessSME{
-		Address:         NewAddressWithTonNpiLen(ton, npi, len),
+		Address:         NewAddressWithTonNpi(ton, npi),
 		errorStatusCode: data.ESME_ROK,
 	}
 }
