@@ -194,5 +194,5 @@ func TestSubmitSM(t *testing.T) {
 
 	// wait response received
 	require.True(t, atomic.LoadInt32(&countSubmitSMResp) == 10)
-	require.True(t, atomic.LoadInt32(&countDeliverSM) > 3)
+	require.True(t, atomic.LoadInt32(&countDeliverSM) > 0)
 }
