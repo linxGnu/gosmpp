@@ -16,22 +16,13 @@ type ShortMessage struct {
 
 // NewShortMessage returns new ShortMessage.
 func NewShortMessage(message string) (s ShortMessage, err error) {
-	err = s.SetMessage(message)
+	err = s.SetMessageWithEncoding(message, data.GSM7BIT)
 	return
 }
 
 // NewShortMessageWithEncoding returns new ShortMessage with predefined encoding.
 func NewShortMessageWithEncoding(message string, enc data.Encoding) (s ShortMessage, err error) {
 	err = s.SetMessageWithEncoding(message, enc)
-	return
-}
-
-// SetMessage set message and its encoded data.
-func (c *ShortMessage) SetMessage(message string) (err error) {
-	err = c.SetMessageWithEncoding(message, data.GSM7BIT)
-	if err != nil {
-		err = c.SetMessageWithEncoding(message, data.ASCII)
-	}
 	return
 }
 
@@ -49,31 +40,21 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 }
 
 // GetMessage returns underlying message.
-func (c *ShortMessage) GetMessage() (string, error) {
+func (c *ShortMessage) GetMessage() (st string, err error) {
 	enc := c.enc
 	if enc == nil {
 		enc = data.GSM7BIT
 	}
-
-	tmp, err := c.GetMessageWithEncoding(enc)
-	if err != nil {
-		return c.GetMessageWithEncoding(data.ASCII)
-	}
-
-	return tmp, err
+	st, err = c.GetMessageWithEncoding(enc)
+	return
 }
 
 // GetMessageWithEncoding returns (decoded) underlying message.
-func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (string, error) {
-	if len(c.messageData) == 0 {
-		return "", nil
+func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err error) {
+	if len(c.messageData) > 0 {
+		st, err = enc.Decode(c.messageData)
 	}
-
-	if enc == nil {
-		return string(c.messageData), nil
-	}
-
-	return enc.Decode(c.messageData)
+	return
 }
 
 // Marshal implements PDU interface.

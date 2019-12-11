@@ -1,10 +1,26 @@
 package pdu
 
 import (
+	"encoding/hex"
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func fromHex(h string) (v []byte) {
+	var err error
+	v, err = hex.DecodeString(h)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return
+}
+
+func toHex(v []byte) (h string) {
+	h = hex.EncodeToString(v)
+	return
+}
 
 func validate(t *testing.T, p PDU, hexValue string, expectCommandID int32) {
 	p.ResetSequenceNumber()

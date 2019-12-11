@@ -1,21 +1,10 @@
 package pdu
 
 import (
-	"encoding/hex"
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
-
-func fromHex(h string) (v []byte) {
-	var err error
-	v, err = hex.DecodeString(h)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return
-}
 
 func TestAddress(t *testing.T) {
 	t.Run("new", func(t *testing.T) {
