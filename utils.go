@@ -34,17 +34,15 @@ func connect(dialer Dialer, addr string, bindReq *pdu.BindRequest) (c *Connectio
 		resp *pdu.BindResp
 	)
 
-loop:
 	for {
 		if p, err = pdu.Parse(c); err != nil {
 			_ = conn.Close()
 			return
 		}
 
-		switch pd := p.(type) {
-		case *pdu.BindResp:
+		if pd, ok := p.(*pdu.BindResp); ok {
 			resp = pd
-			break loop
+			break
 		}
 	}
 

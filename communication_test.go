@@ -124,10 +124,42 @@ func TestReceiver(t *testing.T) {
 	}()
 }
 
+var (
+	countSubmitSMResp, countDeliverSM int32
+)
+
+func handlePDU(t *testing.T) func(pdu.PDU, bool) {
+	return func(p pdu.PDU, responded bool) {
+		switch pd := p.(type) {
+		case *pdu.SubmitSMResp:
+			require.False(t, responded)
+			require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
+			require.NotZero(t, len(pd.MessageID))
+			atomic.AddInt32(&countSubmitSMResp, 1)
+
+		case *pdu.GenerickNack:
+			require.False(t, responded)
+			t.Fatal(pd)
+
+		case *pdu.DataSM:
+			require.True(t, responded)
+			fmt.Println(pd.Header)
+
+		case *pdu.DeliverSM:
+			require.True(t, responded)
+			require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
+
+			_mess, err := pd.Message.GetMessageWithEncoding(data.UCS2)
+			assert.Nil(t, err)
+			if mess == _mess {
+				atomic.AddInt32(&countDeliverSM, 1)
+			}
+
+		}
+	}
+}
+
 func TestSubmitSM(t *testing.T) {
-	var (
-		countSubmitSMResp, countDeliverSM int32
-	)
 
 	trans, err := NewTransceiverSession(NonTLSDialer, newAuth(), TransceiveSettings{
 		EnquireLink: 200 * time.Millisecond,
@@ -144,34 +176,7 @@ func TestSubmitSM(t *testing.T) {
 			fmt.Println(err)
 		},
 
-		OnPDU: func(p pdu.PDU, responded bool) {
-			switch pd := p.(type) {
-			case *pdu.SubmitSMResp:
-				require.False(t, responded)
-				require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
-				require.NotZero(t, len(pd.MessageID))
-				atomic.AddInt32(&countSubmitSMResp, 1)
-
-			case *pdu.GenerickNack:
-				require.False(t, responded)
-				t.Fatal(pd)
-
-			case *pdu.DataSM:
-				require.True(t, responded)
-				fmt.Println(pd.Header)
-
-			case *pdu.DeliverSM:
-				require.True(t, responded)
-				require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
-
-				_mess, err := pd.Message.GetMessageWithEncoding(data.UCS2)
-				assert.Nil(t, err)
-				if mess == _mess {
-					atomic.AddInt32(&countDeliverSM, 1)
-				}
-
-			}
-		},
+		OnPDU: handlePDU(t),
 
 		OnClosed: func(state State) {
 			fmt.Println(state)

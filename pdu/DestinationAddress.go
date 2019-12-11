@@ -89,12 +89,12 @@ func (c *DestinationAddress) SetDistributionList(name string) (err error) {
 
 // HasValue returns true if underlying DistributionList/Address is assigned.
 func (c *DestinationAddress) HasValue() bool {
-	return c.destFlag != byte(data.DFLT_DEST_FLAG)
+	return c.destFlag != data.DFLT_DEST_FLAG
 }
 
 // IsAddress returns true if DestinationAddress is a SME Address.
 func (c *DestinationAddress) IsAddress() bool {
-	return c.destFlag == byte(data.SM_DEST_SME_ADDRESS)
+	return c.destFlag == data.SM_DEST_SME_ADDRESS
 }
 
 // IsDistributionList returns true if DestinationAddress is a DistributionList.
