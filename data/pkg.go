@@ -455,6 +455,10 @@ const (
 	OPT_PAR_MSG_PAYLOAD_MIN = 1
 	OPT_PAR_MSG_PAYLOAD_MAX = 1500
 
+	// User Data Header
+	UDH_CONCAT_MSG_8_BIT_REF  byte = 0x00
+	UDH_CONCAT_MSG_16_BIT_REF byte = 0x08
+
 	/**
 	 * @deprecated As of version 1.3 of the library there are defined
 	 * new encoding constants for base set of encoding supported by Java Runtime.
