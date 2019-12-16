@@ -48,11 +48,11 @@ func decode(data []byte, decoder *encoding.Decoder) (st string, err error) {
 type gsm7bit struct{}
 
 func (c gsm7bit) Encode(str string) ([]byte, error) {
-	return encode(str, gsm7Encoding{}.NewEncoder())
+	return encode(str, gsm7Encoding{packed: true}.NewEncoder())
 }
 
 func (c gsm7bit) Decode(data []byte) (string, error) {
-	return decode(data, gsm7Encoding{}.NewDecoder())
+	return decode(data, gsm7Encoding{packed: true}.NewDecoder())
 }
 
 func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }

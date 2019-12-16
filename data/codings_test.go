@@ -39,7 +39,7 @@ func TestCoding(t *testing.T) {
 
 func TestGSM7Bit(t *testing.T) {
 	require.EqualValues(t, 0, GSM7BIT.DataCoding())
-	testEncoding(t, GSM7BIT, "gjwklgjkwP", "676a776b6c676a6b7750")
+	testEncoding(t, GSM7BIT, "gjwklgjkwP123+?", "67f57dcd3eabd777684c365bfd00")
 }
 
 func TestAscii(t *testing.T) {
