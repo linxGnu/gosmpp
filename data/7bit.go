@@ -109,7 +109,6 @@ func ValidateGSM7Buffer(buffer []byte) []byte {
 // GSM7 returns a GSM 7-bit Bit Encoding.
 //
 // Set the packed flag to true if you wish to convert septets to octets,
-// this should be false for most SMPP providers.
 func GSM7(packed bool) encoding.Encoding {
 	return gsm7Encoding{packed: packed}
 }
