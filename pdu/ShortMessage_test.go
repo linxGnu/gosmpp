@@ -23,7 +23,7 @@ func TestShortMessage(t *testing.T) {
 
 	t.Run("getMessageWithoutCoding", func(t *testing.T) {
 		var s ShortMessage
-		s.messageData = []byte("abc")
+		s.messageData = []byte{0x61, 0xf1, 0x18}
 
 		m, err := s.GetMessage()
 		require.Nil(t, err)
