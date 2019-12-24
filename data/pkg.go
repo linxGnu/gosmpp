@@ -23,6 +23,9 @@ const (
 	SM_PARAM_VALUE_LEN   = 10
 	SM_MAX_CNT_DEST_ADDR = 254
 
+	// GSM specific, short message must be no larger than 140 octets
+	SM_GSM_MSG_LEN = 140
+
 	CONNECTION_CLOSED = 0
 	CONNECTION_OPENED = 1
 
