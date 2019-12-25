@@ -44,7 +44,7 @@ func (u *UDH) MarshalBinary() (b []byte, err error) {
 // The src contains the complete UDH, including the UDHL and all IEs.
 // The function returns the number of bytes read from src, and any error
 // detected while unmarshalling.
-func (udh *UDH) UnmarshalBinary(src []byte) (int, error) {
+func (u *UDH) UnmarshalBinary(src []byte) (int, error) {
 	if len(src) < 1 {
 		return 0, fmt.Errorf("Decode error UDHL %d underflow", 0)
 	}
@@ -78,7 +78,7 @@ func (udh *UDH) UnmarshalBinary(src []byte) (int, error) {
 	return udhl, nil
 }
 
-// FindInfoElement find the last occurence of the Information Element with id
+// FindInfoElement find the last occurrence of the Information Element with id
 func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 	for i := len(u) - 1; i >= 0; i-- {
 		if u[i].ID == id {

@@ -51,8 +51,6 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 // also appends udh to the beginning of messageData
 func (c *ShortMessage) SetUDH(udh UDH) {
 	c.udHeader = udh
-
-	return
 }
 
 // GetMessage returns underlying message.
@@ -100,25 +98,25 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 		// 2. Split raw data c.messageData by octetLimit
 		err = fmt.Errorf("Encoding does implement Splitter interface")
 		return
-	} else {
-		// get octet limit (reserve 6 bytes for concat message UDH)
-		segments, err := splitter.EncodeSplit(c.message, data.SM_GSM_MSG_LEN-6)
-		if err != nil {
-			return nil, err
-		}
+	}
 
-		ref := getRefNum() // all segments will have the same ref id
-		multiSM = []*ShortMessage{}
-		for i, seg := range segments {
-			// create new SM, encode data
-			multiSM = append(multiSM, &ShortMessage{
-				enc: c.enc,
-				// message: we don't really care
-				messageData:       seg,
-				withoutDataCoding: c.withoutDataCoding,
-				udHeader:          UDH{NewIEConcatMessage(len(segments), i, int(ref))},
-			})
-		}
+	// get octet limit (reserve 6 bytes for concat message UDH)
+	segments, err := splitter.EncodeSplit(c.message, data.SM_GSM_MSG_LEN-6)
+	if err != nil {
+		return nil, err
+	}
+
+	ref := getRefNum() // all segments will have the same ref id
+	multiSM = []*ShortMessage{}
+	for i, seg := range segments {
+		// create new SM, encode data
+		multiSM = append(multiSM, &ShortMessage{
+			enc: c.enc,
+			// message: we don't really care
+			messageData:       seg,
+			withoutDataCoding: c.withoutDataCoding,
+			udHeader:          UDH{NewIEConcatMessage(len(segments), i, int(ref))},
+		})
 	}
 
 	return
@@ -209,8 +207,7 @@ func getRefNum() uint32 {
 // 1. The only way to really know if each segment will fit into 134 octet limit is
 //		to do some kind of simulated encoding, where you calculate the total octet
 //		by iterating through each character one by one.
-//
-//		If I must do encoding while splitting, then why not just go for option 2 ?
+//		Too cumbersome
 //
 // 2. When breaking string at octet position 134, I have to detemeine which
 //		character is it ( by doing some kind of decoding)
@@ -224,15 +221,16 @@ func getRefNum() uint32 {
 //		even further since escape chars are not allowed to be splitted
 //		in the middle.
 //		Since the second bytes of escape chars can be confused with
-//		normal chars, I must always lookback 2 character ( do step a for at least 2 septet
+//		normal chars, I must always lookback 2 character ( repeat step a for at least 2 septet )
 
 //		c. After extracting the carry-on
-//		-> Step 2 is very hard when bit packing is already applied
+//		-> Option 2 is very hard when bit packing is already applied
 //
 // 3. Options 3 require extending Encoding interface,
-//	-> not be able to utilize the encoder's Transform() method
+//	The not good point is not being able to utilize the encoder's Transform() method
 //	The good point is you don't have to do bit packing twice
 
-// 4. WTF ? option
+// 4. Terrible option
 
-// All this headaches really only apply to variable length encoding. When using fixed length encoding, you can really split the source message BEFORE encodes.
+// All this headaches really only apply to variable length encoding.
+// When using fixed length encoding, you can really split the source message BEFORE encodes.
