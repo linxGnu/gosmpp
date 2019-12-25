@@ -19,7 +19,7 @@ go get -u github.com/linxGnu/gosmpp
 
 ## Version (0.1.4.RC+)
 
-Please refer to [Test Case And Sample Code](https://github.com/linxGnu/gosmpp/blob/master/communication_test.go).
+Please refer to [Test Case And Sample Code](https://github.com/linxGnu/gosmpp/blob/master/transceiver_test.go).
 
 ## Old version (0.1.3 and previous)
 Full example could be found: [gist](https://gist.github.com/linxGnu/b488997a0e62b3f6a7060ba2af6391ea)
