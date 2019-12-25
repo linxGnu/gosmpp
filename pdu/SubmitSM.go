@@ -53,6 +53,37 @@ func (c *SubmitSM) GetResponse() PDU {
 	return NewSubmitSMResp()
 }
 
+// Split split a single long text message into multiple SubmitSM PDU,
+// Each have the TPUD within the GSM's User Data limit of 140 octet
+// If the message is short enough and doesn't need splitting,
+// Split() returns an array of length 1
+func (c *SubmitSM) Split() (multiSubSM []*SubmitSM, err error) {
+	multiSubSM = []*SubmitSM{}
+
+	multiMsg, err := c.Message.Split()
+	if err != nil {
+		return
+	}
+
+	for _, msg := range multiMsg {
+		multiSubSM = append(multiSubSM, &SubmitSM{
+			base:                 c.base,
+			ServiceType:          c.ServiceType,
+			SourceAddr:           c.SourceAddr,
+			DestAddr:             c.DestAddr,
+			EsmClass:             c.EsmClass,
+			ProtocolID:           c.ProtocolID,
+			PriorityFlag:         c.PriorityFlag,
+			ScheduleDeliveryTime: c.ScheduleDeliveryTime,
+			ValidityPeriod:       c.ValidityPeriod,
+			RegisteredDelivery:   c.RegisteredDelivery,
+			ReplaceIfPresentFlag: c.ReplaceIfPresentFlag,
+			Message:              *msg,
+		})
+	}
+	return
+}
+
 // Marshal implements PDU interface.
 func (c *SubmitSM) Marshal(b *ByteBuffer) {
 	c.base.marshal(b, func(b *ByteBuffer) {

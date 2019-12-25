@@ -1,8 +1,15 @@
 package pdu
 
 import (
+	"fmt"
+	"sync/atomic"
+
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/errors"
+)
+
+var (
+	ref uint32 = 0
 )
 
 // ShortMessage message.
@@ -42,7 +49,7 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 
 // SetUDH set user data header for short message
 // also appends udh to the beginning of messageData
-func (c *ShortMessage) SetUDH(udh UDH) (err error) {
+func (c *ShortMessage) SetUDH(udh UDH) {
 	c.udHeader = udh
 
 	return
@@ -63,6 +70,57 @@ func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err
 	if len(c.messageData) > 0 {
 		st, err = enc.Decode(c.messageData)
 	}
+	return
+}
+
+// Split split one short message and split into multiple short message, with UDH
+// according to 33GP TS 23.040 section 9.2.3.24.1
+// NOTE: Split() will return array of length 1 if data length is still within the limit
+// The encoding interface can implement the data.Splitter interface for ad-hoc splitting rule
+func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
+
+	// quick check to see if you should split first
+	if len(c.messageData) <= data.SM_GSM_MSG_LEN {
+		multiSM = []*ShortMessage{c}
+		return
+	}
+
+	var encoding data.Encoding
+	if c.enc == nil {
+		encoding = data.GSM7BIT
+	} else {
+		encoding = c.enc
+	}
+
+	// check if encoding implements data.Splitter
+	splitter, ok := encoding.(data.Splitter)
+	if !ok {
+		// TODO: we have 2 options here:
+		// 1. Return error
+		// 2. Split raw data c.messageData by octetLimit
+		err = fmt.Errorf("Encoding does implement Splitter interface")
+		return
+	} else {
+		// get octet limit (reserve 6 bytes for concat message UDH)
+		segments, err := splitter.EncodeSplit(c.message, data.SM_GSM_MSG_LEN-6)
+		if err != nil {
+			return nil, err
+		}
+
+		ref := getRefNum() // all segments will have the same ref id
+		multiSM = []*ShortMessage{}
+		for i, seg := range segments {
+			// create new SM, encode data
+			multiSM = append(multiSM, &ShortMessage{
+				enc: c.enc,
+				// message: we don't really care
+				messageData:       seg,
+				withoutDataCoding: c.withoutDataCoding,
+				udHeader:          UDH{NewIEConcatMessage(len(segments), i, int(ref))},
+			})
+		}
+	}
+
 	return
 }
 
@@ -134,3 +192,47 @@ func (c *ShortMessage) Unmarshal(b *ByteBuffer) (err error) {
 func (c *ShortMessage) Encoding() data.Encoding {
 	return c.enc
 }
+
+// getRefNum return a atomically incrementing number each time it's called
+func getRefNum() uint32 {
+	return atomic.AddUint32(&ref, 1)
+}
+
+// NOTE:
+// When coding splitting function, I have 4 choices of abstraction
+// 1. Split the message before encode
+// 2. Split the message after encoded
+// 3. Split the message DURING encoding (before bit packing)
+// 4. Encode, unpack, split
+//
+// Disadvantages:
+// 1. The only way to really know if each segment will fit into 134 octet limit is
+//		to do some kind of simulated encoding, where you calculate the total octet
+//		by iterating through each character one by one.
+//
+//		If I must do encoding while splitting, then why not just go for option 2 ?
+//
+// 2. When breaking string at octet position 134, I have to detemeine which
+//		character is it ( by doing some kind of decoding)
+
+//		a. If the character code point does not fit in the octet
+//		boundary, it has to be carried-over to the next segment.
+//		The remaining bits after extracting the carry-over
+//		has to be filled with zero.
+
+//		b. If it is an escape character, then I have to backtrack
+//		even further since escape chars are not allowed to be splitted
+//		in the middle.
+//		Since the second bytes of escape chars can be confused with
+//		normal chars, I must always lookback 2 character ( do step a for at least 2 septet
+
+//		c. After extracting the carry-on
+//		-> Step 2 is very hard when bit packing is already applied
+//
+// 3. Options 3 require extending Encoding interface,
+//	-> not be able to utilize the encoder's Transform() method
+//	The good point is you don't have to do bit packing twice
+
+// 4. WTF ? option
+
+// All this headaches really only apply to variable length encoding. When using fixed length encoding, you can really split the source message BEFORE encodes.
