@@ -39,6 +39,11 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 	return
 }
 
+// SetMessageData sets underlying raw data which is used for pdu marshalling.
+func (c *ShortMessage) SetMessageData(data []byte) {
+	c.messageData = data
+}
+
 // GetMessage returns underlying message.
 func (c *ShortMessage) GetMessage() (st string, err error) {
 	enc := c.enc
