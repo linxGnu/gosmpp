@@ -77,7 +77,7 @@ func (c gsm7bit) EncodeSplit(text string, octetLimit int) (allSeg [][]byte, err 
 	// 1. split septets
 	septetLim := octetLimit * 8 / 7
 	fr, to := 0, septetLim
-	for {
+	for fr < len(septets) {
 		if to > len(septets) {
 			to = len(septets)
 		}
@@ -87,19 +87,13 @@ func (c gsm7bit) EncodeSplit(text string, octetLimit int) (allSeg [][]byte, err 
 		}
 
 		size := (to - fr) * 7
-		if size%8 != 0 { // round up
-			size += 8
-		}
-		seg := make([]byte, size/8)
+		seg := make([]byte, (size-1/8)+1) // ceil(size/8)
 
 		// 2. pack each septet
 		pack(seg, septets[fr:to])
 		allSeg = append(allSeg, seg)
 
 		fr, to = to, to+septetLim
-		if fr >= len(septets) {
-			break // finished
-		}
 	}
 
 	return
@@ -172,7 +166,7 @@ func (c ucs2) EncodeSplit(text string, octetLimit int) (allSeg [][]byte, err err
 
 	// hextet = 16 bits, the correct terms should be hexadectet
 	fr, to := 0, hextetLim
-	for {
+	for fr < len(runeSlice) {
 		if to > len(runeSlice) {
 			to = len(runeSlice)
 		}
@@ -184,9 +178,6 @@ func (c ucs2) EncodeSplit(text string, octetLimit int) (allSeg [][]byte, err err
 		allSeg = append(allSeg, seg)
 
 		fr, to = to, to+hextetLim
-		if fr >= len(runeSlice) {
-			break // finished
-		}
 	}
 
 	return
