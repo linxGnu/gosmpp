@@ -32,7 +32,7 @@ func TestShortMessage(t *testing.T) {
 
 	t.Run("marshalWithoutCoding", func(t *testing.T) {
 		var s ShortMessage
-		s.messageData = []byte("abc")
+		s.SetMessageData([]byte("abc"))
 		s.messageData = append(s.messageData, 0)
 		s.enc = nil
 

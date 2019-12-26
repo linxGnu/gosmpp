@@ -74,7 +74,7 @@ func (u *UDH) UnmarshalBinary(src []byte) (int, error) {
 		ies = append(ies, ie)
 	}
 
-	*udh = UDH(ies)
+	*u = UDH(ies)
 	return udhl, nil
 }
 
