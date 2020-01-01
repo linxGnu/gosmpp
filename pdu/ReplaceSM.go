@@ -66,7 +66,7 @@ func (c *ReplaceSM) Unmarshal(b *ByteBuffer) error {
 				if c.ScheduleDeliveryTime, err = b.ReadCString(); err == nil {
 					if c.ValidityPeriod, err = b.ReadCString(); err == nil {
 						if c.RegisteredDelivery, err = b.ReadByte(); err == nil {
-							err = c.Message.Unmarshal(b)
+							err = c.Message.Unmarshal(b, false)
 						}
 					}
 				}

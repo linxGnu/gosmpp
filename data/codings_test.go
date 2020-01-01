@@ -27,7 +27,7 @@ func testEncoding(t *testing.T, enc EncDec, original, expected string) {
 	require.Equal(t, original, decoded)
 }
 
-func testEncodingSplit(t *testing.T, enc EncDec, octetLim int, original string, expected []string, expectDecode []string) {
+func testEncodingSplit(t *testing.T, enc EncDec, octetLim uint, original string, expected []string, expectDecode []string) {
 	splitter, ok := enc.(Splitter)
 	require.Truef(t, ok, "Encoding must implement Splitter interface")
 
@@ -36,7 +36,7 @@ func testEncodingSplit(t *testing.T, enc EncDec, octetLim int, original string, 
 
 	for i, seg := range segEncoded {
 		require.Equal(t, fromHex(expected[i]), seg)
-		require.LessOrEqualf(t, len(seg), octetLim,
+		require.LessOrEqualf(t, uint(len(seg)), octetLim,
 			"Segment len must be less than or equal to %d, got %d", octetLim, len(seg))
 		decoded, err := enc.Decode(seg)
 		require.Nil(t, err)
@@ -76,6 +76,18 @@ func TestSplit(t *testing.T) {
 			})
 	})
 
+	t.Run("testSplitGSM7Empty", func(t *testing.T) {
+		testEncodingSplit(t, GSM7BIT,
+			134,
+			"",
+			[]string{
+				"",
+			},
+			[]string{
+				"",
+			})
+	})
+
 	t.Run("testSplitUCS2", func(t *testing.T) {
 		testEncodingSplit(t, UCS2,
 			134,
@@ -87,6 +99,18 @@ func TestSplit(t *testing.T) {
 			[]string{
 				"biggest gift của Christmas là có nhiều big/challenging/meaningful p",
 				"roblems để sấp mặt làm",
+			})
+	})
+
+	t.Run("testSplitUCS2Empty", func(t *testing.T) {
+		testEncodingSplit(t, UCS2,
+			134,
+			"",
+			[]string{
+				"",
+			},
+			[]string{
+				"",
 			})
 	})
 

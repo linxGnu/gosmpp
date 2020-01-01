@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"sync/atomic"
 )
 
@@ -513,6 +514,10 @@ const (
 	MAX_VALUE_PORT     = 65535
 	MIN_VALUE_PORT     = 100
 	MIN_LENGTH_ADDRESS = 7
+)
+
+var (
+	ErrNotImpplSplitterInterface = fmt.Errorf("Encoding not implementing Splitter interface")
 )
 
 var defaultTon atomic.Value

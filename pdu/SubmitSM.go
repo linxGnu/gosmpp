@@ -43,6 +43,12 @@ func NewSubmitSM() PDU {
 	return c
 }
 
+// ShouldSplit check if this the user data of submitSM PDU
+func (c *SubmitSM) ShouldSplit() bool {
+	// GSM standard mandates that User Data must be no longer than 140 octet
+	return len(c.Message.messageData) > 140
+}
+
 // CanResponse implements PDU interface.
 func (c *SubmitSM) CanResponse() bool {
 	return true
@@ -71,7 +77,7 @@ func (c *SubmitSM) Split() (multiSubSM []*SubmitSM, err error) {
 			ServiceType:          c.ServiceType,
 			SourceAddr:           c.SourceAddr,
 			DestAddr:             c.DestAddr,
-			EsmClass:             c.EsmClass,
+			EsmClass:             data.SM_UDH_GSM, // must set to indicate UDH
 			ProtocolID:           c.ProtocolID,
 			PriorityFlag:         c.PriorityFlag,
 			ScheduleDeliveryTime: c.ScheduleDeliveryTime,
@@ -116,7 +122,7 @@ func (c *SubmitSM) Unmarshal(b *ByteBuffer) error {
 									if c.ValidityPeriod, err = b.ReadCString(); err == nil {
 										if c.RegisteredDelivery, err = b.ReadByte(); err == nil {
 											if c.ReplaceIfPresentFlag, err = b.ReadByte(); err == nil {
-												err = c.Message.Unmarshal(b)
+												err = c.Message.Unmarshal(b, c.EsmClass == data.SM_UDH_GSM)
 											}
 										}
 									}

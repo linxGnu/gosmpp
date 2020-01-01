@@ -63,14 +63,14 @@ func (u *UDH) UnmarshalBinary(src []byte) (int, error) {
 		}
 		ie := InfoElement{}
 		ie.ID = src[ri]
-		ri++
-		iedl := int(src[ri])
-		ri++
-		if len(src) < ri+iedl {
+
+		iedl := int(src[ri+1])
+
+		if len(src) < ri+2+iedl {
 			return ri, fmt.Errorf("Decode error InfoElement %d underflow", ri)
 		}
-		ie.Data = append([]byte(nil), src[ri:ri+iedl]...)
-		ri += iedl
+		ie.Data = append([]byte(nil), src[ri:ri+2+iedl]...)
+		ri += iedl + 2
 		ies = append(ies, ie)
 	}
 

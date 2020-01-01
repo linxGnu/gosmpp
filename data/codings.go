@@ -57,7 +57,10 @@ func (c gsm7bit) Decode(data []byte) (string, error) {
 
 func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }
 
-func (c gsm7bit) EncodeSplit(text string, octetLimit int) (allSeg [][]byte, err error) {
+func (c gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
+	if octetLimit == 0 {
+		octetLimit = 134
+	}
 
 	// alphabet mapping
 	septets := make([]byte, 0, len(text))
@@ -75,7 +78,7 @@ func (c gsm7bit) EncodeSplit(text string, octetLimit int) (allSeg [][]byte, err 
 	allSeg = [][]byte{}
 
 	// 1. split septets
-	septetLim := octetLimit * 8 / 7
+	septetLim := int(octetLimit * 8 / 7)
 	fr, to := 0, septetLim
 	for fr < len(septets) {
 		if to > len(septets) {
@@ -87,7 +90,7 @@ func (c gsm7bit) EncodeSplit(text string, octetLimit int) (allSeg [][]byte, err 
 		}
 
 		size := (to - fr) * 7
-		seg := make([]byte, (size-1/8)+1) // ceil(size/8)
+		seg := make([]byte, ((size-1)/8)+1) // ceil(size/8)
 
 		// 2. pack each septet
 		pack(seg, septets[fr:to])
@@ -159,10 +162,14 @@ func (c ucs2) Decode(data []byte) (string, error) {
 	return decode(data, tmp.NewDecoder())
 }
 
-func (c ucs2) EncodeSplit(text string, octetLimit int) (allSeg [][]byte, err error) {
+func (c ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
+	if octetLimit == 0 {
+		octetLimit = 134
+	}
+
 	allSeg = [][]byte{}
 	runeSlice := []rune(text)
-	hextetLim := octetLimit / 2 // round down
+	hextetLim := int(octetLimit / 2) // round down
 
 	// hextet = 16 bits, the correct terms should be hexadectet
 	fr, to := 0, hextetLim
@@ -224,5 +231,5 @@ func FromDataCoding(code byte) (enc Encoding) {
 // that split a string into multiple segments
 // Each segment string, when encoded, must be within a certain octet limit
 type Splitter interface {
-	EncodeSplit(text string, octetLimit int) ([][]byte, error)
+	EncodeSplit(text string, octetLimit uint) ([][]byte, error)
 }

@@ -70,9 +70,21 @@ func (c *ShortMessage) GetMessage() (st string, err error) {
 
 // GetMessageWithEncoding returns (decoded) underlying message.
 func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err error) {
-	if len(c.messageData) > 0 {
-		st, err = enc.Decode(c.messageData)
+	if len(c.messageData) <= 0 {
+		return
 	}
+
+	f, t := 0, len(c.messageData)
+
+	if c.udHeader.UDHL() > 0 {
+		f = c.udHeader.UDHL() + 1
+		if f >= t {
+			err = errors.ErrUDHTooLong
+			return
+		}
+	}
+
+	st, err = enc.Decode(c.messageData[f:t])
 	return
 }
 
@@ -98,9 +110,6 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 	// check if encoding implements data.Splitter
 	splitter, ok := encoding.(data.Splitter)
 	if !ok {
-		// TODO: we have 2 options here:
-		// 1. Return error
-		// 2. Split raw data c.messageData by octetLimit
 		err = fmt.Errorf("Encoding does implement Splitter interface")
 		return
 	}
@@ -167,27 +176,39 @@ func (c *ShortMessage) Marshal(b *ByteBuffer) {
 }
 
 // Unmarshal implements PDU interface.
-func (c *ShortMessage) Unmarshal(b *ByteBuffer) (err error) {
+func (c *ShortMessage) Unmarshal(b *ByteBuffer, udhi bool) (err error) {
 	var dataCoding, n byte
+
 	if !c.withoutDataCoding {
-		if dataCoding, err = b.ReadByte(); err == nil {
-			if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
-				if n, err = b.ReadByte(); err == nil {
-					if c.messageData, err = b.ReadN(int(n)); err == nil {
-						c.enc = data.FromDataCoding(dataCoding)
-					}
-				}
-			}
-		}
-	} else {
-		if c.SmDefaultMsgID, err = b.ReadByte(); err == nil {
-			if n, err = b.ReadByte(); err == nil {
-				if c.messageData, err = b.ReadN(int(n)); err == nil {
-					c.enc = data.FromDataCoding(0)
-				}
-			}
+		if dataCoding, err = b.ReadByte(); err != nil {
+			return
 		}
 	}
+
+	if c.SmDefaultMsgID, err = b.ReadByte(); err != nil {
+		return
+	}
+
+	if n, err = b.ReadByte(); err != nil {
+		return
+	}
+
+	if c.messageData, err = b.ReadN(int(n)); err != nil {
+		return
+	}
+	c.enc = data.FromDataCoding(dataCoding)
+
+	// short message contain User-Data Header
+	if udhi {
+		udh := UDH{}
+		_, err = udh.UnmarshalBinary(c.messageData)
+		if err != nil {
+			return
+		}
+
+		c.udHeader = udh
+	}
+
 	return
 }
 
