@@ -77,7 +77,7 @@ func (c *SubmitSM) Split() (multiSubSM []*SubmitSM, err error) {
 			ServiceType:          c.ServiceType,
 			SourceAddr:           c.SourceAddr,
 			DestAddr:             c.DestAddr,
-			EsmClass:             data.SM_UDH_GSM, // must set to indicate UDH
+			EsmClass:             c.EsmClass & data.SM_UDH_GSM, // must set to indicate UDH
 			ProtocolID:           c.ProtocolID,
 			PriorityFlag:         c.PriorityFlag,
 			ScheduleDeliveryTime: c.ScheduleDeliveryTime,
