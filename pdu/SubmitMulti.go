@@ -85,7 +85,7 @@ func (c *SubmitMulti) Unmarshal(b *ByteBuffer) error {
 									if c.ValidityPeriod, err = b.ReadCString(); err == nil {
 										if c.RegisteredDelivery, err = b.ReadByte(); err == nil {
 											if c.ReplaceIfPresentFlag, err = b.ReadByte(); err == nil {
-												err = c.Message.Unmarshal(b)
+												err = c.Message.Unmarshal(b, c.EsmClass == data.SM_UDH_GSM)
 											}
 										}
 									}

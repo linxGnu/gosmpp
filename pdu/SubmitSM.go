@@ -43,6 +43,12 @@ func NewSubmitSM() PDU {
 	return c
 }
 
+// ShouldSplit check if this the user data of submitSM PDU
+func (c *SubmitSM) ShouldSplit() bool {
+	// GSM standard mandates that User Data must be no longer than 140 octet
+	return len(c.Message.messageData) > 140
+}
+
 // CanResponse implements PDU interface.
 func (c *SubmitSM) CanResponse() bool {
 	return true
@@ -51,6 +57,37 @@ func (c *SubmitSM) CanResponse() bool {
 // GetResponse implements PDU interface.
 func (c *SubmitSM) GetResponse() PDU {
 	return NewSubmitSMResp()
+}
+
+// Split split a single long text message into multiple SubmitSM PDU,
+// Each have the TPUD within the GSM's User Data limit of 140 octet
+// If the message is short enough and doesn't need splitting,
+// Split() returns an array of length 1
+func (c *SubmitSM) Split() (multiSubSM []*SubmitSM, err error) {
+	multiSubSM = []*SubmitSM{}
+
+	multiMsg, err := c.Message.Split()
+	if err != nil {
+		return
+	}
+
+	for _, msg := range multiMsg {
+		multiSubSM = append(multiSubSM, &SubmitSM{
+			base:                 c.base,
+			ServiceType:          c.ServiceType,
+			SourceAddr:           c.SourceAddr,
+			DestAddr:             c.DestAddr,
+			EsmClass:             c.EsmClass | data.SM_UDH_GSM, // must set to indicate UDH
+			ProtocolID:           c.ProtocolID,
+			PriorityFlag:         c.PriorityFlag,
+			ScheduleDeliveryTime: c.ScheduleDeliveryTime,
+			ValidityPeriod:       c.ValidityPeriod,
+			RegisteredDelivery:   c.RegisteredDelivery,
+			ReplaceIfPresentFlag: c.ReplaceIfPresentFlag,
+			Message:              *msg,
+		})
+	}
+	return
 }
 
 // Marshal implements PDU interface.
@@ -85,7 +122,7 @@ func (c *SubmitSM) Unmarshal(b *ByteBuffer) error {
 									if c.ValidityPeriod, err = b.ReadCString(); err == nil {
 										if c.RegisteredDelivery, err = b.ReadByte(); err == nil {
 											if c.ReplaceIfPresentFlag, err = b.ReadByte(); err == nil {
-												err = c.Message.Unmarshal(b)
+												err = c.Message.Unmarshal(b, (c.EsmClass&data.SM_UDH_GSM) > 0)
 											}
 										}
 									}

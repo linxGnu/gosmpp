@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"sync/atomic"
 )
 
@@ -22,6 +23,9 @@ const (
 	SM_PARAM_NAME_LEN    = 10
 	SM_PARAM_VALUE_LEN   = 10
 	SM_MAX_CNT_DEST_ADDR = 254
+
+	// GSM specific, short message must be no larger than 140 octets
+	SM_GSM_MSG_LEN = 140
 
 	CONNECTION_CLOSED = 0
 	CONNECTION_OPENED = 1
@@ -455,6 +459,10 @@ const (
 	OPT_PAR_MSG_PAYLOAD_MIN = 1
 	OPT_PAR_MSG_PAYLOAD_MAX = 1500
 
+	// User Data Header
+	UDH_CONCAT_MSG_8_BIT_REF  byte = 0x00
+	UDH_CONCAT_MSG_16_BIT_REF byte = 0x08
+
 	/**
 	 * @deprecated As of version 1.3 of the library there are defined
 	 * new encoding constants for base set of encoding supported by Java Runtime.
@@ -506,6 +514,10 @@ const (
 	MAX_VALUE_PORT     = 65535
 	MIN_VALUE_PORT     = 100
 	MIN_LENGTH_ADDRESS = 7
+)
+
+var (
+	ErrNotImpplSplitterInterface = fmt.Errorf("Encoding not implementing Splitter interface")
 )
 
 var defaultTon atomic.Value

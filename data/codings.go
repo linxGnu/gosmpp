@@ -57,6 +57,51 @@ func (c gsm7bit) Decode(data []byte) (string, error) {
 
 func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }
 
+func (c gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
+	if octetLimit < 64 {
+		octetLimit = 134
+	}
+
+	// alphabet mapping
+	septets := make([]byte, 0, len(text))
+	for _, r := range text {
+		if v, ok := forwardLookup[r]; ok {
+			septets = append(septets, v)
+		} else if v, ok := forwardEscape[r]; ok {
+			septets = append(septets, escapeSequence, v)
+		} else {
+			err = ErrInvalidCharacter
+			return
+		}
+	}
+
+	allSeg = [][]byte{}
+
+	// 1. split septets
+	septetLim := int(octetLimit * 8 / 7)
+	fr, to := 0, septetLim
+	for fr < len(septets) {
+		if to > len(septets) {
+			to = len(septets)
+		}
+
+		if to-fr == septetLim && septets[to-1] == escapeSequence {
+			to-- // check if we splitted an escape
+		}
+
+		size := (to - fr) * 7
+		seg := make([]byte, ((size-1)/8)+1) // ceil(size/8)
+
+		// 2. pack each septet
+		pack(seg, septets[fr:to])
+		allSeg = append(allSeg, seg)
+
+		fr, to = to, to+septetLim
+	}
+
+	return
+}
+
 type ascii struct{}
 
 func (c ascii) Encode(str string) ([]byte, error) {
@@ -117,6 +162,34 @@ func (c ucs2) Decode(data []byte) (string, error) {
 	return decode(data, tmp.NewDecoder())
 }
 
+func (c ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
+	if octetLimit < 64 {
+		octetLimit = 134
+	}
+
+	allSeg = [][]byte{}
+	runeSlice := []rune(text)
+	hextetLim := int(octetLimit / 2) // round down
+
+	// hextet = 16 bits, the correct terms should be hexadectet
+	fr, to := 0, hextetLim
+	for fr < len(runeSlice) {
+		if to > len(runeSlice) {
+			to = len(runeSlice)
+		}
+
+		seg, err := c.Encode(string(runeSlice[fr:to]))
+		if err != nil {
+			return nil, err
+		}
+		allSeg = append(allSeg, seg)
+
+		fr, to = to, to+hextetLim
+	}
+
+	return
+}
+
 func (c ucs2) DataCoding() byte { return UCS2Coding }
 
 var (
@@ -152,4 +225,11 @@ var codingMap = map[byte]Encoding{
 func FromDataCoding(code byte) (enc Encoding) {
 	enc = codingMap[code]
 	return
+}
+
+// Splitter extend encoding object by defining a split function
+// that split a string into multiple segments
+// Each segment string, when encoded, must be within a certain octet limit
+type Splitter interface {
+	EncodeSplit(text string, octetLimit uint) ([][]byte, error)
 }

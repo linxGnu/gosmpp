@@ -27,6 +27,23 @@ func testEncoding(t *testing.T, enc EncDec, original, expected string) {
 	require.Equal(t, original, decoded)
 }
 
+func testEncodingSplit(t *testing.T, enc EncDec, octetLim uint, original string, expected []string, expectDecode []string) {
+	splitter, ok := enc.(Splitter)
+	require.Truef(t, ok, "Encoding must implement Splitter interface")
+
+	segEncoded, err := splitter.EncodeSplit(original, octetLim)
+	require.Nil(t, err)
+
+	for i, seg := range segEncoded {
+		require.Equal(t, fromHex(expected[i]), seg)
+		require.LessOrEqualf(t, uint(len(seg)), octetLim,
+			"Segment len must be less than or equal to %d, got %d", octetLim, len(seg))
+		decoded, err := enc.Decode(seg)
+		require.Nil(t, err)
+		require.Equal(t, expectDecode[i], decoded)
+	}
+}
+
 func TestCoding(t *testing.T) {
 	require.Nil(t, FromDataCoding(12))
 	require.Equal(t, GSM7BIT, FromDataCoding(0))
@@ -40,6 +57,79 @@ func TestCoding(t *testing.T) {
 func TestGSM7Bit(t *testing.T) {
 	require.EqualValues(t, 0, GSM7BIT.DataCoding())
 	testEncoding(t, GSM7BIT, "gjwklgjkwP123+?", "67f57dcd3eabd777684c365bfd00")
+}
+
+func TestSplit(t *testing.T) {
+	require.EqualValues(t, 00, GSM7BIT.DataCoding())
+
+	t.Run("testSplitEscapeGSM7", func(t *testing.T) {
+		testEncodingSplit(t, GSM7BIT,
+			134,
+			"gjwklgjkwP123+?sasdasdaqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdqwdqwDQWdqwdqwdqwdqwwqwdqwdqwddqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdwqdqwqwdqwdqwqwdqw{",
+			[]string{
+				"67f57dcd3eabd777684c365bfde6e139393c2787e37772fc4e8edfc9f13b397e27c7efe4f89d1cbf93e37772fc4e8edfc9f13b397e27c7efe4f89d1cbf93e377729c1cbf93e37762f44a8edfc9f13b397e27c7eff7f89d1cbf93e37732397e27c7efe4f89d1cbf93e37772fc4e8edfc9f13b397e27c7efe4f89d1c27dfe3e4f83d7e27c7ef64",
+				"f17bfc4e8edf3728",
+			},
+			[]string{
+				"gjwklgjkwP123+?sasdasdaqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdqwdqwDQWdqwdqwdqwdqwwqwdqwdqwddqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdwqdqwqwdqwd",
+				"qwqwdqw{",
+			})
+	})
+
+	t.Run("testSplitGSM7Empty", func(t *testing.T) {
+		testEncodingSplit(t, GSM7BIT,
+			134,
+			"",
+			[]string{
+				"",
+			},
+			[]string{
+				"",
+			})
+	})
+
+	t.Run("testSplitUCS2", func(t *testing.T) {
+		testEncodingSplit(t, UCS2,
+			134,
+			"biggest gift của Christmas là có nhiều big/challenging/meaningful problems để sấp mặt làm",
+			[]string{
+				"006200690067006700650073007400200067006900660074002000631ee700610020004300680072006900730074006d006100730020006c00e00020006300f30020006e006800691ec100750020006200690067002f006300680061006c006c0065006e00670069006e0067002f006d00650061006e0069006e006700660075006c00200070",
+				"0072006f0062006c0065006d0073002001111ec3002000731ea500700020006d1eb700740020006c00e0006d",
+			},
+			[]string{
+				"biggest gift của Christmas là có nhiều big/challenging/meaningful p",
+				"roblems để sấp mặt làm",
+			})
+	})
+
+	t.Run("testSplitUCS2Empty", func(t *testing.T) {
+		testEncodingSplit(t, UCS2,
+			134,
+			"",
+			[]string{
+				"",
+			},
+			[]string{
+				"",
+			})
+	})
+
+	// UCS2 character should not be splitted in the middle
+	// here 54 character is encoded to 108 octet, but since there are 107 octet limit,
+	// a whole 2 octet has to be carried over to the next segment
+	t.Run("testSplit_Middle_UCS2", func(t *testing.T) {
+		testEncodingSplit(t, UCS2,
+			107,
+			"biggest gift của Christmas là có nhiều big/challenging",
+			[]string{
+				"006200690067006700650073007400200067006900660074002000631ee700610020004300680072006900730074006d006100730020006c00e00020006300f30020006e006800691ec100750020006200690067002f006300680061006c006c0065006e00670069006e",
+				"0067", // 0x00 0x67 is "g"
+			},
+			[]string{
+				"biggest gift của Christmas là có nhiều big/challengin",
+				"g",
+			})
+	})
 }
 
 func TestAscii(t *testing.T) {
