@@ -70,7 +70,7 @@ func (c *ShortMessage) GetMessage() (st string, err error) {
 
 // GetMessageWithEncoding returns (decoded) underlying message.
 func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err error) {
-	if len(c.messageData) <= 0 {
+	if len(c.messageData) == 0 {
 		return
 	}
 
