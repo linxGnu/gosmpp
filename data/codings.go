@@ -58,7 +58,7 @@ func (c gsm7bit) Decode(data []byte) (string, error) {
 func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }
 
 func (c gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
-	if octetLimit == 0 {
+	if octetLimit < 64 {
 		octetLimit = 134
 	}
 
@@ -163,7 +163,7 @@ func (c ucs2) Decode(data []byte) (string, error) {
 }
 
 func (c ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
-	if octetLimit == 0 {
+	if octetLimit < 64 {
 		octetLimit = 134
 	}
 
