@@ -30,7 +30,8 @@ type TransmitterSession struct {
 //
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
 func NewTransmitterSession(dialer Dialer, auth Auth, settings TransmitSettings, rebindingInterval time.Duration) (session *TransmitterSession, err error) {
-	if conn, err := ConnectAsTransmitter(dialer, auth); err == nil {
+	conn, err := ConnectAsTransmitter(dialer, auth)
+	if err == nil {
 		session = &TransmitterSession{
 			dialer:            dialer,
 			auth:              auth,
