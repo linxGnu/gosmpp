@@ -114,8 +114,7 @@ func (t *receiver) loop() {
 	for {
 		p, err := pdu.Parse(t.conn)
 
-		closeOnError := t.check(err)
-		if closeOnError || t.handleOrClose(p) {
+		if closeOnError := t.check(err); closeOnError || t.handleOrClose(p) {
 			if closeOnError {
 				t.closing(InvalidStreaming)
 			}
@@ -131,7 +130,6 @@ func (t *receiver) handleOrClose(p pdu.PDU) (closing bool) {
 			if t.settings.response != nil {
 				t.settings.response(pp.GetResponse())
 			}
-			return
 
 		case *pdu.Unbind:
 			if t.settings.response != nil {
@@ -143,7 +141,6 @@ func (t *receiver) handleOrClose(p pdu.PDU) (closing bool) {
 
 			closing = true
 			t.closing(UnbindClosing)
-			return
 
 		default:
 			var responded bool
