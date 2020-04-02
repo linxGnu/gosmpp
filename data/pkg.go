@@ -517,6 +517,7 @@ const (
 )
 
 var (
+	// ErrNotImpplSplitterInterface indicates that encoding does not support Splitter interface
 	ErrNotImpplSplitterInterface = fmt.Errorf("Encoding not implementing Splitter interface")
 )
 

@@ -20,7 +20,7 @@ go get -u github.com/linxGnu/gosmpp
 ## Version (0.1.4.RC+)
 
 - Please refer: [Test Case And Sample Code](https://github.com/linxGnu/gosmpp/blob/master/transceiver_test.go).
-- Another full example could be found: [here](https://github.com/linxGnu/gosmpp/blob/master/example/main.go)
+- Another full example could be found: [here](https://github.com/linxGnu/gosmpp/blob/master/example)
   - In this example, you should run smsc first:
     - Please point to: https://github.com/linxGnu/gosmpp/blob/master/example/smsc
     - Build & Run SMSC (g++ required): `./run.sh`

@@ -18,7 +18,7 @@ func NewEnquireLinkResp() PDU {
 	return c
 }
 
-// NewEnquireLinkResp returns EnquireLinkResp.
+// NewEnquireLinkRespFromReq returns EnquireLinkResp.
 func NewEnquireLinkRespFromReq(req *EnquireLink) PDU {
 	c := NewEnquireLinkResp().(*EnquireLinkResp)
 	if req != nil {

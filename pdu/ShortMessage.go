@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ref uint32 = 0
+	ref = uint32(0)
 )
 
 // ShortMessage message.
