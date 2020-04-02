@@ -9,13 +9,16 @@ import (
 )
 
 func TestUnbindResp(t *testing.T) {
-	v := NewUnbindResp().(*UnbindResp)
+	req := NewUnbind().(*Unbind)
+	req.SequenceNumber = 13
+
+	v := NewUnbindRespFromReq(req).(*UnbindResp)
 	require.False(t, v.CanResponse())
 	require.Nil(t, v.GetResponse())
 
 	validate(t,
 		v,
-		"00000010800000060000000000000001",
+		"0000001080000006000000000000000d",
 		data.UNBIND_RESP,
 	)
 }

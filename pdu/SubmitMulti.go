@@ -50,7 +50,7 @@ func (c *SubmitMulti) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *SubmitMulti) GetResponse() PDU {
-	return NewSubmitMultiResp()
+	return NewSubmitMultiRespFromReq(c)
 }
 
 // Marshal implements PDU interface.

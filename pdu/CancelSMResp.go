@@ -18,6 +18,15 @@ func NewCancelSMResp() PDU {
 	return c
 }
 
+// NewCancelSMRespFromReq returns CancelSMResp.
+func NewCancelSMRespFromReq(req *CancelSM) PDU {
+	c := NewCancelSMResp().(*CancelSMResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *CancelSMResp) CanResponse() bool {
 	return false

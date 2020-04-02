@@ -23,9 +23,6 @@ func toHex(v []byte) (h string) {
 }
 
 func validate(t *testing.T, p PDU, hexValue string, expectCommandID int32) {
-	p.ResetSequenceNumber()
-	require.EqualValues(t, 1, p.GetSequenceNumber())
-
 	buf := NewBuffer(nil)
 	p.Marshal(buf)
 	require.Equal(t, fromHex(hexValue), buf.Bytes())

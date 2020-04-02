@@ -12,10 +12,11 @@ func TestReplaceSM(t *testing.T) {
 	v := NewReplaceSM().(*ReplaceSM)
 	require.True(t, v.CanResponse())
 	require.True(t, v.Message.withoutDataCoding)
+	v.SequenceNumber = 13
 
 	validate(t,
 		v.GetResponse(),
-		"00000010800000070000000000000001",
+		"0000001080000007000000000000000d",
 		data.REPLACE_SM_RESP,
 	)
 
@@ -34,7 +35,7 @@ func TestReplaceSM(t *testing.T) {
 
 	validate(t,
 		v,
-		"0000002d00000007000000000000000149445f486572001c1d416c69636572000000530008eef4194dbfa7e768",
+		"0000002d00000007000000000000000d49445f486572001c1d416c69636572000000530008eef4194dbfa7e768",
 		data.REPLACE_SM,
 	)
 }

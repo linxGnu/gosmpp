@@ -38,7 +38,7 @@ func (c *DataSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *DataSM) GetResponse() PDU {
-	return NewDataSMResp()
+	return NewDataSMRespFromReq(c)
 }
 
 // Marshal implements PDU interface.

@@ -11,10 +11,11 @@ import (
 func TestDataSM(t *testing.T) {
 	v := NewDataSM().(*DataSM)
 	require.True(t, v.CanResponse())
+	v.SequenceNumber = 13
 
 	validate(t,
 		v.GetResponse(),
-		"0000001180000103000000000000000100",
+		"0000001180000103000000000000000d00",
 		data.DATA_SM_RESP,
 	)
 
@@ -41,7 +42,7 @@ func TestDataSM(t *testing.T) {
 
 	validate(t,
 		v,
-		"0000002c000001030000000000000001616263001c1d416c69636572001e1f426f626f004d535b000700015f",
+		"0000002c00000103000000000000000d616263001c1d416c69636572001e1f426f626f004d535b000700015f",
 		data.DATA_SM,
 	)
 }

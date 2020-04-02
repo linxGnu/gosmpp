@@ -9,7 +9,10 @@ import (
 )
 
 func TestDataSMResp(t *testing.T) {
-	v := NewDataSMResp().(*DataSMResp)
+	req := NewDataSM().(*DataSM)
+	req.SequenceNumber = 13
+
+	v := NewDataSMRespFromReq(req).(*DataSMResp)
 	require.False(t, v.CanResponse())
 	require.Nil(t, v.GetResponse())
 
@@ -17,7 +20,7 @@ func TestDataSMResp(t *testing.T) {
 
 	validate(t,
 		v,
-		"00000018800001030000000000000001746573744d494400",
+		"0000001880000103000000000000000d746573744d494400",
 		data.DATA_SM_RESP,
 	)
 }

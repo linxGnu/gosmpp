@@ -15,6 +15,7 @@ func NewBindResp(req BindRequest) (c *BindResp) {
 	c = &BindResp{
 		base: newBase(),
 	}
+	c.SequenceNumber = req.SequenceNumber
 
 	switch req.BindingType {
 	case Transceiver:

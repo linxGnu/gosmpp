@@ -18,6 +18,15 @@ func NewUnbindResp() PDU {
 	return c
 }
 
+// NewUnbindRespFromReq returns UnbindResp.
+func NewUnbindRespFromReq(req *Unbind) PDU {
+	c := NewUnbindResp().(*UnbindResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *UnbindResp) CanResponse() bool {
 	return false

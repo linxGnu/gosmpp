@@ -13,13 +13,14 @@ func TestOutbind(t *testing.T) {
 	require.False(t, v.CanResponse())
 	require.Nil(t, v.GetResponse())
 	require.True(t, v.IsOk())
+	v.SequenceNumber = 13
 
 	v.SystemID = "inventory"
 	v.Password = "ipassword"
 
 	validate(t,
 		v,
-		"000000240000000b0000000000000001696e76656e746f7279006970617373776f726400",
+		"000000240000000b000000000000000d696e76656e746f7279006970617373776f726400",
 		data.OUTBIND,
 	)
 }

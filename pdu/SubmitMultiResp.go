@@ -22,6 +22,15 @@ func NewSubmitMultiResp() PDU {
 	return c
 }
 
+// NewSubmitMultiRespFromReq returns new SubmitMultiResp.
+func NewSubmitMultiRespFromReq(req *SubmitMulti) PDU {
+	c := NewSubmitMultiResp().(*SubmitMultiResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *SubmitMultiResp) CanResponse() bool {
 	return false

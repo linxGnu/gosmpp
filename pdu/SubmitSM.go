@@ -56,7 +56,7 @@ func (c *SubmitSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *SubmitSM) GetResponse() PDU {
-	return NewSubmitSMResp()
+	return NewSubmitSMRespFromReq(c)
 }
 
 // Split split a single long text message into multiple SubmitSM PDU,

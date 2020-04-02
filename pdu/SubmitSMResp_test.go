@@ -9,7 +9,10 @@ import (
 )
 
 func TestSubmitSMResp(t *testing.T) {
-	v := NewSubmitSMResp().(*SubmitSMResp)
+	req := NewSubmitSM().(*SubmitSM)
+	req.SequenceNumber = 13
+
+	v := NewSubmitSMRespFromReq(req).(*SubmitSMResp)
 	require.False(t, v.CanResponse())
 	require.Nil(t, v.GetResponse())
 
@@ -17,7 +20,7 @@ func TestSubmitSMResp(t *testing.T) {
 
 	validate(t,
 		v,
-		"00000019800000040000000000000001666f6f7462616c6c00",
+		"0000001980000004000000000000000d666f6f7462616c6c00",
 		data.SUBMIT_SM_RESP,
 	)
 }

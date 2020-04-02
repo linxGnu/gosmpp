@@ -20,6 +20,15 @@ func NewSubmitSMResp() PDU {
 	return c
 }
 
+// NewSubmitSMRespFromReq returns new SubmitSMResp.
+func NewSubmitSMRespFromReq(req *SubmitSM) PDU {
+	c := NewSubmitSMResp().(*SubmitSMResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *SubmitSMResp) CanResponse() bool {
 	return false

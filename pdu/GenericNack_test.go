@@ -12,10 +12,11 @@ func TestGNack(t *testing.T) {
 	require.False(t, v.CanResponse())
 	require.Nil(t, v.GetResponse())
 	require.True(t, v.IsGNack())
+	v.SequenceNumber = 13
 
 	validate(t,
 		v,
-		"00000010800000000000000000000001",
+		"0000001080000000000000000000000d",
 		data.GENERIC_NACK,
 	)
 }

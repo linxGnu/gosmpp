@@ -18,6 +18,15 @@ func NewEnquireLinkResp() PDU {
 	return c
 }
 
+// NewEnquireLinkResp returns EnquireLinkResp.
+func NewEnquireLinkRespFromReq(req *EnquireLink) PDU {
+	c := NewEnquireLinkResp().(*EnquireLinkResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *EnquireLinkResp) CanResponse() bool {
 	return false

@@ -30,7 +30,7 @@ func (c *QuerySM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *QuerySM) GetResponse() PDU {
-	return NewQuerySMResp()
+	return NewQuerySMRespFromReq(c)
 }
 
 // Marshal implements PDU interface.

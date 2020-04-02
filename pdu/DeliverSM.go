@@ -49,7 +49,7 @@ func (c *DeliverSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *DeliverSM) GetResponse() PDU {
-	return NewDeliverSMResp()
+	return NewDeliverSMRespFromReq(c)
 }
 
 // Marshal implements PDU interface.

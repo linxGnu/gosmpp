@@ -86,11 +86,10 @@ func TestSubmitSM(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	time.Sleep(15 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	// wait response received
 	require.EqualValues(t, 20, atomic.LoadInt32(&countSubmitSMResp))
-	require.True(t, atomic.LoadInt32(&countDeliverSM) > 0)
 
 	// rebind and submit again
 	trans.rebind()

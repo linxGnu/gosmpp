@@ -11,10 +11,11 @@ import (
 func TestQuerySM(t *testing.T) {
 	v := NewQuerySM().(*QuerySM)
 	require.True(t, v.CanResponse())
+	v.SequenceNumber = 13
 
 	validate(t,
 		v.GetResponse(),
-		"0000001480000003000000000000000100000000",
+		"0000001480000003000000000000000d00000000",
 		data.QUERY_SM_RESP,
 	)
 
@@ -25,7 +26,7 @@ func TestQuerySM(t *testing.T) {
 
 	validate(t,
 		v,
-		"0000001e00000003000000000000000161776179001c1d416c6963657200",
+		"0000001e00000003000000000000000d61776179001c1d416c6963657200",
 		data.QUERY_SM,
 	)
 }

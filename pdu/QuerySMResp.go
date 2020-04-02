@@ -25,6 +25,15 @@ func NewQuerySMResp() PDU {
 	return c
 }
 
+// NewQuerySMRespFromReq returns new QuerySM PDU.
+func NewQuerySMRespFromReq(req *QuerySM) PDU {
+	c := NewQuerySMResp().(*QuerySMResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *QuerySMResp) CanResponse() bool {
 	return false

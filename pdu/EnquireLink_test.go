@@ -11,16 +11,17 @@ import (
 func TestEnquireLink(t *testing.T) {
 	v := NewEnquireLink().(*EnquireLink)
 	require.True(t, v.CanResponse())
+	v.SequenceNumber = 13
 
 	validate(t,
 		v.GetResponse(),
-		"00000010800000150000000000000001",
+		"0000001080000015000000000000000d",
 		data.ENQUIRE_LINK_RESP,
 	)
 
 	validate(t,
 		v,
-		"00000010000000150000000000000001",
+		"0000001000000015000000000000000d",
 		data.ENQUIRE_LINK,
 	)
 }

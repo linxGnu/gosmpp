@@ -20,6 +20,15 @@ func NewDeliverSMResp() PDU {
 	return c
 }
 
+// NewDeliverSMRespFromReq returns new DeliverSMResp.
+func NewDeliverSMRespFromReq(req *DeliverSM) PDU {
+	c := NewDeliverSMResp().(*DeliverSMResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *DeliverSMResp) CanResponse() bool {
 	return false

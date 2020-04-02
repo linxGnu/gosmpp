@@ -27,7 +27,7 @@ func (c *Unbind) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *Unbind) GetResponse() PDU {
-	return NewUnbindResp()
+	return NewUnbindRespFromReq(c)
 }
 
 // Marshal implements PDU interface.

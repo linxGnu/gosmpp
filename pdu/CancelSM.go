@@ -35,7 +35,7 @@ func (c *CancelSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *CancelSM) GetResponse() PDU {
-	return NewCancelSMResp()
+	return NewCancelSMRespFromReq(c)
 }
 
 // Marshal implements PDU interface.

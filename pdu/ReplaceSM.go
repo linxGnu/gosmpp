@@ -41,7 +41,7 @@ func (c *ReplaceSM) CanResponse() bool {
 
 // GetResponse implements PDU interface.
 func (c *ReplaceSM) GetResponse() PDU {
-	return NewReplaceSMResp()
+	return NewReplaceSMRespFromReq(c)
 }
 
 // Marshal implements PDU interface.

@@ -18,6 +18,15 @@ func NewReplaceSMResp() PDU {
 	return c
 }
 
+// NewReplaceSMRespFromReq returns ReplaceSMResp.
+func NewReplaceSMRespFromReq(req *ReplaceSM) PDU {
+	c := NewReplaceSMResp().(*ReplaceSMResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *ReplaceSMResp) CanResponse() bool {
 	return false

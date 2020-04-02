@@ -9,13 +9,16 @@ import (
 )
 
 func TestCancelSMResp(t *testing.T) {
-	v := NewCancelSMResp().(*CancelSMResp)
+	req := NewCancelSM().(*CancelSM)
+	req.SequenceNumber = 11
+
+	v := NewCancelSMRespFromReq(req).(*CancelSMResp)
 	require.False(t, v.CanResponse())
 	require.Nil(t, v.GetResponse())
 
 	validate(t,
 		v,
-		"00000010800000080000000000000001",
+		"0000001080000008000000000000000b",
 		data.CANCEL_SM_RESP,
 	)
 }

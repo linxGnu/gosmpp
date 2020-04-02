@@ -20,6 +20,15 @@ func NewDataSMResp() PDU {
 	return c
 }
 
+// NewDataSMRespFromReq returns DataSMResp.
+func NewDataSMRespFromReq(req *DataSM) PDU {
+	c := NewDataSMResp().(*DataSMResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *DataSMResp) CanResponse() bool {
 	return false

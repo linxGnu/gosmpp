@@ -9,7 +9,10 @@ import (
 )
 
 func TestSubmitMultiResp(t *testing.T) {
-	v := NewSubmitMultiResp().(*SubmitMultiResp)
+	req := NewSubmitMulti().(*SubmitMulti)
+	req.SequenceNumber = 13
+
+	v := NewSubmitMultiRespFromReq(req).(*SubmitMultiResp)
 	require.False(t, v.CanResponse())
 	require.Nil(t, v.GetResponse())
 
@@ -28,7 +31,7 @@ func TestSubmitMultiResp(t *testing.T) {
 
 	validate(t,
 		v,
-		"00000030800000210000000000000001666f6f7462616c6c00022621426f623100000000130000426f62320000000014",
+		"0000003080000021000000000000000d666f6f7462616c6c00022621426f623100000000130000426f62320000000014",
 		data.SUBMIT_MULTI_RESP,
 	)
 }
