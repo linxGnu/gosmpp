@@ -10,6 +10,11 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
+const (
+	// EnquireLinkIntervalMinimum represents minimum interval for enquire link.
+	EnquireLinkIntervalMinimum = 20 * time.Second
+)
+
 // TransmitSettings is listener for transmitter.
 type TransmitSettings struct {
 	// WriteTimeout is timeout/deadline for submitting PDU.
@@ -147,8 +152,8 @@ func (t *transmitter) loop() {
 
 // PDU loop processing with enquire link support
 func (t *transmitter) loopWithEnquireLink() {
-	if t.settings.EnquireLink < time.Minute {
-		t.settings.EnquireLink = time.Minute
+	if t.settings.EnquireLink < EnquireLinkIntervalMinimum {
+		t.settings.EnquireLink = EnquireLinkIntervalMinimum
 	}
 
 	ticker := time.NewTicker(t.settings.EnquireLink)

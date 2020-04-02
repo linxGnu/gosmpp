@@ -24,14 +24,14 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	auth := gosmpp.Auth{
-		SMSC:       "smscsim.melroselabs.com:2775",
+		SMSC:       "127.0.0.1:2775",
 		SystemID:   "522241",
 		Password:   "UUDHWB",
 		SystemType: "",
 	}
 
 	trans, err := gosmpp.NewTransceiverSession(gosmpp.NonTLSDialer, auth, gosmpp.TransceiveSettings{
-		EnquireLink: 500 * time.Millisecond,
+		EnquireLink: 5 * time.Second,
 
 		OnSubmitError: func(p pdu.PDU, err error) {
 			log.Fatal(err)
@@ -84,6 +84,7 @@ func handlePDU() func(pdu.PDU, bool) {
 
 		case *pdu.DeliverSM:
 			fmt.Printf("DeliverSM:%+v\n", pd)
+			fmt.Println(pd.Message.GetMessage())
 		}
 	}
 }
