@@ -152,6 +152,7 @@ func (t *transmitter) loopWithEnquireLink() {
 	}
 
 	ticker := time.NewTicker(t.settings.EnquireLink)
+	defer ticker.Stop()
 
 	// enquireLink payload
 	eqp := pdu.NewEnquireLink()
