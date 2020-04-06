@@ -734,7 +734,7 @@ class SMPPSession : public Session {
                      // testing purposes
           generateMO(msg.source_addr_ton, msg.source_addr_npi, msg.source_addr,
                      msg.dest_addr_ton, msg.dest_addr_npi, msg.destination_addr,
-                     msg.short_message, msg.sm_length);
+                     msg.short_message, msg.sm_length, msg.data_coding);
         }
       }
     }
@@ -745,7 +745,8 @@ class SMPPSession : public Session {
   void generateMO(uint8_t source_addr_ton, uint8_t source_addr_npi,
                   string source_addr, uint8_t dest_addr_ton,
                   uint8_t dest_addr_npi, string destination_addr,
-                  uint8_t* short_message, uint8_t sm_length) {
+                  uint8_t* short_message, uint8_t sm_length,
+                  uint8_t data_coding) {
     uint8_t sbuf[1024];
 
     int sidx = 0;
@@ -764,15 +765,15 @@ class SMPPSession : public Session {
            destination_addr.length() + 1);  // source_addr
     sidx += destination_addr.length() + 1;
 
-    sbuf[sidx++] = 0x00;  // esm_class
-    sbuf[sidx++] = 0x00;  // protocol_id
-    sbuf[sidx++] = 0x00;  // priority_flag
-    sbuf[sidx++] = 0x00;  // schedule_delivery_time
-    sbuf[sidx++] = 0x00;  // validity_period
-    sbuf[sidx++] = 0x00;  // registered_delivery
-    sbuf[sidx++] = 0x00;  // replace_if_present_flag
-    sbuf[sidx++] = 0x00;  // data_coding
-    sbuf[sidx++] = 0x00;  // sm_default_msg_id
+    sbuf[sidx++] = 0x00;         // esm_class
+    sbuf[sidx++] = 0x00;         // protocol_id
+    sbuf[sidx++] = 0x00;         // priority_flag
+    sbuf[sidx++] = 0x00;         // schedule_delivery_time
+    sbuf[sidx++] = 0x00;         // validity_period
+    sbuf[sidx++] = 0x00;         // registered_delivery
+    sbuf[sidx++] = 0x00;         // replace_if_present_flag
+    sbuf[sidx++] = data_coding;  // data_coding
+    sbuf[sidx++] = 0x00;         // sm_default_msg_id
 
     sbuf[sidx++] = sm_length;  // sm_length
 
@@ -1024,6 +1025,7 @@ class SMPPSession : public Session {
           uint8_t registered_delivery = 0;
           uint8_t sm_length;
           uint8_t short_message[160];
+          uint8_t data_coding;
 
           int ptr_max = 0;
           uint8_t* ptr = conn.getBodyPointer(ptr_max);
@@ -1079,7 +1081,7 @@ class SMPPSession : public Session {
           }
           registered_delivery = ptr[idx++];  // registered_delivery
           idx++;                             // replace_if_present_flag
-          idx++;                             // data_coding
+          data_coding = ptr[idx++];          // data_coding
           idx++;                             // sm_default_msg_id
           sm_length = ptr[idx++];
           memcpy(short_message, ptr + idx, sm_length);
@@ -1146,7 +1148,7 @@ class SMPPSession : public Session {
 
             // sending back MO
             generateMO(5, 0, "FakeFrom", 1, 1, "FakeTo", short_message,
-                       sm_length);
+                       sm_length, data_coding);
 
             // add message to deliverer so that receipt will then be sent to
             // ESME

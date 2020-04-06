@@ -104,7 +104,7 @@ func newSubmitSM() *pdu.SubmitSM {
 	submitSM := pdu.NewSubmitSM().(*pdu.SubmitSM)
 	submitSM.SourceAddr = srcAddr
 	submitSM.DestAddr = destAddr
-	_ = submitSM.Message.SetMessageWithEncoding("Just a test", data.GSM7BIT)
+	_ = submitSM.Message.SetMessageWithEncoding("Đừng buồn thế dù ngoài kia vẫn mưa nghiễng rợi tý tỵ", data.UCS2)
 	submitSM.ProtocolID = 0
 	submitSM.RegisteredDelivery = 1
 	submitSM.ReplaceIfPresentFlag = 0
