@@ -8,6 +8,9 @@ const (
 	// explicitly (from outside).
 	ExplicitClosing State = iota
 
+	// StoppingProcessOnly stops daemons but does not close underlying net conn.
+	StoppingProcessOnly
+
 	// InvalidStreaming indicates Transceiver/Receiver data reading state is
 	// invalid due to network connection/ or SMSC responsed with an invalid PDU
 	// which potentially damages other following PDU(s).

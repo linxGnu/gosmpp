@@ -79,17 +79,22 @@ func (t *transmitter) Close() (err error) {
 
 func (t *transmitter) close(state State) (err error) {
 	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
-		// cancel context to notify stop
+		// don't receive anymore SubmitSM
 		t.cancel()
 
-		// wait daemons
+		// notify daemon
+		close(t.input)
+
+		// wait daemon
 		t.wg.Wait()
 
 		// try to send unbind
 		_, _ = t.conn.Write(marshal(pdu.NewUnbind()))
 
 		// close connection
-		err = t.conn.Close()
+		if state != StoppingProcessOnly {
+			err = t.conn.Close()
+		}
 
 		// notify transmitter closed
 		if t.settings.OnClosed != nil {
@@ -134,17 +139,11 @@ func (t *transmitter) start() {
 
 // PDU loop processing
 func (t *transmitter) loop() {
-	for {
-		select {
-		case <-t.ctx.Done():
-			return
-
-		case p := <-t.input:
-			if p != nil {
-				n, err := t.write(marshal(p))
-				if t.check(p, n, err) {
-					return
-				}
+	for p := range t.input {
+		if p != nil {
+			n, err := t.write(marshal(p))
+			if t.check(p, n, err) {
+				return
 			}
 		}
 	}
@@ -165,16 +164,17 @@ func (t *transmitter) loopWithEnquireLink() {
 
 	for {
 		select {
-		case <-t.ctx.Done():
-			return
-
 		case <-ticker.C:
 			n, err := t.write(enquireLink)
 			if t.check(eqp, n, err) {
 				return
 			}
 
-		case p := <-t.input:
+		case p, ok := <-t.input:
+			if !ok {
+				return
+			}
+
 			if p != nil {
 				n, err := t.write(marshal(p))
 				if t.check(p, n, err) {

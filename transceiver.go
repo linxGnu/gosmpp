@@ -91,7 +91,9 @@ func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 		},
 
 		response: func(p pdu.PDU) {
-			_ = t.out.Submit(p)
+			if t.out.Submit(p) != nil { // only happened when transceiver is closed
+				_, _ = t.out.write(marshal(p))
+			}
 		},
 	}, false)
 
@@ -110,10 +112,10 @@ func (t *transceiver) SystemID() string {
 func (t *transceiver) Close() (err error) {
 	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
 		// closing input and output
-		_ = t.out.Close()
-		_ = t.in.Close()
+		_ = t.out.close(StoppingProcessOnly)
+		_ = t.in.close(StoppingProcessOnly)
 
-		// close connection
+		// close underlying conn
 		err = t.conn.Close()
 
 		// notify transceiver closed

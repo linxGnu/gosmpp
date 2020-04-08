@@ -1,6 +1,7 @@
 package gosmpp
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,6 +31,8 @@ type ReceiveSettings struct {
 }
 
 type receiver struct {
+	ctx      context.Context
+	cancel   context.CancelFunc
 	wg       sync.WaitGroup
 	settings ReceiveSettings
 	conn     *Connection
@@ -46,6 +49,7 @@ func newReceiver(conn *Connection, settings ReceiveSettings, startDaemon bool) *
 		settings: settings,
 		conn:     conn,
 	}
+	r.ctx, r.cancel = context.WithCancel(context.Background())
 
 	// start receiver daemon(s)
 	if startDaemon {
@@ -67,11 +71,19 @@ func (t *receiver) Close() (err error) {
 
 func (t *receiver) close(state State) (err error) {
 	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
-		// close connection to notify daemons to stop
-		err = t.conn.Close()
+		// cancel to notify stop
+		t.cancel()
+
+		// set read deadline for current blocking read
+		_ = t.conn.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
 
 		// wait daemons
 		t.wg.Wait()
+
+		// close connection to notify daemons to stop
+		if state != StoppingProcessOnly {
+			err = t.conn.Close()
+		}
 
 		// notify receiver closed
 		if t.settings.OnClosed != nil {
@@ -112,6 +124,12 @@ func (t *receiver) check(err error) (closing bool) {
 // PDU loop processing
 func (t *receiver) loop() {
 	for {
+		select {
+		case <-t.ctx.Done():
+			return
+		default:
+		}
+
 		p, err := pdu.Parse(t.conn)
 
 		if closeOnError := t.check(err); closeOnError || t.handleOrClose(p) {
@@ -136,7 +154,7 @@ func (t *receiver) handleOrClose(p pdu.PDU) (closing bool) {
 				t.settings.response(pp.GetResponse())
 
 				// wait to send response before closing
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(50 * time.Millisecond)
 			}
 
 			closing = true

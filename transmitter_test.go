@@ -51,6 +51,7 @@ func TestTransmitter(t *testing.T) {
 		require.Nil(t, err)
 
 		var tr transmitter
+		tr.input = make(chan pdu.PDU, 1)
 
 		c := NewConnection(conn)
 		defer func() {
