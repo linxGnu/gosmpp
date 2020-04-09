@@ -45,14 +45,16 @@ func decode(data []byte, decoder *encoding.Decoder) (st string, err error) {
 	return
 }
 
-type gsm7bit struct{}
+type gsm7bit struct {
+	packed bool
+}
 
 func (c gsm7bit) Encode(str string) ([]byte, error) {
-	return Encode7Bit(str), nil
+	return encode(str, GSM7(c.packed).NewEncoder())
 }
 
 func (c gsm7bit) Decode(data []byte) (string, error) {
-	return Decode7Bit(data)
+	return decode(data, GSM7(c.packed).NewDecoder())
 }
 
 func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }
@@ -173,7 +175,12 @@ func (c ucs2) DataCoding() byte { return UCS2Coding }
 
 var (
 	// GSM7BIT is gsm-7bit encoding.
-	GSM7BIT Encoding = &gsm7bit{}
+	GSM7BIT Encoding = &gsm7bit{packed: false}
+
+	// GSM7BITPACKED is packed gsm-7bit encoding.
+	// Most of SMSC(s) use unpack version.
+	// Should be tested before using.
+	GSM7BITPACKED Encoding = &gsm7bit{packed: true}
 
 	// ASCII is ascii encoding.
 	ASCII Encoding = &ascii{}

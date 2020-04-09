@@ -55,15 +55,15 @@ func TestCoding(t *testing.T) {
 }
 
 func TestGSM7Bit(t *testing.T) {
-	require.EqualValues(t, 0, GSM7BIT.DataCoding())
-	testEncoding(t, GSM7BIT, "gjwklgjkwP123+?", "67f57dcd3eabd777684c365bfd1a")
+	require.EqualValues(t, 0, GSM7BITPACKED.DataCoding())
+	testEncoding(t, GSM7BITPACKED, "gjwklgjkwP123+?", "67f57dcd3eabd777684c365bfd00")
 }
 
 func TestSplit(t *testing.T) {
-	require.EqualValues(t, 00, GSM7BIT.DataCoding())
+	require.EqualValues(t, 00, GSM7BITPACKED.DataCoding())
 
 	t.Run("testSplitEscapeGSM7", func(t *testing.T) {
-		testEncodingSplit(t, GSM7BIT,
+		testEncodingSplit(t, GSM7BITPACKED,
 			134,
 			"gjwklgjkwP123+?sasdasdaqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdqwdqwDQWdqwdqwdqwdqwwqwdqwdqwddqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdwqdqwqwdqwdqwqwdqw{",
 			[]string{

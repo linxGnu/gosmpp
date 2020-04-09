@@ -23,7 +23,7 @@ func TestShortMessage(t *testing.T) {
 
 	t.Run("getMessageWithoutCoding", func(t *testing.T) {
 		var s ShortMessage
-		s.messageData = []byte{0x61, 0xf1, 0x18}
+		s.messageData = []byte{0x61, 0x62, 0x63}
 
 		m, err := s.GetMessage()
 		require.Nil(t, err)
@@ -47,18 +47,17 @@ func TestShortMessage(t *testing.T) {
 
 		buf := NewBuffer(nil)
 		s.Marshal(buf)
-		require.Equal(t, "00000361f118", toHex(buf.Bytes()))
+		require.Equal(t, "000003616263", toHex(buf.Bytes()))
 	})
 
 	t.Run("marshalWithCoding160chars", func(t *testing.T) {
-		s, err := NewShortMessageWithEncoding("abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcaabcabcabcabcabcabcabcabcacc123121", data.GSM7BIT)
+		s, err := NewShortMessageWithEncoding("abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcab", data.GSM7BIT)
 		require.NoError(t, err)
 
 		buf := NewBuffer(nil)
 		s.Marshal(buf)
 
-		// should be able to fit 160 char into 140 octets ( + 3 bytes header )
-		require.Equal(t, 143, len(buf.Bytes()))
+		require.Equal(t, 116, len(buf.Bytes()))
 	})
 
 	t.Run("marshalGSM7WithUDHConcat", func(t *testing.T) {
@@ -68,13 +67,13 @@ func TestShortMessage(t *testing.T) {
 
 		buf := NewBuffer(nil)
 		s.Marshal(buf)
-		require.Equal(t, "0000090500030c020161f118", toHex(buf.Bytes()))
+		require.Equal(t, "0000090500030c0201616263", toHex(buf.Bytes()))
 	})
 
 	t.Run("unmarshalGSM7WithUDHConcat", func(t *testing.T) {
 		s := &ShortMessage{}
 
-		buf := NewBuffer([]byte{0x00, 0x00, 0x09, 0x05, 0x00, 0x03, 0x0c, 0x02, 0x01, 0x61, 0xf1, 0x18})
+		buf := NewBuffer([]byte{0x00, 0x00, 0x09, 0x05, 0x00, 0x03, 0x0c, 0x02, 0x01, 0x61, 0x62, 0x63})
 
 		// check encoding
 		require.NoError(t, s.Unmarshal(buf, true))
@@ -103,7 +102,7 @@ func TestShortMessage(t *testing.T) {
 
 		multiSM, err := sm.Split()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(multiSM))
+		require.Equal(t, 2, len(multiSM))
 	})
 
 	t.Run("shortMessageSplitUCS2_89chars", func(t *testing.T) {
