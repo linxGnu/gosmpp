@@ -51,20 +51,24 @@ func Decode7Bit(octets []byte) (str string, err error) {
 	var escaped bool
 	var r rune
 	for _, b := range raw7 {
-		if b > max {
+		switch {
+
+		case b > max:
 			err = ErrUnexpectedByte
 			return
-		}
-		if escaped {
+
+		case escaped:
 			r = gsmEscapes.from7Bit(b)
 			escaped = false
-		} else if b == Esc {
+			str += string(r)
+
+		case b == Esc:
 			escaped = true
-			continue
-		} else {
+
+		default:
 			r = gsmTable.Rune(int(b))
+			str += string(r)
 		}
-		str += string(r)
 	}
 	return
 }
