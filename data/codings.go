@@ -48,11 +48,11 @@ func decode(data []byte, decoder *encoding.Decoder) (st string, err error) {
 type gsm7bit struct{}
 
 func (c gsm7bit) Encode(str string) ([]byte, error) {
-	return encode(str, GSM7(true).NewEncoder())
+	return Encode7Bit(str), nil
 }
 
 func (c gsm7bit) Decode(data []byte) (string, error) {
-	return decode(data, GSM7(true).NewDecoder())
+	return Decode7Bit(data)
 }
 
 func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }
@@ -62,41 +62,20 @@ func (c gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err
 		octetLimit = 134
 	}
 
-	// alphabet mapping
-	septets := make([]byte, 0, len(text))
-	for _, r := range text {
-		if v, ok := forwardLookup[r]; ok {
-			septets = append(septets, v)
-		} else if v, ok := forwardEscape[r]; ok {
-			septets = append(septets, escapeSequence, v)
-		} else {
-			err = ErrInvalidCharacter
-			return
-		}
-	}
-
 	allSeg = [][]byte{}
+	runeSlice := []rune(text)
 
-	// 1. split septets
-	septetLim := int(octetLimit * 8 / 7)
-	fr, to := 0, septetLim
-	for fr < len(septets) {
-		if to > len(septets) {
-			to = len(septets)
+	fr, to := 0, int(octetLimit)
+	for fr < len(runeSlice) {
+		if to > len(runeSlice) {
+			to = len(runeSlice)
 		}
-
-		if to-fr == septetLim && septets[to-1] == escapeSequence {
-			to-- // check if we splitted an escape
+		seg, err := c.Encode(string(runeSlice[fr:to]))
+		if err != nil {
+			return nil, err
 		}
-
-		size := (to - fr) * 7
-		seg := make([]byte, ((size-1)/8)+1) // ceil(size/8)
-
-		// 2. pack each septet
-		pack(seg, septets[fr:to])
 		allSeg = append(allSeg, seg)
-
-		fr, to = to, to+septetLim
+		fr, to = to, to+int(octetLimit)
 	}
 
 	return

@@ -1,360 +1,338 @@
 package data
 
-// Source code in this file is copied from: https://github.com/fiorix
+// copied from: https://github.com/xlab/at/blob/master/pdu/7bit.go
 import (
 	"bytes"
 	"errors"
-	"math"
-
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/transform"
+	"fmt"
 )
 
-// ErrInvalidCharacter means a given character can not be represented in GSM 7-bit encoding.
-//
-// This can only happen during encoding.
-var ErrInvalidCharacter = errors.New("invalid gsm7 character")
+// Esc code.
+const Esc byte = 0x1B
 
-// ErrInvalidByte means that a given byte is outside of the GSM 7-bit encoding range.
-//
-// This can only happen during decoding.
-var ErrInvalidByte = errors.New("invalid gsm7 byte")
+// Ctrl+Z code.
+const Sub byte = 0x1A
 
-/*
-GSM 7-bit default alphabet and extension table
-Source: https://en.wikipedia.org/wiki/GSM_03.38#GSM_7-bit_default_alphabet_and_extension_table_of_3GPP_TS_23.038_/_GSM_03.38
-*/
-const escapeSequence = 0x1B
+// <CR> code.
+const CR byte = 0x0D
 
-var forwardLookup = map[rune]byte{
-	'@': 0x00, '£': 0x01, '$': 0x02, '¥': 0x03, 'è': 0x04, 'é': 0x05, 'ù': 0x06, 'ì': 0x07,
-	'ò': 0x08, 'Ç': 0x09, '\n': 0x0a, 'Ø': 0x0b, 'ø': 0x0c, '\r': 0x0d, 'Å': 0x0e, 'å': 0x0f,
-	'Δ': 0x10, '_': 0x11, 'Φ': 0x12, 'Γ': 0x13, 'Λ': 0x14, 'Ω': 0x15, 'Π': 0x16, 'Ψ': 0x17,
-	'Σ': 0x18, 'Θ': 0x19, 'Ξ': 0x1a /* 0x1B */, 'Æ': 0x1c, 'æ': 0x1d, 'ß': 0x1e, 'É': 0x1f,
-	' ': 0x20, '!': 0x21, '"': 0x22, '#': 0x23, '¤': 0x24, '%': 0x25, '&': 0x26, '\'': 0x27,
-	'(': 0x28, ')': 0x29, '*': 0x2a, '+': 0x2b, ',': 0x2c, '-': 0x2d, '.': 0x2e, '/': 0x2f,
-	'0': 0x30, '1': 0x31, '2': 0x32, '3': 0x33, '4': 0x34, '5': 0x35, '6': 0x36, '7': 0x37,
-	'8': 0x38, '9': 0x39, ':': 0x3a, ';': 0x3b, '<': 0x3c, '=': 0x3d, '>': 0x3e, '?': 0x3f,
-	'¡': 0x40, 'A': 0x41, 'B': 0x42, 'C': 0x43, 'D': 0x44, 'E': 0x45, 'F': 0x46, 'G': 0x47,
-	'H': 0x48, 'I': 0x49, 'J': 0x4a, 'K': 0x4b, 'L': 0x4c, 'M': 0x4d, 'N': 0x4e, 'O': 0x4f,
-	'P': 0x50, 'Q': 0x51, 'R': 0x52, 'S': 0x53, 'T': 0x54, 'U': 0x55, 'V': 0x56, 'W': 0x57,
-	'X': 0x58, 'Y': 0x59, 'Z': 0x5a, 'Ä': 0x5b, 'Ö': 0x5c, 'Ñ': 0x5d, 'Ü': 0x5e, '§': 0x5f,
-	'¿': 0x60, 'a': 0x61, 'b': 0x62, 'c': 0x63, 'd': 0x64, 'e': 0x65, 'f': 0x66, 'g': 0x67,
-	'h': 0x68, 'i': 0x69, 'j': 0x6a, 'k': 0x6b, 'l': 0x6c, 'm': 0x6d, 'n': 0x6e, 'o': 0x6f,
-	'p': 0x70, 'q': 0x71, 'r': 0x72, 's': 0x73, 't': 0x74, 'u': 0x75, 'v': 0x76, 'w': 0x77,
-	'x': 0x78, 'y': 0x79, 'z': 0x7a, 'ä': 0x7b, 'ö': 0x7c, 'ñ': 0x7d, 'ü': 0x7e, 'à': 0x7f,
-}
-var forwardEscape = map[rune]byte{
-	'\f': 0x0A, '^': 0x14, '{': 0x28, '}': 0x29, '\\': 0x2F, '[': 0x3C, '~': 0x3D, ']': 0x3E, '|': 0x40, '€': 0x65,
-}
-var reverseLookup = map[byte]rune{
-	0x00: '@', 0x01: '£', 0x02: '$', 0x03: '¥', 0x04: 'è', 0x05: 'é', 0x06: 'ù', 0x07: 'ì',
-	0x08: 'ò', 0x09: 'Ç', 0x0a: '\n', 0x0b: 'Ø', 0x0c: 'ø', 0x0d: '\r', 0x0e: 'Å', 0x0f: 'å',
-	0x10: 'Δ', 0x11: '_', 0x12: 'Φ', 0x13: 'Γ', 0x14: 'Λ', 0x15: 'Ω', 0x16: 'Π', 0x17: 'Ψ',
-	0x18: 'Σ', 0x19: 'Θ', 0x1a: 'Ξ' /* 0x1B */, 0x1c: 'Æ', 0x1d: 'æ', 0x1e: 'ß', 0x1f: 'É',
-	0x20: ' ', 0x21: '!', 0x22: '"', 0x23: '#', 0x24: '¤', 0x25: '%', 0x26: '&', 0x27: '\'',
-	0x28: '(', 0x29: ')', 0x2a: '*', 0x2b: '+', 0x2c: ',', 0x2d: '-', 0x2e: '.', 0x2f: '/',
-	0x30: '0', 0x31: '1', 0x32: '2', 0x33: '3', 0x34: '4', 0x35: '5', 0x36: '6', 0x37: '7',
-	0x38: '8', 0x39: '9', 0x3a: ':', 0x3b: ';', 0x3c: '<', 0x3d: '=', 0x3e: '>', 0x3f: '?',
-	0x40: '¡', 0x41: 'A', 0x42: 'B', 0x43: 'C', 0x44: 'D', 0x45: 'E', 0x46: 'F', 0x47: 'G',
-	0x48: 'H', 0x49: 'I', 0x4a: 'J', 0x4b: 'K', 0x4c: 'L', 0x4d: 'M', 0x4e: 'N', 0x4f: 'O',
-	0x50: 'P', 0x51: 'Q', 0x52: 'R', 0x53: 'S', 0x54: 'T', 0x55: 'U', 0x56: 'V', 0x57: 'W',
-	0x58: 'X', 0x59: 'Y', 0x5a: 'Z', 0x5b: 'Ä', 0x5c: 'Ö', 0x5d: 'Ñ', 0x5e: 'Ü', 0x5f: '§',
-	0x60: '¿', 0x61: 'a', 0x62: 'b', 0x63: 'c', 0x64: 'd', 0x65: 'e', 0x66: 'f', 0x67: 'g',
-	0x68: 'h', 0x69: 'i', 0x6a: 'j', 0x6b: 'k', 0x6c: 'l', 0x6d: 'm', 0x6e: 'n', 0x6f: 'o',
-	0x70: 'p', 0x71: 'q', 0x72: 'r', 0x73: 's', 0x74: 't', 0x75: 'u', 0x76: 'v', 0x77: 'w',
-	0x78: 'x', 0x79: 'y', 0x7a: 'z', 0x7b: 'ä', 0x7c: 'ö', 0x7d: 'ñ', 0x7e: 'ü', 0x7f: 'à',
-}
-var reverseEscape = map[byte]rune{
-	0x0A: '\f', 0x14: '^', 0x28: '{', 0x29: '}', 0x2F: '\\', 0x3C: '[', 0x3D: '~', 0x3E: ']', 0x40: '|', 0x65: '€',
-}
+var crcr = []byte{CR, CR}
+var cr = []byte{CR}
 
-// ValidateGSM7String returns the characters, in the given text, that can not be represented in GSM 7-bit encoding.
-func ValidateGSM7String(text string) []rune {
-	invalidChars := make([]rune, 0, 4)
-	for _, r := range text {
-		if _, ok := forwardLookup[r]; !ok {
-			if _, ok := forwardEscape[r]; !ok {
-				invalidChars = append(invalidChars, r)
-			}
-		}
-	}
-	return invalidChars
-}
+const (
+	max     byte = 0x7F
+	unknown rune = '?'
+)
 
-// ValidateGSM7Buffer returns the bytes, in the given buffer, that are outside of the GSM 7-bit encoding range.
-func ValidateGSM7Buffer(buffer []byte) []byte {
-	invalidBytes := make([]byte, 0, 4)
-	count := 0
-	for count < len(buffer) {
-		b := buffer[count]
-		if b == escapeSequence {
-			count++
-			if count >= len(buffer) {
-				invalidBytes = append(invalidBytes, b)
-				break
-			}
-			e := buffer[count]
-			if _, ok := reverseEscape[e]; !ok {
-				invalidBytes = append(invalidBytes, b, e)
-			}
-		} else if _, ok := reverseLookup[b]; !ok {
-			invalidBytes = append(invalidBytes, b)
-		}
-		count++
-	}
-	return invalidBytes
-}
+// ErrUnexpectedByte happens when someone tries to decode non GSM 7-bit encoded string.
+var ErrUnexpectedByte = errors.New("7bit decode: met an unexpected byte")
 
-// GSM7 returns a GSM 7-bit Bit Encoding.
-//
-// Set the packed flag to true if you wish to convert septets to octets,
-func GSM7(packed bool) encoding.Encoding {
-	return gsm7Encoding{packed: packed}
-}
-
-type gsm7Encoding struct {
-	packed bool
-}
-
-func (g gsm7Encoding) NewDecoder() *encoding.Decoder {
-	return &encoding.Decoder{Transformer: &gsm7Decoder{
-		packed: g.packed,
-	}}
-}
-
-func (g gsm7Encoding) NewEncoder() *encoding.Encoder {
-	return &encoding.Encoder{Transformer: &gsm7Encoder{
-		packed: g.packed,
-	}}
-}
-
-func (g gsm7Encoding) String() string {
-	if g.packed {
-		return "GSM 7-bit (Packed)"
-	}
-	return "GSM 7-bit (Unpacked)"
-}
-
-type gsm7Decoder struct {
-	packed bool
-}
-
-func (g *gsm7Decoder) Reset() { /* not needed */ }
-
-func unpack(src []byte, packed bool) (septets []byte) {
-	septets = src
-	if packed {
-		septets = make([]byte, 0, len(src))
-		count := 0
-		for remain := len(src) - count; remain > 0; {
-			// Unpack by converting octets into septets.
-			switch {
-			case remain >= 7:
-				septets = append(septets, src[count+0]&0x7F<<0)
-				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
-				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
-				septets = append(septets, (src[count+3]&0x0F<<3)|(src[count+2]&0xE0>>5))
-				septets = append(septets, (src[count+4]&0x07<<4)|(src[count+3]&0xF0>>4))
-				septets = append(septets, (src[count+5]&0x03<<5)|(src[count+4]&0xF8>>3))
-				septets = append(septets, (src[count+6]&0x01<<6)|(src[count+5]&0xFC>>2))
-				if src[count+6] > 0 {
-					septets = append(septets, src[count+6]&0xFE>>1)
-				}
-				count += 7
-			case remain >= 6:
-				septets = append(septets, src[count+0]&0x7F<<0)
-				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
-				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
-				septets = append(septets, (src[count+3]&0x0F<<3)|(src[count+2]&0xE0>>5))
-				septets = append(septets, (src[count+4]&0x07<<4)|(src[count+3]&0xF0>>4))
-				septets = append(septets, (src[count+5]&0x03<<5)|(src[count+4]&0xF8>>3))
-				count += 6
-			case remain >= 5:
-				septets = append(septets, src[count+0]&0x7F<<0)
-				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
-				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
-				septets = append(septets, (src[count+3]&0x0F<<3)|(src[count+2]&0xE0>>5))
-				septets = append(septets, (src[count+4]&0x07<<4)|(src[count+3]&0xF0>>4))
-				count += 5
-			case remain >= 4:
-				septets = append(septets, src[count+0]&0x7F<<0)
-				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
-				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
-				septets = append(septets, (src[count+3]&0x0F<<3)|(src[count+2]&0xE0>>5))
-				count += 4
-			case remain >= 3:
-				septets = append(septets, src[count+0]&0x7F<<0)
-				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
-				septets = append(septets, (src[count+2]&0x1F<<2)|(src[count+1]&0xC0>>6))
-				count += 3
-			case remain >= 2:
-				septets = append(septets, src[count+0]&0x7F<<0)
-				septets = append(septets, (src[count+1]&0x3F<<1)|(src[count+0]&0x80>>7))
-				count += 2
-			case remain >= 1:
-				septets = append(septets, src[count+0]&0x7F<<0)
-				count++
-			default:
-				return
-			}
-			remain = len(src) - count
-		}
-	}
-	return
-}
-
-func (g *gsm7Decoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-	if len(src) == 0 {
-		return 0, 0, nil
-	}
-
-	septets := unpack(src, g.packed)
-
-	nSeptet := 0
-	builder := bytes.NewBufferString("")
-	for nSeptet < len(septets) {
-		b := septets[nSeptet]
-		if b == escapeSequence {
-			nSeptet++
-			if nSeptet >= len(septets) {
-				return 0, 0, ErrInvalidByte
-			}
-			e := septets[nSeptet]
-			if r, ok := reverseEscape[e]; ok {
-				builder.WriteRune(r)
+// Encode7Bit encodes the given UTF-8 text into GSM 7-bit (3GPP TS 23.038) encoding with packing.
+func Encode7Bit(str string) []byte {
+	raw7 := make([]byte, 0, len(str))
+	for _, r := range str {
+		i := gsmTable.Index(r)
+		if i < 0 {
+			b := gsmEscapes.to7Bit(r)
+			if b != byte(unknown) {
+				raw7 = append(raw7, Esc, b)
 			} else {
-				return 0, 0, ErrInvalidByte
+				raw7 = append(raw7, b)
 			}
-		} else if r, ok := reverseLookup[b]; ok {
-			builder.WriteRune(r)
-		} else {
-			return 0, 0, ErrInvalidByte
+			continue
 		}
-		nSeptet++
+		raw7 = append(raw7, byte(i))
 	}
-	text := builder.Bytes()
-	nDst = len(text)
-
-	if len(dst) < nDst {
-		return 0, 0, transform.ErrShortDst
-	}
-
-	copy(dst, text)
-	return
+	return pack7Bit(raw7)
 }
 
-type gsm7Encoder struct {
-	packed bool
-}
-
-func (g *gsm7Encoder) Reset() {
-	/* no needed */
-}
-
-func pack(dst []byte, septets []byte) (nDst int) {
-	nSeptet := 0
-	for remain := len(septets); remain > 0; {
-		// Pack by converting septets into octets.
-		switch {
-		case remain >= 8:
-			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
-			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
-			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
-			dst[nDst+3] = (septets[nSeptet+3] & 0x78 >> 3) | (septets[nSeptet+4] & 0x0F << 4)
-			dst[nDst+4] = (septets[nSeptet+4] & 0x70 >> 4) | (septets[nSeptet+5] & 0x1F << 3)
-			dst[nDst+5] = (septets[nSeptet+5] & 0x60 >> 5) | (septets[nSeptet+6] & 0x3F << 2)
-			dst[nDst+6] = (septets[nSeptet+6] & 0x40 >> 6) | (septets[nSeptet+7] & 0x7F << 1)
-			nSeptet += 8
-			nDst += 7
-		case remain >= 7:
-			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
-			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
-			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
-			dst[nDst+3] = (septets[nSeptet+3] & 0x78 >> 3) | (septets[nSeptet+4] & 0x0F << 4)
-			dst[nDst+4] = (septets[nSeptet+4] & 0x70 >> 4) | (septets[nSeptet+5] & 0x1F << 3)
-			dst[nDst+5] = (septets[nSeptet+5] & 0x60 >> 5) | (septets[nSeptet+6] & 0x3F << 2)
-			dst[nDst+6] = septets[nSeptet+6] & 0x40 >> 6
-			nSeptet += 7
-			nDst += 7
-		case remain >= 6:
-			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
-			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
-			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
-			dst[nDst+3] = (septets[nSeptet+3] & 0x78 >> 3) | (septets[nSeptet+4] & 0x0F << 4)
-			dst[nDst+4] = (septets[nSeptet+4] & 0x70 >> 4) | (septets[nSeptet+5] & 0x1F << 3)
-			dst[nDst+5] = septets[nSeptet+5] & 0x60 >> 5
-			nSeptet += 6
-			nDst += 6
-		case remain >= 5:
-			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
-			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
-			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
-			dst[nDst+3] = (septets[nSeptet+3] & 0x78 >> 3) | (septets[nSeptet+4] & 0x0F << 4)
-			dst[nDst+4] = septets[nSeptet+4] & 0x70 >> 4
-			nSeptet += 5
-			nDst += 5
-		case remain >= 4:
-			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
-			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
-			dst[nDst+2] = (septets[nSeptet+2] & 0x7C >> 2) | (septets[nSeptet+3] & 0x07 << 5)
-			dst[nDst+3] = septets[nSeptet+3] & 0x78 >> 3
-			nSeptet += 4
-			nDst += 4
-		case remain >= 3:
-			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
-			dst[nDst+1] = (septets[nSeptet+1] & 0x7E >> 1) | (septets[nSeptet+2] & 0x03 << 6)
-			dst[nDst+2] = septets[nSeptet+2] & 0x7C >> 2
-			nSeptet += 3
-			nDst += 3
-		case remain >= 2:
-			dst[nDst+0] = (septets[nSeptet+0] & 0x7F >> 0) | (septets[nSeptet+1] & 0x01 << 7)
-			dst[nDst+1] = septets[nSeptet+1] & 0x7E >> 1
-			nSeptet += 2
-			nDst += 2
-		case remain >= 1:
-			dst[nDst+0] = septets[nSeptet+0] & 0x7F >> 0
-			nSeptet++
-			nDst++
-		default:
+// Decode7Bit decodes the given GSM 7-bit packed octet data (3GPP TS 23.038) into a UTF-8 encoded string.
+func Decode7Bit(octets []byte) (str string, err error) {
+	raw7 := unpack7Bit(octets)
+	var escaped bool
+	var r rune
+	for _, b := range raw7 {
+		if b > max {
+			err = ErrUnexpectedByte
 			return
+		} else if escaped {
+			r = gsmEscapes.from7Bit(b)
+			escaped = false
+		} else if b == Esc {
+			escaped = true
+			continue
+		} else {
+			r = gsmTable.Rune(int(b))
 		}
-		remain = len(septets) - nSeptet
+		str += string(r)
 	}
 	return
 }
 
-func (g *gsm7Encoder) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-	if len(src) == 0 {
-		return 0, 0, nil
+func pad(n, block int) int {
+	if n%block == 0 {
+		return n
 	}
+	return (n/block + 1) * block
+}
 
-	text := string(src) // work with []rune (a.k.a string) instead of []byte
-	septets := make([]byte, 0, len(text))
-	for _, r := range text {
-		if v, ok := forwardLookup[r]; ok {
-			septets = append(septets, v)
-		} else if v, ok := forwardEscape[r]; ok {
-			septets = append(septets, escapeSequence, v)
-		} else {
-			return 0, 0, ErrInvalidCharacter
+func blocks(n, block int) int {
+	if n%block == 0 {
+		return n / block
+	}
+	return n/block + 1
+}
+
+func pack7Bit(raw7 []byte) []byte {
+	pack7 := make([]byte, blocks(len(raw7)*7, 8))
+	pack := func(out []byte, b byte, oct int, bit uint8) (int, uint8) {
+		for i := uint8(0); i < 7; i++ {
+			out[oct] |= b >> i & 1 << bit
+			bit++
+			if bit == 8 {
+				oct++
+				bit = 0
+			}
 		}
-		nSrc++
+		return oct, bit
 	}
+	var oct int   // current octet in pack7
+	var bit uint8 // current bit in octet
+	var b byte    // current byte in raw7
+	for i := range raw7 {
+		b = raw7[i]
+		oct, bit = pack(pack7, b, oct, bit)
+	}
+	// N.B. in order to not confuse 7 zero-bits with @
+	// <CR> code is added to the packed bits.
+	if 8-bit == 7 {
+		oct, bit = pack(pack7, CR, oct, bit)
+	} else if bit == 0 && b == CR {
+		// and if data ends with <CR> on the octet boundary,
+		// then we add an additional octet with <CR>. See (3GPP TS 23.038).
+		pack7 = append(pack7, 0x00)
+		oct, bit = pack(pack7, CR, oct, bit)
+	}
+	return pack7
+}
 
-	nDst = len(septets)
-	if g.packed {
-		nDst = int(math.Ceil(float64(len(septets)) * 7 / 8))
+func unpack7Bit(pack7 []byte) []byte {
+	raw7 := make([]byte, 0, len(pack7))
+	var sep byte  // current septet
+	var bit uint8 // current bit in septet
+	for _, oct := range pack7 {
+		for i := uint8(0); i < 8; i++ {
+			sep |= oct >> i & 1 << bit
+			bit++
+			if bit == 7 {
+				raw7 = append(raw7, sep)
+				sep = 0
+				bit = 0
+			}
+		}
 	}
-	if len(dst) < nDst {
-		return 0, 0, transform.ErrShortDst
+	if bytes.HasSuffix(raw7, crcr) || bytes.HasSuffix(raw7, cr) {
+		raw7 = raw7[:len(raw7)-1]
 	}
+	return raw7
+}
 
-	if !g.packed {
-		copy(dst, septets)
-		return nDst, nSrc, nil
+func displayPack(buf []byte) (out string) {
+	for i := 0; i < len(buf)*8; i++ {
+		b := buf[i/8]
+		if i%8 == 0 {
+			out += fmt.Sprintf("\n%02X:", b)
+		}
+		off := 7 - uint8(i%8)
+		out += fmt.Sprintf("%4d", b>>off&1)
 	}
+	return out
+}
 
-	nDst = pack(dst, septets)
-	return
+type escape struct {
+	from byte
+	to   rune
+}
+
+type escapeTable [0x0A]escape
+
+func (et *escapeTable) to7Bit(r rune) byte {
+	for _, esc := range et {
+		if esc.to == r {
+			return esc.from
+		}
+	}
+	return byte(unknown)
+}
+
+func (et *escapeTable) from7Bit(b byte) rune {
+	for _, esc := range et {
+		if esc.from == b {
+			return esc.to
+		}
+	}
+	return unknown
+}
+
+var gsmEscapes = escapeTable{
+	{0x0A, 0x000C}, /* FORM FEED */
+	{0x14, 0x005E}, /* CIRCUMFLEX ACCENT */
+	{0x28, 0x007B}, /* LEFT CURLY BRACKET */
+	{0x29, 0x007D}, /* RIGHT CURLY BRACKET */
+	{0x2F, 0x005C}, /* REVERSE SOLIDUS */
+	{0x3C, 0x005B}, /* LEFT SQUARE BRACKET */
+	{0x3D, 0x007E}, /* TILDE */
+	{0x3E, 0x005D}, /* RIGHT SQUARE BRACKET */
+	{0x40, 0x007C}, /* VERTICAL LINE */
+	{0x65, 0x20AC}, /* EURO SIGN */
+}
+
+type runeTable [0x80]rune
+
+func (rt *runeTable) Index(r rune) int {
+	for i := range rt {
+		if rt[i] == r {
+			return i
+		}
+	}
+	return -1
+}
+
+func (rt *runeTable) Rune(idx int) rune {
+	if idx >= 0 && idx < len(rt) {
+		return rt[idx]
+	}
+	return unknown
+}
+
+// Thanks, Jeroen @ Mobile Tidings
+var gsmTable = runeTable{
+	/* 0x00 */ 0x0040, /* COMMERCIAL AT */
+	/* 0x01 */ 0x00A3, /* POUND SIGN */
+	/* 0x02 */ 0x0024, /* DOLLAR SIGN */
+	/* 0x03 */ 0x00A5, /* YEN SIGN */
+	/* 0x04 */ 0x00E8, /* LATIN SMALL LETTER E WITH GRAVE */
+	/* 0x05 */ 0x00E9, /* LATIN SMALL LETTER E WITH ACUTE */
+	/* 0x06 */ 0x00F9, /* LATIN SMALL LETTER U WITH GRAVE */
+	/* 0x07 */ 0x00EC, /* LATIN SMALL LETTER I WITH GRAVE */
+	/* 0x08 */ 0x00F2, /* LATIN SMALL LETTER O WITH GRAVE */
+	/* 0x09 */ 0x00E7, /* LATIN SMALL LETTER C WITH CEDILLA */
+	/* 0x0A */ 0x000A, /* LINE FEED */
+	/* 0x0B */ 0x00D8, /* LATIN CAPITAL LETTER O WITH STROKE */
+	/* 0x0C */ 0x00F8, /* LATIN SMALL LETTER O WITH STROKE */
+	/* 0x0D */ 0x000D, /* CARRIAGE RETURN */
+	/* 0x0E */ 0x00C5, /* LATIN CAPITAL LETTER A WITH RING ABOVE */
+	/* 0x0F */ 0x00E5, /* LATIN SMALL LETTER A WITH RING ABOVE */
+	/* 0x10 */ 0x0394, /* GREEK CAPITAL LETTER DELTA */
+	/* 0x11 */ 0x005F, /* LOW LINE */
+	/* 0x12 */ 0x03A6, /* GREEK CAPITAL LETTER PHI */
+	/* 0x13 */ 0x0393, /* GREEK CAPITAL LETTER GAMMA */
+	/* 0x14 */ 0x039B, /* GREEK CAPITAL LETTER LAMDA */
+	/* 0x15 */ 0x03A9, /* GREEK CAPITAL LETTER OMEGA */
+	/* 0x16 */ 0x03A0, /* GREEK CAPITAL LETTER PI */
+	/* 0x17 */ 0x03A8, /* GREEK CAPITAL LETTER PSI */
+	/* 0x18 */ 0x03A3, /* GREEK CAPITAL LETTER SIGMA */
+	/* 0x19 */ 0x0398, /* GREEK CAPITAL LETTER THETA */
+	/* 0x1A */ 0x039E, /* GREEK CAPITAL LETTER XI */
+	/* 0x1B */ 0x00A0, /* ESCAPE TO EXTENSION TABLE */
+	/* 0x1C */ 0x00C6, /* LATIN CAPITAL LETTER AE */
+	/* 0x1D */ 0x00E6, /* LATIN SMALL LETTER AE */
+	/* 0x1E */ 0x00DF, /* LATIN SMALL LETTER SHARP S (German) */
+	/* 0x1F */ 0x00C9, /* LATIN CAPITAL LETTER E WITH ACUTE */
+	/* 0x20 */ 0x0020, /* SPACE */
+	/* 0x21 */ 0x0021, /* EXCLAMATION MARK */
+	/* 0x22 */ 0x0022, /* QUOTATION MARK */
+	/* 0x23 */ 0x0023, /* NUMBER SIGN */
+	/* 0x24 */ 0x00A4, /* CURRENCY SIGN */
+	/* 0x25 */ 0x0025, /* PERCENT SIGN */
+	/* 0x26 */ 0x0026, /* AMPERSAND */
+	/* 0x27 */ 0x0027, /* APOSTROPHE */
+	/* 0x28 */ 0x0028, /* LEFT PARENTHESIS */
+	/* 0x29 */ 0x0029, /* RIGHT PARENTHESIS */
+	/* 0x2A */ 0x002A, /* ASTERISK */
+	/* 0x2B */ 0x002B, /* PLUS SIGN */
+	/* 0x2C */ 0x002C, /* COMMA */
+	/* 0x2D */ 0x002D, /* HYPHEN-MINUS */
+	/* 0x2E */ 0x002E, /* FULL STOP */
+	/* 0x2F */ 0x002F, /* SOLIDUS */
+	/* 0x30 */ 0x0030, /* DIGIT ZERO */
+	/* 0x31 */ 0x0031, /* DIGIT ONE */
+	/* 0x32 */ 0x0032, /* DIGIT TWO */
+	/* 0x33 */ 0x0033, /* DIGIT THREE */
+	/* 0x34 */ 0x0034, /* DIGIT FOUR */
+	/* 0x35 */ 0x0035, /* DIGIT FIVE */
+	/* 0x36 */ 0x0036, /* DIGIT SIX */
+	/* 0x37 */ 0x0037, /* DIGIT SEVEN */
+	/* 0x38 */ 0x0038, /* DIGIT EIGHT */
+	/* 0x39 */ 0x0039, /* DIGIT NINE */
+	/* 0x3A */ 0x003A, /* COLON */
+	/* 0x3B */ 0x003B, /* SEMICOLON */
+	/* 0x3C */ 0x003C, /* LESS-THAN SIGN */
+	/* 0x3D */ 0x003D, /* EQUALS SIGN */
+	/* 0x3E */ 0x003E, /* GREATER-THAN SIGN */
+	/* 0x3F */ 0x003F, /* QUESTION MARK */
+	/* 0x40 */ 0x00A1, /* INVERTED EXCLAMATION MARK */
+	/* 0x41 */ 0x0041, /* LATIN CAPITAL LETTER A */
+	/* 0x42 */ 0x0042, /* LATIN CAPITAL LETTER B */
+	/* 0x43 */ 0x0043, /* LATIN CAPITAL LETTER C */
+	/* 0x44 */ 0x0044, /* LATIN CAPITAL LETTER D */
+	/* 0x45 */ 0x0045, /* LATIN CAPITAL LETTER E */
+	/* 0x46 */ 0x0046, /* LATIN CAPITAL LETTER F */
+	/* 0x47 */ 0x0047, /* LATIN CAPITAL LETTER G */
+	/* 0x48 */ 0x0048, /* LATIN CAPITAL LETTER H */
+	/* 0x49 */ 0x0049, /* LATIN CAPITAL LETTER I */
+	/* 0x4A */ 0x004A, /* LATIN CAPITAL LETTER J */
+	/* 0x4B */ 0x004B, /* LATIN CAPITAL LETTER K */
+	/* 0x4C */ 0x004C, /* LATIN CAPITAL LETTER L */
+	/* 0x4D */ 0x004D, /* LATIN CAPITAL LETTER M */
+	/* 0x4E */ 0x004E, /* LATIN CAPITAL LETTER N */
+	/* 0x4F */ 0x004F, /* LATIN CAPITAL LETTER O */
+	/* 0x50 */ 0x0050, /* LATIN CAPITAL LETTER P */
+	/* 0x51 */ 0x0051, /* LATIN CAPITAL LETTER Q */
+	/* 0x52 */ 0x0052, /* LATIN CAPITAL LETTER R */
+	/* 0x53 */ 0x0053, /* LATIN CAPITAL LETTER S */
+	/* 0x54 */ 0x0054, /* LATIN CAPITAL LETTER T */
+	/* 0x55 */ 0x0055, /* LATIN CAPITAL LETTER U */
+	/* 0x56 */ 0x0056, /* LATIN CAPITAL LETTER V */
+	/* 0x57 */ 0x0057, /* LATIN CAPITAL LETTER W */
+	/* 0x58 */ 0x0058, /* LATIN CAPITAL LETTER X */
+	/* 0x59 */ 0x0059, /* LATIN CAPITAL LETTER Y */
+	/* 0x5A */ 0x005A, /* LATIN CAPITAL LETTER Z */
+	/* 0x5B */ 0x00C4, /* LATIN CAPITAL LETTER A WITH DIAERESIS */
+	/* 0x5C */ 0x00D6, /* LATIN CAPITAL LETTER O WITH DIAERESIS */
+	/* 0x5D */ 0x00D1, /* LATIN CAPITAL LETTER N WITH TILDE */
+	/* 0x5E */ 0x00DC, /* LATIN CAPITAL LETTER U WITH DIAERESIS */
+	/* 0x5F */ 0x00A7, /* SECTION SIGN */
+	/* 0x60 */ 0x00BF, /* INVERTED QUESTION MARK */
+	/* 0x61 */ 0x0061, /* LATIN SMALL LETTER A */
+	/* 0x62 */ 0x0062, /* LATIN SMALL LETTER B */
+	/* 0x63 */ 0x0063, /* LATIN SMALL LETTER C */
+	/* 0x64 */ 0x0064, /* LATIN SMALL LETTER D */
+	/* 0x65 */ 0x0065, /* LATIN SMALL LETTER E */
+	/* 0x66 */ 0x0066, /* LATIN SMALL LETTER F */
+	/* 0x67 */ 0x0067, /* LATIN SMALL LETTER G */
+	/* 0x68 */ 0x0068, /* LATIN SMALL LETTER H */
+	/* 0x69 */ 0x0069, /* LATIN SMALL LETTER I */
+	/* 0x6A */ 0x006A, /* LATIN SMALL LETTER J */
+	/* 0x6B */ 0x006B, /* LATIN SMALL LETTER K */
+	/* 0x6C */ 0x006C, /* LATIN SMALL LETTER L */
+	/* 0x6D */ 0x006D, /* LATIN SMALL LETTER M */
+	/* 0x6E */ 0x006E, /* LATIN SMALL LETTER N */
+	/* 0x6F */ 0x006F, /* LATIN SMALL LETTER O */
+	/* 0x70 */ 0x0070, /* LATIN SMALL LETTER P */
+	/* 0x71 */ 0x0071, /* LATIN SMALL LETTER Q */
+	/* 0x72 */ 0x0072, /* LATIN SMALL LETTER R */
+	/* 0x73 */ 0x0073, /* LATIN SMALL LETTER S */
+	/* 0x74 */ 0x0074, /* LATIN SMALL LETTER T */
+	/* 0x75 */ 0x0075, /* LATIN SMALL LETTER U */
+	/* 0x76 */ 0x0076, /* LATIN SMALL LETTER V */
+	/* 0x77 */ 0x0077, /* LATIN SMALL LETTER W */
+	/* 0x78 */ 0x0078, /* LATIN SMALL LETTER X */
+	/* 0x79 */ 0x0079, /* LATIN SMALL LETTER Y */
+	/* 0x7A */ 0x007A, /* LATIN SMALL LETTER Z */
+	/* 0x7B */ 0x00E4, /* LATIN SMALL LETTER A WITH DIAERESIS */
+	/* 0x7C */ 0x00F6, /* LATIN SMALL LETTER O WITH DIAERESIS */
+	/* 0x7D */ 0x00F1, /* LATIN SMALL LETTER N WITH TILDE */
+	/* 0x7E */ 0x00FC, /* LATIN SMALL LETTER U WITH DIAERESIS */
+	/* 0x7F */ 0x00E0, /* LATIN SMALL LETTER A WITH GRAVE */
 }

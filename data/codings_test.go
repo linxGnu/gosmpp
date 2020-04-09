@@ -56,7 +56,7 @@ func TestCoding(t *testing.T) {
 
 func TestGSM7Bit(t *testing.T) {
 	require.EqualValues(t, 0, GSM7BIT.DataCoding())
-	testEncoding(t, GSM7BIT, "gjwklgjkwP123+?", "67f57dcd3eabd777684c365bfd00")
+	testEncoding(t, GSM7BIT, "gjwklgjkwP123+?", "67f57dcd3eabd777684c365bfd1a")
 }
 
 func TestSplit(t *testing.T) {
@@ -67,12 +67,12 @@ func TestSplit(t *testing.T) {
 			134,
 			"gjwklgjkwP123+?sasdasdaqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdqwdqwDQWdqwdqwdqwdqwwqwdqwdqwddqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdwqdqwqwdqwdqwqwdqw{",
 			[]string{
-				"67f57dcd3eabd777684c365bfde6e139393c2787e37772fc4e8edfc9f13b397e27c7efe4f89d1cbf93e37772fc4e8edfc9f13b397e27c7efe4f89d1cbf93e377729c1cbf93e37762f44a8edfc9f13b397e27c7eff7f89d1cbf93e37732397e27c7efe4f89d1cbf93e37772fc4e8edfc9f13b397e27c7efe4f89d1c27dfe3e4f83d7e27c7ef64",
-				"f17bfc4e8edf3728",
+				"67f57dcd3eabd777684c365bfde6e139393c2787e37772fc4e8edfc9f13b397e27c7efe4f89d1cbf93e37772fc4e8edfc9f13b397e27c7efe4f89d1cbf93e377729c1cbf93e37762f44a8edfc9f13b397e27c7eff7f89d1cbf93e37732397e27c7efe4f89d1cbf93e37772fc4e8edfc9f13b397e2703",
+				"f13b397e27c7c9f738397e8fdfc9f13b397e8fdfc9f1fb0605",
 			},
 			[]string{
-				"gjwklgjkwP123+?sasdasdaqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdqwdqwDQWdqwdqwdqwdqwwqwdqwdqwddqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdwqdqwqwdqwd",
-				"qwqwdqw{",
+				"gjwklgjkwP123+?sasdasdaqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqwdqdqwdqwDQWdqwdqwdqwdqwwqwdqwdqwddqwdqwdqwdqwdqwdqwdqwdqwdqwd",
+				"qwdqwdqdwqdqwqwdqwdqwqwdqw{",
 			})
 	})
 
