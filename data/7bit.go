@@ -54,7 +54,8 @@ func Decode7Bit(octets []byte) (str string, err error) {
 		if b > max {
 			err = ErrUnexpectedByte
 			return
-		} else if escaped {
+		}
+		if escaped {
 			r = gsmEscapes.from7Bit(b)
 			escaped = false
 		} else if b == Esc {
