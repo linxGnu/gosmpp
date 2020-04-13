@@ -61,7 +61,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	// sending SMS(s)
 	for i := 0; i < 60; i++ {
 		if err = trans.Transceiver().Submit(newSubmitSM()); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		time.Sleep(time.Second)
 	}
