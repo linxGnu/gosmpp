@@ -2,9 +2,9 @@ package gosmpp
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/linxGnu/gosmpp/pdu"
@@ -13,6 +13,11 @@ import (
 const (
 	// EnquireLinkIntervalMinimum represents minimum interval for enquire link.
 	EnquireLinkIntervalMinimum = 20 * time.Second
+)
+
+var (
+	// ErrTransmitterClosing indicates transmitter is closing. Can not send any PDU.
+	ErrTransmitterClosing = fmt.Errorf("Transmitter is closing. Can not send PDU to SMSC.")
 )
 
 // TransmitSettings is listener for transmitter.
@@ -43,6 +48,7 @@ type transmitter struct {
 	settings TransmitSettings
 	conn     *Connection
 	input    chan pdu.PDU
+	lock     sync.RWMutex
 	state    int32
 }
 
@@ -78,7 +84,10 @@ func (t *transmitter) Close() (err error) {
 }
 
 func (t *transmitter) close(state State) (err error) {
-	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	if t.state == 0 {
 		// don't receive anymore SubmitSM
 		t.cancel()
 
@@ -100,26 +109,38 @@ func (t *transmitter) close(state State) (err error) {
 		if t.settings.OnClosed != nil {
 			t.settings.OnClosed(state)
 		}
+
+		t.state = 1
 	}
+
 	return
 }
 
 func (t *transmitter) closing(state State) {
 	go func() {
-		_ = t.Close()
+		_ = t.close(state)
 	}()
 }
 
 // Submit a PDU.
 func (t *transmitter) Submit(p pdu.PDU) (err error) {
-	select {
-	case <-t.ctx.Done():
-		err = t.ctx.Err()
-		return
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 
-	case t.input <- p:
-		return
+	if t.state == 0 {
+		select {
+		case <-t.ctx.Done():
+			err = t.ctx.Err()
+			return
+
+		case t.input <- p:
+			return
+		}
+	} else {
+		err = ErrTransmitterClosing
 	}
+
+	return
 }
 
 func (t *transmitter) start() {
