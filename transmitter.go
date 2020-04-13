@@ -17,7 +17,7 @@ const (
 
 var (
 	// ErrTransmitterClosing indicates transmitter is closing. Can not send any PDU.
-	ErrTransmitterClosing = fmt.Errorf("Transmitter is closing. Can not send PDU to SMSC.")
+	ErrTransmitterClosing = fmt.Errorf("Transmitter is closing. Can not send PDU to SMSC")
 )
 
 // TransmitSettings is listener for transmitter.
