@@ -87,61 +87,49 @@ func TestShortMessage(t *testing.T) {
 
 	t.Run("shortMessageSplitGSM7_169chars", func(t *testing.T) {
 		// over gsm7 chars limit ( 169/160 ), split
-		sm, err := NewShortMessageWithEncoding("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1234123456789", data.GSM7BIT)
+		sm, err := NewLongMessageWithEncoding("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1234123456789", data.GSM7BIT)
 		require.NoError(t, err)
 
-		multiSM, err := sm.Split()
-		require.NoError(t, err)
-		require.Equal(t, 2, len(multiSM))
+		require.Equal(t, 2, len(sm))
 	})
 
 	t.Run("shortMessageSplitGSM7_160chars", func(t *testing.T) {
 		// over gsm7 chars limit ( 160/160 ), split
-		sm, err := NewShortMessageWithEncoding("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1234", data.GSM7BIT)
+		sm, err := NewLongMessageWithEncoding("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1234", data.GSM7BIT)
 		require.NoError(t, err)
 
-		multiSM, err := sm.Split()
-		require.NoError(t, err)
-		require.Equal(t, 2, len(multiSM))
+		require.Equal(t, 2, len(sm))
 	})
 
 	t.Run("shortMessageSplitUCS2_89chars", func(t *testing.T) {
 		// over UCS2 chars limit (89/67), split
-		sm, err := NewShortMessageWithEncoding("biggest gift của Christmas là có nhiều big/challenging/meaningful problems để sấp mặt làm", data.UCS2)
+		sm, err := NewLongMessageWithEncoding("biggest gift của Christmas là có nhiều big/challenging/meaningful problems để sấp mặt làm", data.UCS2)
 		require.NoError(t, err)
 
-		multiSM, err := sm.Split()
-		require.NoError(t, err)
-		require.Equal(t, 2, len(multiSM))
+		require.Equal(t, 2, len(sm))
 	})
 
 	t.Run("shortMessageSplitUCS2_67chars", func(t *testing.T) {
 		// still within UCS2 chars limit (67/67), not split
-		sm, err := NewShortMessageWithEncoding("biggest gift của Christmas là có nhiều big/challenging/meaningful p", data.UCS2)
+		sm, err := NewLongMessageWithEncoding("biggest gift của Christmas là có nhiều big/challenging/meaningful p", data.UCS2)
 		require.NoError(t, err)
 
-		multiSM, err := sm.Split()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(multiSM))
+		require.Equal(t, 1, len(sm))
 	})
 
 	t.Run("shortMessageSplitGSM7_empty", func(t *testing.T) {
 		// over UCS2 chars limit (89/67), split
-		sm, err := NewShortMessageWithEncoding("", data.GSM7BIT)
+		sm, err := NewLongMessageWithEncoding("", data.GSM7BIT)
 		require.NoError(t, err)
 
-		multiSM, err := sm.Split()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(multiSM))
+		require.Equal(t, 1, len(sm))
 	})
 
 	t.Run("indempotentMarshal", func(t *testing.T) {
 		// over gsm7 chars limit ( 160/160 ), split
-		sm, err := NewShortMessageWithEncoding("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1234", data.GSM7BIT)
+		multiSM, err := NewLongMessageWithEncoding("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1234", data.GSM7BIT)
 		require.NoError(t, err)
 
-		multiSM, err := sm.Split()
-		require.NoError(t, err)
 		for i := range multiSM {
 			b1, b2 := NewBuffer(nil), NewBuffer(nil)
 			multiSM[i].Marshal(b1)

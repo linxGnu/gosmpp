@@ -59,8 +59,8 @@ func (c gsm7bit) Decode(data []byte) (string, error) {
 
 func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }
 
-func (c gsm7bit) ShouldSplit(text string, octetLimit uint) (howMany uint) {
-	return (uint(len(text)) + octetLimit - 1) / octetLimit // ceil division
+func (c gsm7bit) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+	return uint(len(text)) > octetLimit
 }
 
 func (c gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
@@ -147,8 +147,8 @@ func (c ucs2) Decode(data []byte) (string, error) {
 	return decode(data, tmp.NewDecoder())
 }
 
-func (c ucs2) ShouldSplit(text string, octetLimit uint) (howMany uint) {
-	return (uint(len(text)*2) + octetLimit - 1) / octetLimit // ceil division
+func (c ucs2) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+	return uint(len(text)*2) > octetLimit
 }
 
 func (c ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
@@ -225,8 +225,7 @@ func FromDataCoding(code byte) (enc Encoding) {
 // that split a string into multiple segments
 // Each segment string, when encoded, must be within a certain octet limit
 type Splitter interface {
-	// ShouldSplit given an octetLimit calculates total splitted segments
-	// of this encoding, <=1 : no split,
-	ShouldSplit(text string, octetLimit uint) (howMany uint)
+	// ShouldSplit check if the encoded data of given text should be splitted under octetLimit
+	ShouldSplit(text string, octetLimit uint) (should bool)
 	EncodeSplit(text string, octetLimit uint) ([][]byte, error)
 }

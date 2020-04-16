@@ -44,8 +44,7 @@ func NewLongMessageWithEncoding(message string, enc data.Encoding) (s []*ShortMe
 		message: message,
 		enc:     enc,
 	}
-	s = []*ShortMessage{sm}
-	return
+	return sm.Split()
 }
 
 // SetMessageWithEncoding set message with encoding.
@@ -125,18 +124,19 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 	// check if encoding implements data.Splitter
 	splitter, ok := encoding.(data.Splitter)
 	if !ok {
+		// check if encoding implements data.Splitter
 		multiSM = []*ShortMessage{c}
 		return
 	}
-	octetLim := data.SM_GSM_MSG_LEN - 6 // reserve 6 bytes for concat message UDH
 
 	// quick check to see if you should split first
-	if splitter.ShouldSplit(c.message, uint(octetLim)) <= 1 {
+	if !splitter.ShouldSplit(c.message, data.SM_GSM_MSG_LEN) {
 		multiSM = []*ShortMessage{c}
 		return
 	}
 
-	segments, err := splitter.EncodeSplit(c.message, uint(octetLim))
+	// reserve 6 bytes for concat message UDH
+	segments, err := splitter.EncodeSplit(c.message, data.SM_GSM_MSG_LEN-6)
 	if err != nil {
 		return nil, err
 	}
