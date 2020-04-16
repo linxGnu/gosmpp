@@ -147,7 +147,7 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 			// message: we don't really care
 			messageData:       seg,
 			withoutDataCoding: c.withoutDataCoding,
-			udHeader:          UDH{NewIEConcatMessage(len(segments), i, int(ref))},
+			udHeader:          UDH{NewIEConcatMessage(len(segments), i+1, int(ref))},
 		})
 	}
 
