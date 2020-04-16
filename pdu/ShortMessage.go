@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -39,12 +38,14 @@ func NewLongMessage(message string) (s []*ShortMessage, err error) {
 	return NewLongMessageWithEncoding(message, data.GSM7BIT)
 }
 
+// NewLongMessage return long message splitted into multiple short message with encoding of choice
 func NewLongMessageWithEncoding(message string, enc data.Encoding) (s []*ShortMessage, err error) {
-	sm := ShortMessage{
+	sm := &ShortMessage{
 		message: message,
 		enc:     enc,
 	}
-	return sm.Split()
+	s = []*ShortMessage{sm}
+	return
 }
 
 // SetMessageWithEncoding set message with encoding.
@@ -124,7 +125,7 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 	// check if encoding implements data.Splitter
 	splitter, ok := encoding.(data.Splitter)
 	if !ok {
-		err = fmt.Errorf("Encoding does implement Splitter interface")
+		multiSM = []*ShortMessage{c}
 		return
 	}
 	octetLim := data.SM_GSM_MSG_LEN - 6 // reserve 6 bytes for concat message UDH

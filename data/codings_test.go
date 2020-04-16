@@ -62,6 +62,12 @@ func TestGSM7Bit(t *testing.T) {
 func TestSplit(t *testing.T) {
 	require.EqualValues(t, 00, GSM7BITPACKED.DataCoding())
 
+	t.Run("testShouldSplitGSM7", func(t *testing.T) {
+	})
+
+	t.Run("testShouldSplitUCS2", func(t *testing.T) {
+	})
+
 	t.Run("testSplitEscapeGSM7", func(t *testing.T) {
 		testEncodingSplit(t, GSM7BITPACKED,
 			134,
