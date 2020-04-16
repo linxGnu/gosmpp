@@ -134,4 +134,19 @@ func TestShortMessage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(multiSM))
 	})
+
+	t.Run("indempotentMarshal", func(t *testing.T) {
+		// over gsm7 chars limit ( 160/160 ), split
+		sm, err := NewShortMessageWithEncoding("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1234", data.GSM7BIT)
+		require.NoError(t, err)
+
+		multiSM, err := sm.Split()
+		require.NoError(t, err)
+		for i := range multiSM {
+			b1, b2 := NewBuffer(nil), NewBuffer(nil)
+			multiSM[i].Marshal(b1)
+			multiSM[i].Marshal(b2)
+			require.Equal(t, b1.Bytes(), b2.Bytes())
+		}
+	})
 }
