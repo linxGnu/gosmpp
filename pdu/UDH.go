@@ -112,7 +112,7 @@ type InfoElement struct {
 }
 
 // NewIEConcatMessage  turn a new IE element for concat message info
-// NOTE: in my opinion, using 16 bit reference is very unnecessary, usi
+// IE.Data is populated at time of object creation
 func NewIEConcatMessage(totalParts, partNum, mref int) InfoElement {
 	return InfoElement{
 		ID:   data.UDH_CONCAT_MSG_8_BIT_REF,

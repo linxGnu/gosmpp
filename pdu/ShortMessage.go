@@ -138,18 +138,15 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 
 // Marshal implements PDU interface.
 func (c *ShortMessage) Marshal(b *ByteBuffer) {
-
-	l := len(c.messageData)
+	var (
+		udhBin []byte
+		n      = byte(len(c.messageData))
+	)
 
 	// Prepend UDH to messgae data if there are any
-	if c.udHeader != nil {
-		if udhBin, err := c.udHeader.MarshalBinary(); err == nil {
-			c.messageData = append(udhBin, c.messageData...)
-			l += len(udhBin)
-		}
+	if c.udHeader != nil && c.udHeader.UDHL() > 0 {
+		udhBin, _ = c.udHeader.MarshalBinary()
 	}
-
-	n := byte(l)
 
 	b.Grow(int(n) + 3)
 
@@ -169,9 +166,14 @@ func (c *ShortMessage) Marshal(b *ByteBuffer) {
 	_ = b.WriteByte(c.SmDefaultMsgID)
 
 	// sm_length
-	_ = b.WriteByte(n)
+	if udhBin != nil {
+		_ = b.WriteByte(byte(int(n) + len(udhBin)))
+		b.Write(udhBin)
+	} else {
+		_ = b.WriteByte(n)
+	}
 
-	// short_message (udh included)
+	// short_message
 	_, _ = b.Write(c.messageData[:n])
 }
 
