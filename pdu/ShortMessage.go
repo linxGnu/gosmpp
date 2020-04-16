@@ -34,6 +34,16 @@ func NewShortMessageWithEncoding(message string, enc data.Encoding) (s ShortMess
 	return
 }
 
+func NewLongMessage(message string) (s ShortMessage, err error) {
+	err = s.SetLongMessageWithEnc(message, data.GSM7BIT)
+	return
+}
+
+func NewLongMessageWithEncoding(message string, enc data.Encoding) (s ShortMessage, err error) {
+	err = s.SetLongMessageWithEnc(message, enc)
+	return
+}
+
 // SetMessageWithEncoding set message with encoding.
 func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding) (err error) {
 	if c.messageData, err = enc.Encode(message); err == nil {
@@ -44,6 +54,14 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 			c.enc = enc
 		}
 	}
+	return
+}
+
+// SetLongMessageWithEnc set ShortMessage with message longer than  256 bytes
+// callers are expected to call Split() after this
+func (c *ShortMessage) SetLongMessageWithEnc(message string, enc data.Encoding) (err error) {
+	c.message = message
+	c.enc = enc
 	return
 }
 
