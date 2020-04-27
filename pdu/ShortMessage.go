@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -34,14 +33,18 @@ func NewShortMessageWithEncoding(message string, enc data.Encoding) (s ShortMess
 	return
 }
 
-func NewLongMessage(message string) (s ShortMessage, err error) {
-	err = s.SetLongMessageWithEnc(message, data.GSM7BIT)
-	return
+// NewLongMessage return long message splitted into multiple short message
+func NewLongMessage(message string) (s []*ShortMessage, err error) {
+	return NewLongMessageWithEncoding(message, data.GSM7BIT)
 }
 
-func NewLongMessageWithEncoding(message string, enc data.Encoding) (s ShortMessage, err error) {
-	err = s.SetLongMessageWithEnc(message, enc)
-	return
+// NewLongMessage return long message splitted into multiple short message with encoding of choice
+func NewLongMessageWithEncoding(message string, enc data.Encoding) (s []*ShortMessage, err error) {
+	sm := &ShortMessage{
+		message: message,
+		enc:     enc,
+	}
+	return sm.Split()
 }
 
 // SetMessageWithEncoding set message with encoding.
@@ -111,13 +114,6 @@ func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err
 // NOTE: Split() will return array of length 1 if data length is still within the limit
 // The encoding interface can implement the data.Splitter interface for ad-hoc splitting rule
 func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
-
-	// quick check to see if you should split first
-	if len(c.messageData) <= data.SM_GSM_MSG_LEN {
-		multiSM = []*ShortMessage{c}
-		return
-	}
-
 	var encoding data.Encoding
 	if c.enc == nil {
 		encoding = data.GSM7BIT
@@ -127,12 +123,14 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 
 	// check if encoding implements data.Splitter
 	splitter, ok := encoding.(data.Splitter)
-	if !ok {
-		err = fmt.Errorf("Encoding does implement Splitter interface")
+	// check if encoding implements data.Splitter or split is necessary
+	if !ok || !splitter.ShouldSplit(c.message, data.SM_GSM_MSG_LEN) {
+		err = c.SetMessageWithEncoding(c.message, c.enc)
+		multiSM = []*ShortMessage{c}
 		return
 	}
 
-	// get octet limit (reserve 6 bytes for concat message UDH)
+	// reserve 6 bytes for concat message UDH
 	segments, err := splitter.EncodeSplit(c.message, data.SM_GSM_MSG_LEN-6)
 	if err != nil {
 		return nil, err

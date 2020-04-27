@@ -62,6 +62,25 @@ func TestGSM7Bit(t *testing.T) {
 func TestSplit(t *testing.T) {
 	require.EqualValues(t, 00, GSM7BITPACKED.DataCoding())
 
+	t.Run("testShouldSplitGSM7", func(t *testing.T) {
+		octetLim := uint(140)
+		expect := map[string]bool{
+			"":  false,
+			"1": false,
+			"12312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311234121212":  false,
+			"123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112342212121": true,
+		}
+
+		splitter, _ := GSM7BIT.(Splitter)
+		for k, v := range expect {
+			ok := splitter.ShouldSplit(k, octetLim)
+			require.Equalf(t, ok, v, "Test case %s", k)
+		}
+	})
+
+	t.Run("testShouldSplitUCS2", func(t *testing.T) {
+	})
+
 	t.Run("testSplitEscapeGSM7", func(t *testing.T) {
 		testEncodingSplit(t, GSM7BITPACKED,
 			134,
