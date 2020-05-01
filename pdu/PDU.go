@@ -149,12 +149,12 @@ func (c *base) RegisterOptionalParam(tlv Field) {
 
 // IsOk is status ok.
 func (c *base) IsOk() bool {
-	return c.CommandStatus == int32(data.ESME_ROK)
+	return c.CommandStatus == data.ESME_ROK
 }
 
 // IsGNack is generic n-ack.
 func (c *base) IsGNack() bool {
-	return c.CommandID == int32(data.GENERIC_NACK)
+	return c.CommandID == data.GENERIC_NACK
 }
 
 // Parse PDU from reader.
