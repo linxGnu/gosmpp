@@ -1,1 +1,1 @@
-golangci-lint -E bodyclose,misspell,gocyclo,gofmt,golint,unconvert,goimports,depguard,gocritic,interfacer run
+golangci-lint -E bodyclose,misspell,gocyclo,gofmt,unconvert,goimports,depguard,gocritic,interfacer run
