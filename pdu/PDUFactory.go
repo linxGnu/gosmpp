@@ -7,7 +7,7 @@ import (
 
 type pduGenerator func() PDU
 
-var pduMap = map[int32]pduGenerator{
+var pduMap = map[data.CommandIDType]pduGenerator{
 	data.BIND_TRANSMITTER:      NewBindTransmitter,
 	data.BIND_TRANSMITTER_RESP: NewBindTransmitterResp,
 	data.BIND_TRANSCEIVER:      NewBindTransceiver,
@@ -38,7 +38,7 @@ var pduMap = map[int32]pduGenerator{
 }
 
 // CreatePDUFromCmdID creates PDU from cmd id.
-func CreatePDUFromCmdID(cmdID int32) (PDU, error) {
+func CreatePDUFromCmdID(cmdID data.CommandIDType) (PDU, error) {
 	if g, ok := pduMap[cmdID]; ok {
 		return g(), nil
 	}
