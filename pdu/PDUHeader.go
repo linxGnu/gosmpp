@@ -80,5 +80,5 @@ func (c *Header) Marshal(b *ByteBuffer) {
 	b.WriteInt(c.CommandLength)
 	b.WriteInt(int32(c.CommandID))
 	b.WriteInt(int32(c.CommandStatus))
-	b.WriteInt(int32(c.SequenceNumber))
+	b.WriteInt(c.SequenceNumber)
 }
