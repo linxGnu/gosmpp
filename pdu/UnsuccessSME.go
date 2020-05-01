@@ -7,7 +7,7 @@ import (
 // UnsuccessSME indicates submission was unsuccessful and the respective errors.
 type UnsuccessSME struct {
 	Address
-	errorStatusCode int32
+	errorStatusCode data.CommandStatusType
 }
 
 // NewUnsuccessSME returns new UnsuccessSME
@@ -20,26 +20,30 @@ func NewUnsuccessSME() (c UnsuccessSME) {
 }
 
 // NewUnsuccessSMEWithAddr returns new UnsuccessSME with address.
-func NewUnsuccessSMEWithAddr(addr string, errCode int32) (c UnsuccessSME, err error) {
+func NewUnsuccessSMEWithAddr(addr string, status data.CommandStatusType) (c UnsuccessSME, err error) {
 	c = NewUnsuccessSME()
 	if err = c.SetAddress(addr); err == nil {
-		c.SetErrorStatusCode(errCode)
+		c.SetErrorStatusCode(status)
 	}
 	return
 }
 
 // NewUnsuccessSMEWithTonNpi create new address with ton, npi and error code.
-func NewUnsuccessSMEWithTonNpi(ton, npi byte, errCode int32) UnsuccessSME {
+func NewUnsuccessSMEWithTonNpi(ton, npi byte, status data.CommandStatusType) UnsuccessSME {
 	return UnsuccessSME{
 		Address:         NewAddressWithTonNpi(ton, npi),
-		errorStatusCode: errCode,
+		errorStatusCode: status,
 	}
 }
 
 // Unmarshal from buffer.
 func (c *UnsuccessSME) Unmarshal(b *ByteBuffer) (err error) {
+	var st int32
 	if err = c.Address.Unmarshal(b); err == nil {
-		c.errorStatusCode, err = b.ReadInt()
+		st, err = b.ReadInt()
+		if err == nil {
+			c.errorStatusCode = data.CommandStatusType(st)
+		}
 	}
 	return
 }
@@ -47,16 +51,16 @@ func (c *UnsuccessSME) Unmarshal(b *ByteBuffer) (err error) {
 // Marshal to buffer.
 func (c *UnsuccessSME) Marshal(b *ByteBuffer) {
 	c.Address.Marshal(b)
-	b.WriteInt(c.errorStatusCode)
+	b.WriteInt(int32(c.errorStatusCode))
 }
 
 // SetErrorStatusCode sets error status code.
-func (c *UnsuccessSME) SetErrorStatusCode(v int32) {
+func (c *UnsuccessSME) SetErrorStatusCode(v data.CommandStatusType) {
 	c.errorStatusCode = v
 }
 
 // ErrorStatusCode returns assigned status code.
-func (c *UnsuccessSME) ErrorStatusCode() int32 {
+func (c *UnsuccessSME) ErrorStatusCode() data.CommandStatusType {
 	return c.errorStatusCode
 }
 
