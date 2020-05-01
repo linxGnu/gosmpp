@@ -5,6 +5,8 @@ import (
 	"log"
 	"testing"
 
+	"github.com/linxGnu/gosmpp/data"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +24,7 @@ func toHex(v []byte) (h string) {
 	return
 }
 
-func validate(t *testing.T, p PDU, hexValue string, expectCommandID int32) {
+func validate(t *testing.T, p PDU, hexValue string, expectCommandID data.CommandIDType) {
 	buf := NewBuffer(nil)
 	p.Marshal(buf)
 	require.Equal(t, fromHex(hexValue), buf.Bytes())
@@ -30,7 +32,7 @@ func validate(t *testing.T, p PDU, hexValue string, expectCommandID int32) {
 	expectAfterParse(t, buf, p, expectCommandID)
 }
 
-func expectAfterParse(t *testing.T, b *ByteBuffer, expect PDU, expectCommandID int32) {
+func expectAfterParse(t *testing.T, b *ByteBuffer, expect PDU, expectCommandID data.CommandIDType) {
 	c, err := Parse(b)
 	require.Nil(t, err)
 	require.Equal(t, expect, c)
