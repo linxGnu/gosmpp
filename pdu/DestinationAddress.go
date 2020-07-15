@@ -19,18 +19,6 @@ func NewDestinationAddress() (c DestinationAddress) {
 	return
 }
 
-// NewDestinationAddressFromAddress returns new DestinationAddress from an address.
-func NewDestinationAddressFromAddress(addr string) (c DestinationAddress, err error) {
-	err = c.SetAddress(addr)
-	return
-}
-
-// NewDestinationAddressFromDistributionList returns new DestinationAddress from a DistributionList name.
-func NewDestinationAddressFromDistributionList(name string) (c DestinationAddress, err error) {
-	err = c.SetDistributionList(name)
-	return
-}
-
 // Unmarshal from buffer.
 func (c *DestinationAddress) Unmarshal(b *ByteBuffer) (err error) {
 	if c.destFlag, err = b.ReadByte(); err == nil {
@@ -74,17 +62,15 @@ func (c *DestinationAddress) DistributionList() DistributionList {
 }
 
 // SetAddress marks DistributionAddress as a SME Address and assign.
-func (c *DestinationAddress) SetAddress(addr string) (err error) {
+func (c *DestinationAddress) SetAddress(addr Address) {
 	c.destFlag = data.SM_DEST_SME_ADDRESS
-	c.address, err = NewAddressWithAddr(addr)
-	return
+	c.address = addr
 }
 
 // SetDistributionList marks DistributionAddress as a DistributionList and assign.
-func (c *DestinationAddress) SetDistributionList(name string) (err error) {
+func (c *DestinationAddress) SetDistributionList(list DistributionList) {
 	c.destFlag = data.SM_DEST_DL_NAME
-	c.dl, err = NewDistributionList(name)
-	return
+	c.dl = list
 }
 
 // HasValue returns true if underlying DistributionList/Address is assigned.

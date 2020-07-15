@@ -10,8 +10,10 @@ import (
 
 func TestDestinationAddress(t *testing.T) {
 	t.Run("validDESTAddr", func(t *testing.T) {
-		d1, err := NewDestinationAddressFromAddress("Bob1")
-		require.Nil(t, err)
+		addr := NewAddress()
+		require.Nil(t, addr.SetAddress("Bob1"))
+		d1 := NewDestinationAddress()
+		d1.SetAddress(addr)
 		require.EqualValues(t, data.SM_DEST_SME_ADDRESS, d1.destFlag)
 		require.True(t, d1.IsAddress())
 		require.False(t, d1.IsDistributionList())
@@ -19,26 +21,16 @@ func TestDestinationAddress(t *testing.T) {
 		require.Equal(t, "Bob1", d1.Address().Address())
 		require.Equal(t, "", d1.DistributionList().Name())
 
-		d2, err := NewDestinationAddressFromDistributionList("List1")
+		dl, err := NewDistributionList("List1")
 		require.Nil(t, err)
+		d2 := NewDestinationAddress()
+		d2.SetDistributionList(dl)
 		require.EqualValues(t, data.SM_DEST_DL_NAME, d2.destFlag)
 		require.False(t, d2.IsAddress())
 		require.True(t, d2.IsDistributionList())
 		require.True(t, d2.HasValue())
 		require.Equal(t, "", d2.Address().Address())
 		require.Equal(t, "List1", d2.DistributionList().Name())
-
-		d3 := NewDestinationAddress()
-		require.EqualValues(t, data.DFLT_DEST_FLAG, d3.destFlag)
-		require.False(t, d3.IsAddress())
-		require.False(t, d3.IsDistributionList())
-		require.False(t, d3.HasValue())
-		require.Nil(t, d3.SetDistributionList("List2"))
-		require.Equal(t, "", d3.Address().Address())
-		require.Equal(t, "List2", d3.DistributionList().Name())
-		require.False(t, d3.IsAddress())
-		require.True(t, d3.IsDistributionList())
-		require.EqualValues(t, data.SM_DEST_DL_NAME, d3.destFlag)
 	})
 
 	t.Run("invalidDEST", func(t *testing.T) {

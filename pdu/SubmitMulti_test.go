@@ -24,12 +24,20 @@ func TestSubmitMulti(t *testing.T) {
 	v.SourceAddr.SetTon(28)
 	v.SourceAddr.SetNpi(29)
 
-	d1, err := NewDestinationAddressFromAddress("Bob1")
+	addr := NewAddress()
+	require.Nil(t, addr.SetAddress("Bob1"))
+	d1 := NewDestinationAddress()
+	d1.SetAddress(addr)
+
+	dl, err := NewDistributionList("List1")
 	require.Nil(t, err)
-	d2, err := NewDestinationAddressFromDistributionList("List1")
+	d2 := NewDestinationAddress()
+	d2.SetDistributionList(dl)
+
+	dl, err = NewDistributionList("List2")
 	require.Nil(t, err)
 	d3 := NewDestinationAddress()
-	require.Nil(t, d3.SetDistributionList("List2"))
+	d3.SetDistributionList(dl)
 
 	v.DestAddrs.Add(d1, d2, d3)
 	require.Equal(t, []DestinationAddress{d1, d2, d3}, v.DestAddrs.Get())
