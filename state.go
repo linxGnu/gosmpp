@@ -12,7 +12,7 @@ const (
 	StoppingProcessOnly
 
 	// InvalidStreaming indicates Transceiver/Receiver data reading state is
-	// invalid due to network connection/ or SMSC responsed with an invalid PDU
+	// invalid due to network connection or SMSC responsed with an invalid PDU
 	// which potentially damages other following PDU(s).
 	//
 	// In both cases, Transceiver/Receiver is closed implicitly.
@@ -25,3 +25,26 @@ const (
 	// UnbindClosing indicates Receiver got unbind request from SMSC and closed due to this request.
 	UnbindClosing
 )
+
+// String interface.
+func (s *State) String() string {
+	switch *s {
+	case ExplicitClosing:
+		return "ExplicitClosing"
+
+	case StoppingProcessOnly:
+		return "StoppingProcessOnly"
+
+	case InvalidStreaming:
+		return "InvalidStreaming"
+
+	case ConnectionIssue:
+		return "ConnectionIssue"
+
+	case UnbindClosing:
+		return "UnbindClosing"
+
+	default:
+		return ""
+	}
+}

@@ -17,7 +17,8 @@ func TestTransmitter(t *testing.T) {
 	t.Run("binding", func(t *testing.T) {
 		auth := nextAuth()
 		transmitter, err := NewTransmitterSession(NonTLSDialer, auth, TransmitSettings{
-			WriteTimeout: time.Second,
+			Timeout: time.Second,
+
 			OnSubmitError: func(p pdu.PDU, err error) {
 				t.Fatal(err)
 			},
@@ -77,7 +78,7 @@ func TestTransmitter(t *testing.T) {
 			_, ok := p.(*pdu.CancelSM)
 			require.True(t, ok)
 		}
-		tr.settings.WriteTimeout = 500 * time.Millisecond
+		tr.settings.Timeout = 500 * time.Millisecond
 
 		// do trigger
 		trigger(&tr)

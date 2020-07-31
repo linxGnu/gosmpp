@@ -22,8 +22,8 @@ var (
 
 // TransmitSettings is listener for transmitter.
 type TransmitSettings struct {
-	// WriteTimeout is timeout/deadline for submitting PDU.
-	WriteTimeout time.Duration
+	// Timeout is timeout/deadline for submitting PDU.
+	Timeout time.Duration
 
 	// EnquireLink periodically sends EnquireLink to SMSC.
 	// The duration must not be smaller than 1 minute.
@@ -39,6 +39,12 @@ type TransmitSettings struct {
 
 	// OnClosed notifies `closed` event due to State.
 	OnClosed func(State)
+}
+
+func (s *TransmitSettings) normalize() {
+	if s.EnquireLink <= EnquireLinkIntervalMinimum {
+		s.EnquireLink = EnquireLinkIntervalMinimum
+	}
 }
 
 type transmitter struct {
@@ -58,6 +64,8 @@ func NewTransmitter(conn *Connection, settings TransmitSettings) Transmitter {
 }
 
 func newTransmitter(conn *Connection, settings TransmitSettings, startDaemon bool) *transmitter {
+	settings.normalize()
+
 	t := &transmitter{
 		settings: settings,
 		conn:     conn,
@@ -235,16 +243,20 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 
 // low level writing
 func (t *transmitter) write(v []byte) (n int, err error) {
-	hasTimeout := t.settings.WriteTimeout > 0
+	hasTimeout := t.settings.Timeout > 0
 
 	if hasTimeout {
-		_ = t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout))
+		if err = t.conn.SetWriteTimeout(t.settings.Timeout); err != nil {
+			return
+		}
 	}
 
 	if n, err = t.conn.Write(v); err != nil && n == 0 {
 		// retry again with double timeout
 		if hasTimeout {
-			_ = t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout << 1))
+			if err = t.conn.SetWriteTimeout(t.settings.Timeout << 1); err != nil {
+				return
+			}
 		}
 
 		n, err = t.conn.Write(v)

@@ -9,8 +9,15 @@ import (
 
 // TransceiveSettings is listener for Transceiver.
 type TransceiveSettings struct {
-	// WriteTimeout is timeout/deadline for submitting PDU.
+	// WriteTimeout is timeout for submitting PDU.
 	WriteTimeout time.Duration
+
+	// ReadTimeout is timeout for reading PDU from SMSC.
+	// Underlying net.Conn will be stricted with ReadDeadline(now + timeout).
+	// This setting is very important to detect connection failure.
+	//
+	// Default: 2 secs
+	ReadTimeout time.Duration
 
 	// EnquireLink periodically sends EnquireLink to SMSC.
 	// Zero duration means disable auto enquire link.
@@ -52,9 +59,12 @@ func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 	}
 
 	t.out = newTransmitter(conn, TransmitSettings{
-		WriteTimeout:  settings.WriteTimeout,
-		EnquireLink:   settings.EnquireLink,
+		Timeout: settings.WriteTimeout,
+
+		EnquireLink: settings.EnquireLink,
+
 		OnSubmitError: settings.OnSubmitError,
+
 		OnClosed: func(state State) {
 			switch state {
 			case ExplicitClosing:
@@ -72,7 +82,10 @@ func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 	}, false)
 
 	t.in = newReceiver(conn, ReceiveSettings{
-		OnPDU:            settings.OnPDU,
+		Timeout: settings.ReadTimeout,
+
+		OnPDU: settings.OnPDU,
+
 		OnReceivingError: settings.OnReceivingError,
 
 		OnClosed: func(state State) {
