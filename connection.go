@@ -87,6 +87,11 @@ func (c *Connection) SetReadDeadline(t time.Time) error {
 	return c.conn.SetReadDeadline(t)
 }
 
+// SetReadTimeout is equivalent to ReadDeadline(now + timeout)
+func (c *Connection) SetReadTimeout(t time.Duration) error {
+	return c.conn.SetReadDeadline(time.Now().Add(t))
+}
+
 // SetWriteDeadline sets the deadline for future Write calls
 // and any currently-blocked Write call.
 // Even if write times out, it may return n > 0, indicating that
@@ -94,4 +99,9 @@ func (c *Connection) SetReadDeadline(t time.Time) error {
 // A zero value for t means Write will not time out.
 func (c *Connection) SetWriteDeadline(t time.Time) error {
 	return c.conn.SetWriteDeadline(t)
+}
+
+// SetWriteTimeout is equivalent to WriteDeadline(now + timeout)
+func (c *Connection) SetWriteTimeout(t time.Duration) error {
+	return c.conn.SetWriteDeadline(time.Now().Add(t))
 }

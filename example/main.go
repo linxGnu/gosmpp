@@ -35,16 +35,15 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 		WriteTimeout: time.Second,
 
 		OnSubmitError: func(p pdu.PDU, err error) {
-			fmt.Println("xxxxxxxxxx", err)
-			log.Fatal("xxx", err)
+			log.Fatal("SubmitPDU error:", err)
 		},
 
 		OnReceivingError: func(err error) {
-			fmt.Println("yyyy", err)
+			fmt.Println("Receiving PDU/Network error:", err)
 		},
 
 		OnRebindingError: func(err error) {
-			fmt.Println("zzzz", err)
+			fmt.Println("Rebinding but error:", err)
 		},
 
 		OnPDU: handlePDU(),
