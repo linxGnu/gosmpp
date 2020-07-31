@@ -14,7 +14,7 @@ type TransceiveSettings struct {
 
 	// ReadTimeout is timeout for reading PDU from SMSC.
 	// Underlying net.Conn will be stricted with ReadDeadline(now + timeout).
-	// This setting is very important to dectect connection failure.
+	// This setting is very important to detect connection failure.
 	//
 	// Default: 2 secs
 	ReadTimeout time.Duration
