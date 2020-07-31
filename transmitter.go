@@ -238,17 +238,22 @@ func (t *transmitter) write(v []byte) (n int, err error) {
 	hasTimeout := t.settings.WriteTimeout > 0
 
 	if hasTimeout {
-		_ = t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout))
+		if err = t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout)); err != nil {
+			return
+		}
 	}
 
 	if n, err = t.conn.Write(v); err != nil && n == 0 {
 		// retry again with double timeout
 		if hasTimeout {
-			_ = t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout << 1))
+			if err = t.conn.SetWriteDeadline(time.Now().Add(t.settings.WriteTimeout << 1)); err != nil {
+				return
+			}
 		}
 
 		n, err = t.conn.Write(v)
 	}
+	fmt.Println("WRITING", n, err)
 
 	return
 }

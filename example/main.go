@@ -24,25 +24,27 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	auth := gosmpp.Auth{
-		SMSC:       "127.0.0.1:2775",
-		SystemID:   "522241",
-		Password:   "UUDHWB",
+		SMSC:       "smscsim.melroselabs.com:2775",
+		SystemID:   "169994",
+		Password:   "EDXPJU",
 		SystemType: "",
 	}
 
 	trans, err := gosmpp.NewTransceiverSession(gosmpp.NonTLSDialer, auth, gosmpp.TransceiveSettings{
-		EnquireLink: 5 * time.Second,
+		EnquireLink:  5 * time.Second,
+		WriteTimeout: time.Second,
 
 		OnSubmitError: func(p pdu.PDU, err error) {
-			log.Fatal(err)
+			fmt.Println("xxxxxxxxxx", err)
+			log.Fatal("xxx", err)
 		},
 
 		OnReceivingError: func(err error) {
-			fmt.Println(err)
+			fmt.Println("yyyy", err)
 		},
 
 		OnRebindingError: func(err error) {
-			fmt.Println(err)
+			fmt.Println("zzzz", err)
 		},
 
 		OnPDU: handlePDU(),
@@ -59,7 +61,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	}()
 
 	// sending SMS(s)
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 1800; i++ {
 		if err = trans.Transceiver().Submit(newSubmitSM()); err != nil {
 			fmt.Println(err)
 		}
