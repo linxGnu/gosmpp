@@ -31,8 +31,13 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	}
 
 	trans, err := gosmpp.NewTransceiverSession(gosmpp.NonTLSDialer, auth, gosmpp.TransceiveSettings{
-		EnquireLink:  5 * time.Second,
+		EnquireLink: 5 * time.Second,
+
 		WriteTimeout: time.Second,
+
+		// this setting is very important to detect broken conn.
+		// After timeout, there is no read packet, then we decide it's connection broken.
+		ReadTimeout: 10 * time.Second,
 
 		OnSubmitError: func(p pdu.PDU, err error) {
 			log.Fatal("SubmitPDU error:", err)
