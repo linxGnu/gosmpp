@@ -32,13 +32,13 @@ type TransmitSettings struct {
 	EnquireLink time.Duration
 
 	// OnSubmitError notifies fail-to-submit PDU with along error.
-	OnSubmitError func(pdu.PDU, error)
+	OnSubmitError PDUErrorCallback
 
 	// OnRebindingError notifies error while rebinding.
-	OnRebindingError func(error)
+	OnRebindingError ErrorCallback
 
 	// OnClosed notifies `closed` event due to State.
-	OnClosed func(State)
+	OnClosed ClosedCallback
 }
 
 func (s *TransmitSettings) normalize() {
