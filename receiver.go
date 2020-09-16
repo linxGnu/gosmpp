@@ -24,17 +24,17 @@ type ReceiveSettings struct {
 	//
 	// `Responded` flag indicates this pdu is responded automatically,
 	// no manual respond needed.
-	OnPDU func(p pdu.PDU, responded bool)
+	OnPDU PDUCallback
 
 	// OnReceivingError notifies happened error while reading PDU
 	// from SMSC.
-	OnReceivingError func(error)
+	OnReceivingError ErrorCallback
 
 	// OnRebindingError notifies error while rebinding.
-	OnRebindingError func(error)
+	OnRebindingError ErrorCallback
 
 	// OnClosed notifies `closed` event due to State.
-	OnClosed func(State)
+	OnClosed ClosedCallback
 
 	response func(pdu.PDU)
 }

@@ -27,20 +27,20 @@ type TransceiveSettings struct {
 	//
 	// `Responded` flag indicates this pdu is responded automatically,
 	// no manual respond needed.
-	OnPDU func(p pdu.PDU, responded bool)
+	OnPDU PDUCallback
 
 	// OnSubmitError notifies fail-to-submit PDU with along error.
-	OnSubmitError func(pdu.PDU, error)
+	OnSubmitError PDUErrorCallback
 
 	// OnReceivingError notifies happened error while reading PDU
 	// from SMSC.
-	OnReceivingError func(error)
+	OnReceivingError ErrorCallback
 
 	// OnRebindingError notifies error while rebinding.
-	OnRebindingError func(error)
+	OnRebindingError ErrorCallback
 
 	// OnClosed notifies `closed` event due to State.
-	OnClosed func(State)
+	OnClosed ClosedCallback
 }
 
 type transceiver struct {
