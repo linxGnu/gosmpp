@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -90,15 +91,22 @@ func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 
 // GetConcatInfo return concatenated message info, return 0 if
 // Concat Message InfoElement is not found in the UDH
-func (u UDH) GetConcatInfo() (totalParts, partNum, mref int, found bool) {
-	if len(u) == 0 {
-		found = false
-		return
-	}
-	if ie, found := u.FindInfoElement(data.UDH_CONCAT_MSG_8_BIT_REF); found && len(ie.Data) == 3 {
-		mref = int(ie.Data[0])
-		totalParts = int(ie.Data[1])
-		partNum = int(ie.Data[2])
+func (u UDH) GetConcatInfo() (totalParts, sequence, reference int, found bool) {
+	found = true
+	for _, element := range u {
+		options := element.Data
+		switch element.ID {
+		case data.UDH_CONCAT_MSG_8_BIT_REF, data.UDH_CONCAT_MSG_8_BIT_REF_2:
+			reference = int(options[2])
+			totalParts = int(options[3])
+			sequence = int(options[4])
+		case data.UDH_CONCAT_MSG_16_BIT_REF, data.UDH_CONCAT_MSG_16_BIT_REF_2:
+			reference = int(binary.BigEndian.Uint16(options[3:5]))
+			totalParts = int(options[5])
+			sequence = int(options[6])
+		default:
+			found = false
+		}
 	}
 	return
 }
