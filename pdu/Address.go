@@ -90,3 +90,8 @@ func (c Address) Npi() byte {
 func (c Address) Address() string {
 	return c.address
 }
+
+// String returns assigned address
+func (c Address) String() string {
+	return c.Address()
+}

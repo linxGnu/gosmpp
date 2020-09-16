@@ -92,7 +92,6 @@ func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 // GetConcatInfo return concatenated message info, return 0 if
 // Concat Message InfoElement is not found in the UDH
 func (u UDH) GetConcatInfo() (totalParts, sequence, reference int, found bool) {
-	found = true
 	for _, element := range u {
 		options := element.Data
 		switch element.ID {
@@ -100,12 +99,12 @@ func (u UDH) GetConcatInfo() (totalParts, sequence, reference int, found bool) {
 			reference = int(options[2])
 			totalParts = int(options[3])
 			sequence = int(options[4])
+			found = true
 		case data.UDH_CONCAT_MSG_16_BIT_REF, data.UDH_CONCAT_MSG_16_BIT_REF_2:
 			reference = int(binary.BigEndian.Uint16(options[3:5]))
 			totalParts = int(options[5])
 			sequence = int(options[6])
-		default:
-			found = false
+			found = true
 		}
 	}
 	return

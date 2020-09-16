@@ -240,6 +240,15 @@ func (c *ShortMessage) Encoding() data.Encoding {
 	return c.enc
 }
 
+// String returns message content or content parse error
+func (c *ShortMessage) String() string {
+	message, err := c.GetMessage()
+	if err != nil {
+		return err.Error()
+	}
+	return message
+}
+
 // getRefNum return a atomically incrementing number each time it's called
 func getRefNum() uint32 {
 	return atomic.AddUint32(&ref, 1)

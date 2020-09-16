@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,38 +24,25 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	auth := gosmpp.Auth{
+		// see https://melroselabs.com/services/smsc-simulator/#smsc-simulator-try
 		SMSC:       "smscsim.melroselabs.com:2775",
-		SystemID:   "169994",
-		Password:   "EDXPJU",
+		SystemID:   "your test system id",
+		Password:   "your test password",
 		SystemType: "",
 	}
 
 	trans, err := gosmpp.NewTransceiverSession(gosmpp.NonTLSDialer, auth, gosmpp.TransceiveSettings{
-		EnquireLink: 5 * time.Second,
-
+		EnquireLink:  5 * time.Second,
 		WriteTimeout: time.Second,
-
 		// this setting is very important to detect broken conn.
 		// After timeout, there is no read packet, then we decide it's connection broken.
 		ReadTimeout: 10 * time.Second,
 
-		OnSubmitError: func(p pdu.PDU, err error) {
-			log.Fatal("SubmitPDU error:", err)
-		},
-
-		OnReceivingError: func(err error) {
-			fmt.Println("Receiving PDU/Network error:", err)
-		},
-
-		OnRebindingError: func(err error) {
-			fmt.Println("Rebinding but error:", err)
-		},
-
-		OnPDU: handlePDU(),
-
-		OnClosed: func(state gosmpp.State) {
-			fmt.Println(state)
-		},
+		OnSubmitError:    func(p pdu.PDU, err error) { log.Fatal("SubmitPDU error:", err) },
+		OnReceivingError: func(err error) { log.Println("Receiving PDU/Network error:", err) },
+		OnRebindingError: func(err error) { log.Println("Rebinding but error:", err) },
+		OnPDU:            handlePDU(),
+		OnClosed:         func(state gosmpp.State) { log.Println(state) },
 	}, 5*time.Second)
 	if err != nil {
 		log.Println(err)
@@ -67,32 +54,61 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	// sending SMS(s)
 	for i := 0; i < 1800; i++ {
 		if err = trans.Transceiver().Submit(newSubmitSM()); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		time.Sleep(time.Second)
 	}
 }
 
-func handlePDU() func(pdu.PDU, bool) {
+func handlePDU() gosmpp.PDUCallback {
+	concatenated := map[int][]string{}
 	return func(p pdu.PDU, responded bool) {
 		switch pd := p.(type) {
 		case *pdu.SubmitSMResp:
-			fmt.Printf("SubmitSMResp:%+v\n", pd)
+			log.Printf("SubmitSMResp:%+v\n", pd)
 
 		case *pdu.GenericNack:
 			fmt.Println("GenericNack Received")
 
 		case *pdu.EnquireLinkResp:
-			fmt.Println("EnquireLinkResp Received")
+			log.Println("EnquireLinkResp Received")
 
 		case *pdu.DataSM:
-			fmt.Printf("DataSM:%+v\n", pd)
+			log.Printf("DataSM:%+v\n", pd)
 
 		case *pdu.DeliverSM:
-			fmt.Printf("DeliverSM:%+v\n", pd)
-			fmt.Println(pd.Message.GetMessage())
+			log.Printf("DeliverSM:%+v\n", pd)
+			log.Println(pd.Message.GetMessage())
+			// region concatenated sms (sample code)
+			message, err := pd.Message.GetMessage()
+			if err != nil {
+				log.Fatal(err)
+			}
+			totalParts, sequence, reference, found := pd.Message.UDH().GetConcatInfo()
+			if found {
+				if _, ok := concatenated[reference]; !ok {
+					concatenated[reference] = make([]string, totalParts)
+				}
+				concatenated[reference][sequence-1] = message
+			}
+			if !found {
+				log.Println(message)
+			} else if parts, ok := concatenated[reference]; ok && isConcatenatedDone(parts, totalParts) {
+				log.Println(strings.Join(parts, ""))
+				delete(concatenated, reference)
+			}
+			// endregion
 		}
 	}
+}
+
+func isConcatenatedDone(parts []string, total int) bool {
+	for _, part := range parts {
+		if part != "" {
+			total--
+		}
+	}
+	return total == 0
 }
 
 func newSubmitSM() *pdu.SubmitSM {
