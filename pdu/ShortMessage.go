@@ -68,6 +68,11 @@ func (c *ShortMessage) SetLongMessageWithEnc(message string, enc data.Encoding) 
 	return
 }
 
+// UDH get user data header for short message
+func (c *ShortMessage) UDH() UDH {
+	return c.udHeader
+}
+
 // SetUDH set user data header for short message
 // also appends udh to the beginning of messageData
 func (c *ShortMessage) SetUDH(udh UDH) {
