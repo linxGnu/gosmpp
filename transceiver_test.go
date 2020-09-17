@@ -26,7 +26,7 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 			require.NotZero(t, len(pd.MessageID))
 			atomic.AddInt32(&countSubmitSMResp, 1)
 
-		case *pdu.GenerickNack:
+		case *pdu.GenericNack:
 			require.False(t, responded)
 			t.Fatal(pd)
 

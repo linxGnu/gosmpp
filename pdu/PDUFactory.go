@@ -34,7 +34,7 @@ var pduMap = map[data.CommandIDType]pduGenerator{
 	data.ENQUIRE_LINK:          NewEnquireLink,
 	data.ENQUIRE_LINK_RESP:     NewEnquireLinkResp,
 	data.ALERT_NOTIFICATION:    NewAlertNotification,
-	data.GENERIC_NACK:          NewGenerickNack,
+	data.GENERIC_NACK:          NewGenericNack,
 }
 
 // CreatePDUFromCmdID creates PDU from cmd id.
