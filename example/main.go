@@ -79,7 +79,7 @@ func handlePDU() func(pdu.PDU, bool) {
 		case *pdu.SubmitSMResp:
 			fmt.Printf("SubmitSMResp:%+v\n", pd)
 
-		case *pdu.GenerickNack:
+		case *pdu.GenericNack:
 			fmt.Println("GenericNack Received")
 
 		case *pdu.EnquireLinkResp:

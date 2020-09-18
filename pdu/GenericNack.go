@@ -4,7 +4,7 @@ import (
 	"github.com/linxGnu/gosmpp/data"
 )
 
-// GenerickNack PDU is a generic negative acknowledgement to an SMPP PDU submitted
+// GenericNack PDU is a generic negative acknowledgement to an SMPP PDU submitted
 // with an invalid message header. A generic_nack response is returned in the following cases:
 //
 // - Invalid command_length
@@ -14,13 +14,13 @@ import (
 //
 // - Unknown command_id
 //   If an unknown or invalid command_id is received, a generic_nack PDU must also be returned to the originator.
-type GenerickNack struct {
+type GenericNack struct {
 	base
 }
 
-// NewGenerickNack returns new GenerickNack PDU.
-func NewGenerickNack() PDU {
-	c := &GenerickNack{
+// NewGenericNack returns new GenericNack PDU.
+func NewGenericNack() PDU {
+	c := &GenericNack{
 		base: newBase(),
 	}
 	c.CommandID = data.GENERIC_NACK
@@ -28,21 +28,21 @@ func NewGenerickNack() PDU {
 }
 
 // CanResponse implements PDU interface.
-func (c *GenerickNack) CanResponse() bool {
+func (c *GenericNack) CanResponse() bool {
 	return false
 }
 
 // GetResponse implements PDU interface.
-func (c *GenerickNack) GetResponse() PDU {
+func (c *GenericNack) GetResponse() PDU {
 	return nil
 }
 
 // Marshal implements PDU interface.
-func (c *GenerickNack) Marshal(b *ByteBuffer) {
+func (c *GenericNack) Marshal(b *ByteBuffer) {
 	c.base.marshal(b, nil)
 }
 
 // Unmarshal implements PDU interface.
-func (c *GenerickNack) Unmarshal(b *ByteBuffer) error {
+func (c *GenericNack) Unmarshal(b *ByteBuffer) error {
 	return c.base.unmarshal(b, nil)
 }
