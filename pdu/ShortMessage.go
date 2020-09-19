@@ -150,7 +150,7 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 			// message: we don't really care
 			messageData:       seg,
 			withoutDataCoding: c.withoutDataCoding,
-			udHeader:          UDH{NewIEConcatMessage(len(segments), i+1, int(ref))},
+			udHeader:          UDH{NewIEConcatMessage(byte(len(segments)), byte(i+1), ref)},
 		})
 	}
 
@@ -250,8 +250,8 @@ func (c *ShortMessage) String() string {
 }
 
 // getRefNum return a atomically incrementing number each time it's called
-func getRefNum() uint32 {
-	return atomic.AddUint32(&ref, 1)
+func getRefNum() uint16 {
+	return uint16(atomic.AddUint32(&ref, 1))
 }
 
 // NOTE:

@@ -1,9 +1,9 @@
 package pdu
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
-
 	"github.com/linxGnu/gosmpp/data"
 )
 
@@ -16,11 +16,16 @@ import (
 type UDH []InfoElement
 
 // UDHL return the length (number of octet) of the encoded UDH itself
-func (u UDH) UDHL() (l int) {
-	for i := range u {
-		l += len(u[i].Data)
+func (u *UDH) UDHL() int {
+	if u == nil {
+		return 0
 	}
-	return l
+	length := 1
+	for _, element := range *u {
+		length += 2
+		length += len(element.Data)
+	}
+	return length
 }
 
 // MarshalBinary marshal UDH into bytes array
@@ -28,15 +33,18 @@ func (u UDH) UDHL() (l int) {
 // MarshalBinary preserve InformationElement order as they appears in the UDH
 func (u *UDH) MarshalBinary() (b []byte, err error) {
 	if len(*u) == 0 {
-		return nil, nil
+		return
 	}
-
-	b = []byte{byte(u.UDHL())}
-
-	for _, ie := range *u {
-		b = append(b, ie.Data...)
+	var buf bytes.Buffer
+	buf.WriteByte(0)
+	for _, element := range *u {
+		buf.WriteByte(element.ID)
+		buf.WriteByte(byte(len(element.Data)))
+		buf.Write(element.Data)
 	}
-	return b, nil
+	b = buf.Bytes()
+	b[0] = byte(len(b)) - 1
+	return
 }
 
 // UnmarshalBinary reads the InformationElements from the binary User Data
@@ -46,37 +54,24 @@ func (u *UDH) MarshalBinary() (b []byte, err error) {
 // The function returns the number of bytes read from src, and any error
 // detected while unmarshalling.
 func (u *UDH) UnmarshalBinary(src []byte) (int, error) {
-	if len(src) < 1 {
-		return 0, fmt.Errorf("Decode error UDHL %d underflow", 0)
+	if length := len(src); length > 1 && length < int(src[0]+1) {
+		return 0, fmt.Errorf("Decode error UDHL underflow")
 	}
-
-	udhl := int(src[0])
-	udhl++ // so it includes itself
-	ri := 1
-	if len(src) < udhl {
-		return ri, fmt.Errorf("Decode error InfoElement %d underflow", ri)
+	length := src[0]
+	payload := src[1 : length+1]
+	header := UDH{}
+	for i := byte(0); i < length; {
+		blockSize := payload[i+1]
+		header = append(header, InfoElement{
+			ID:   payload[i],
+			Data: payload[i+2 : i+2+blockSize],
+		})
+		i += blockSize + 2
 	}
-
-	ies := []InfoElement(nil)
-	for ri < udhl {
-		if udhl < ri+2 {
-			return ri, fmt.Errorf("Decode error InfoElement %d underflow", ri)
-		}
-		ie := InfoElement{}
-		ie.ID = src[ri]
-
-		iedl := int(src[ri+1])
-
-		if len(src) < ri+2+iedl {
-			return ri, fmt.Errorf("Decode error InfoElement %d underflow", ri)
-		}
-		ie.Data = append([]byte(nil), src[ri:ri+2+iedl]...)
-		ri += iedl + 2
-		ies = append(ies, ie)
+	if len(header) > 0 {
+		*u = header
 	}
-
-	*u = UDH(ies)
-	return udhl, nil
+	return int(length + 1), nil
 }
 
 // FindInfoElement find the last occurrence of the Information Element with id
@@ -91,19 +86,19 @@ func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 
 // GetConcatInfo return concatenated message info, return 0 if
 // Concat Message InfoElement is not found in the UDH
-func (u UDH) GetConcatInfo() (totalParts, sequence, reference int, found bool) {
+func (u UDH) GetConcatInfo() (totalParts, sequence byte, reference uint16, found bool) {
 	for _, element := range u {
 		options := element.Data
 		switch element.ID {
 		case data.UDH_CONCAT_MSG_8_BIT_REF, data.UDH_CONCAT_MSG_8_BIT_REF_2:
-			reference = int(options[2])
-			totalParts = int(options[3])
-			sequence = int(options[4])
+			reference = uint16(options[0])
+			totalParts = options[1]
+			sequence = options[2]
 			found = true
 		case data.UDH_CONCAT_MSG_16_BIT_REF, data.UDH_CONCAT_MSG_16_BIT_REF_2:
-			reference = int(binary.BigEndian.Uint16(options[3:5]))
-			totalParts = int(options[5])
-			sequence = int(options[6])
+			reference = binary.BigEndian.Uint16(options[0:2])
+			totalParts = options[2]
+			sequence = options[3]
 			found = true
 		}
 	}
@@ -120,9 +115,15 @@ type InfoElement struct {
 
 // NewIEConcatMessage  turn a new IE element for concat message info
 // IE.Data is populated at time of object creation
-func NewIEConcatMessage(totalParts, partNum, mref int) InfoElement {
-	return InfoElement{
-		ID:   data.UDH_CONCAT_MSG_8_BIT_REF,
-		Data: []byte{data.UDH_CONCAT_MSG_8_BIT_REF, 0x03, byte(mref), byte(totalParts), byte(partNum)},
+func NewIEConcatMessage(totalParts, sequence byte, reference uint16) InfoElement {
+	var element InfoElement
+	if reference > 0xFF {
+		element.ID = data.UDH_CONCAT_MSG_16_BIT_REF
+		element.Data = []byte{0, 0, totalParts, sequence}
+		binary.BigEndian.PutUint16(element.Data[0:2], reference)
+	} else {
+		element.ID = data.UDH_CONCAT_MSG_8_BIT_REF
+		element.Data = []byte{byte(reference), totalParts, sequence}
 	}
+	return element
 }
