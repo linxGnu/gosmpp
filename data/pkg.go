@@ -37,32 +37,32 @@ const (
 	SM_RESPONSE_PNACK = 2
 
 	// Interface_Version
-	SMPP_V33 int8 = int8(-0x33)
-	SMPP_V34 byte = byte(0x34)
+	SMPP_V33 = int8(-0x33)
+	SMPP_V34 = byte(0x34)
 
 	// Address_TON
-	GSM_TON_UNKNOWN       byte = byte(0x00)
-	GSM_TON_INTERNATIONAL byte = byte(0x01)
-	GSM_TON_NATIONAL      byte = byte(0x02)
-	GSM_TON_NETWORK       byte = byte(0x03)
-	GSM_TON_SUBSCRIBER    byte = byte(0x04)
-	GSM_TON_ALPHANUMERIC  byte = byte(0x05)
-	GSM_TON_ABBREVIATED   byte = byte(0x06)
-	GSM_TON_RESERVED_EXTN byte = byte(0x07)
+	GSM_TON_UNKNOWN       = byte(0x00)
+	GSM_TON_INTERNATIONAL = byte(0x01)
+	GSM_TON_NATIONAL      = byte(0x02)
+	GSM_TON_NETWORK       = byte(0x03)
+	GSM_TON_SUBSCRIBER    = byte(0x04)
+	GSM_TON_ALPHANUMERIC  = byte(0x05)
+	GSM_TON_ABBREVIATED   = byte(0x06)
+	GSM_TON_RESERVED_EXTN = byte(0x07)
 
 	// Address_NPI
-	GSM_NPI_UNKNOWN       byte = byte(0x00)
-	GSM_NPI_E164          byte = byte(0x01)
-	GSM_NPI_ISDN          byte = GSM_NPI_E164
-	GSM_NPI_X121          byte = byte(0x03)
-	GSM_NPI_TELEX         byte = byte(0x04)
-	GSM_NPI_LAND_MOBILE   byte = byte(0x06)
-	GSM_NPI_NATIONAL      byte = byte(0x08)
-	GSM_NPI_PRIVATE       byte = byte(0x09)
-	GSM_NPI_ERMES         byte = byte(0x0A)
-	GSM_NPI_INTERNET      byte = byte(0x0E)
-	GSM_NPI_WAP_CLIENT_ID byte = byte(0x12)
-	GSM_NPI_RESERVED_EXTN byte = byte(0x0F)
+	GSM_NPI_UNKNOWN       = byte(0x00)
+	GSM_NPI_E164          = byte(0x01)
+	GSM_NPI_ISDN          = GSM_NPI_E164
+	GSM_NPI_X121          = byte(0x03)
+	GSM_NPI_TELEX         = byte(0x04)
+	GSM_NPI_LAND_MOBILE   = byte(0x06)
+	GSM_NPI_NATIONAL      = byte(0x08)
+	GSM_NPI_PRIVATE       = byte(0x09)
+	GSM_NPI_ERMES         = byte(0x0A)
+	GSM_NPI_INTERNET      = byte(0x0E)
+	GSM_NPI_WAP_CLIENT_ID = byte(0x12)
+	GSM_NPI_RESERVED_EXTN = byte(0x0F)
 
 	// Service_Type
 	SERVICE_NULL string = ""
@@ -73,11 +73,11 @@ const (
 	SERVICE_WAP  string = "WAP"
 	SERVICE_USSD string = "USSD"
 
-	SMPP_PROTOCOL                 byte = byte(1)
-	SMPPP_PROTOCOL                byte = byte(2)
-	SM_SERVICE_MOBILE_TERMINATED  byte = byte(0)
-	SM_SERVICE_MOBILE_ORIGINATED  byte = byte(1)
-	SM_SERVICE_MOBILE_TRANSCEIVER byte = byte(2)
+	SMPP_PROTOCOL                 = byte(1)
+	SMPPP_PROTOCOL                = byte(2)
+	SM_SERVICE_MOBILE_TERMINATED  = byte(0)
+	SM_SERVICE_MOBILE_ORIGINATED  = byte(1)
+	SM_SERVICE_MOBILE_TRANSCEIVER = byte(2)
 
 	// State of message at SMSC
 	SM_STATE_EN_ROUTE      = 1 // default state for messages in transit
@@ -343,7 +343,7 @@ const (
 	DFLT_ERR           byte   = 0
 	DFLT_SCHEDULE      string = ""
 	DFLT_VALIDITY      string = ""
-	DFLT_REG_DELIVERY  byte   = SM_SMSC_RECEIPT_NOT_REQUESTED | SM_SME_ACK_NOT_REQUESTED | SM_NOTIF_NOT_REQUESTED
+	DFLT_REG_DELIVERY         = SM_SMSC_RECEIPT_NOT_REQUESTED | SM_SME_ACK_NOT_REQUESTED | SM_NOTIF_NOT_REQUESTED
 	DFLT_DFLTMSGID     byte   = 0
 	DFLT_MSG_LEN       byte   = 0
 	DFLT_ESM_CLASS     byte   = 0
@@ -352,8 +352,8 @@ const (
 	DFLT_PRIORITY_FLAG byte   = 0
 	DFTL_REPLACE_IFP   byte   = 0
 	DFLT_DL_NAME       string = ""
-	DFLT_GSM_TON       byte   = GSM_TON_UNKNOWN
-	DFLT_GSM_NPI       byte   = GSM_NPI_UNKNOWN
+	DFLT_GSM_TON              = GSM_TON_UNKNOWN
+	DFLT_GSM_NPI              = GSM_NPI_UNKNOWN
 	DFLT_DEST_FLAG     byte   = 0 // not set
 	MAX_PDU_LEN               = 64 << 10
 

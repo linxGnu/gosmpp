@@ -61,14 +61,14 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 }
 
 func handlePDU() gosmpp.PDUCallback {
-	concatenated := map[int][]string{}
+	concatenated := map[uint16][]string{}
 	return func(p pdu.PDU, responded bool) {
 		switch pd := p.(type) {
 		case *pdu.SubmitSMResp:
 			log.Printf("SubmitSMResp:%+v\n", pd)
 
 		case *pdu.GenericNack:
-			fmt.Println("GenericNack Received")
+			log.Println("GenericNack Received")
 
 		case *pdu.EnquireLinkResp:
 			log.Println("EnquireLinkResp Received")
@@ -102,7 +102,7 @@ func handlePDU() gosmpp.PDUCallback {
 	}
 }
 
-func isConcatenatedDone(parts []string, total int) bool {
+func isConcatenatedDone(parts []string, total byte) bool {
 	for _, part := range parts {
 		if part != "" {
 			total--
