@@ -1,0 +1,11 @@
+linters-settings:
+  enable:
+    - bodyclose
+    - misspell
+    - gocyclo
+    - gofmt
+    - unconvert
+    - goimports
+    - depguard
+    - gocritic
+    - interfacer
