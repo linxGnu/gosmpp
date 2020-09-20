@@ -18,13 +18,10 @@ type UDH []InfoElement
 
 // UDHL return the length (number of octet) of the encoded UDH itself
 func (u UDH) UDHL() int {
-	if u == nil {
-		return 0
-	}
 	length := 1
-	for _, element := range u {
+	for index := range u {
 		length += 2
-		length += len(element.Data)
+		length += len(u[index].Data)
 	}
 	return length
 }
