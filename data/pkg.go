@@ -6,6 +6,7 @@ import (
 )
 
 //nolint
+//goland:noinspection GoSnakeCaseUsage,SpellCheckingInspection
 const (
 	SM_CONNID_LEN        = 16
 	SM_MSG_LEN           = 254
@@ -37,7 +38,7 @@ const (
 	SM_RESPONSE_PNACK = 2
 
 	// Interface_Version
-	SMPP_V33 = int8(-0x33)
+	SMPP_V33 = byte(0x33)
 	SMPP_V34 = byte(0x34)
 
 	// Address_TON
@@ -377,8 +378,8 @@ const (
 )
 
 var (
-	// ErrNotImpplSplitterInterface indicates that encoding does not support Splitter interface
-	ErrNotImpplSplitterInterface = fmt.Errorf("Encoding not implementing Splitter interface")
+	// ErrNotImplSplitterInterface indicates that encoding does not support Splitter interface
+	ErrNotImplSplitterInterface = fmt.Errorf("Encoding not implementing Splitter interface")
 )
 
 var defaultTon atomic.Value
