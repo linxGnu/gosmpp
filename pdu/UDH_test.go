@@ -31,6 +31,19 @@ func TestUserDataHeader(t *testing.T) {
 		require.Equal(t, reference, uint16(1000))
 	})
 
+	t.Run("unmarshalBinaryUDHConcatMessage failed", func(t *testing.T) {
+		failedList := [][]byte{
+			{0x04, 0x00, 0x02, 0x02, 0x01},
+			{0x04, 0x08, 0x02, 0x02, 0x01},
+		}
+		u := new(UDH)
+		for _, data := range failedList {
+			_, _ = u.UnmarshalBinary(data)
+			_, _, _, found := u.GetConcatInfo()
+			require.False(t, found, data)
+		}
+	})
+
 	t.Run("unmarshalBinaryUDHConcatMessage", func(t *testing.T) {
 		u, rd := new(UDH), []byte{0x05, 0x00, 0x03, 0x0c, 0x02, 0x01}
 		_, err := u.UnmarshalBinary(rd)

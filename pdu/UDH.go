@@ -29,16 +29,17 @@ func (u UDH) UDHL() int {
 // MarshalBinary marshal UDH into bytes array
 // The first byte is UDHL
 // MarshalBinary preserve InformationElement order as they appears in the UDH
-func (u *UDH) MarshalBinary() (b []byte, err error) {
-	if len(*u) == 0 {
+func (u UDH) MarshalBinary() (b []byte, err error) {
+	if len(u) == 0 {
 		return
 	}
 	var buf bytes.Buffer
+	buf.Grow(u.UDHL())
 	buf.WriteByte(0)
-	for _, element := range *u {
-		buf.WriteByte(element.ID)
-		buf.WriteByte(byte(len(element.Data)))
-		buf.Write(element.Data)
+	for i := range u {
+		buf.WriteByte(u[i].ID)
+		buf.WriteByte(byte(len(u[i].Data)))
+		buf.Write(u[i].Data)
 	}
 	b = buf.Bytes()
 	b[0] = byte(len(b)) - 1
@@ -58,11 +59,17 @@ func (u *UDH) UnmarshalBinary(src []byte) (int, error) {
 	length := src[0]
 	payload := src[1 : length+1]
 	header := UDH{}
+	var start, end byte
 	for i := byte(0); i < length; {
 		blockSize := payload[i+1]
+		start = i + 2
+		end = start + blockSize
+		if end <= byte(len(payload)) {
+			return 0, fmt.Errorf("Decode error InfoElement underflow")
+		}
 		header = append(header, InfoElement{
 			ID:   payload[i],
-			Data: payload[i+2 : i+2+blockSize],
+			Data: payload[start:end],
 		})
 		i += blockSize + 2
 	}
@@ -85,15 +92,21 @@ func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 // GetConcatInfo return concatenated message info, return 0 if
 // Concat Message InfoElement is not found in the UDH
 func (u UDH) GetConcatInfo() (totalParts, sequence byte, reference uint16, found bool) {
-	for _, element := range u {
-		options := element.Data
-		switch element.ID {
+	for i := range u {
+		options := u[i].Data
+		switch u[i].ID {
 		case data.UDH_CONCAT_MSG_8_BIT_REF:
+			if len(options) != 3 {
+				return
+			}
 			reference = uint16(options[0])
 			totalParts = options[1]
 			sequence = options[2]
 			found = true
 		case data.UDH_CONCAT_MSG_16_BIT_REF:
+			if len(options) != 4 {
+				return
+			}
 			reference = binary.BigEndian.Uint16(options[0:2])
 			totalParts = options[2]
 			sequence = options[3]
