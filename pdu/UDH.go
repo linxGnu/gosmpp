@@ -33,8 +33,7 @@ func (u UDH) MarshalBinary() (b []byte, err error) {
 	if len(u) == 0 {
 		return
 	}
-	var buf bytes.Buffer
-	buf.Grow(u.UDHL())
+	buf := bytes.NewBuffer(make([]byte, u.UDHL()))
 	buf.WriteByte(0)
 	for i := range u {
 		buf.WriteByte(u[i].ID)
