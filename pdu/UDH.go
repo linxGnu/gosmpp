@@ -88,12 +88,12 @@ func (u UDH) GetConcatInfo() (totalParts, sequence byte, reference uint16, found
 	for _, element := range u {
 		options := element.Data
 		switch element.ID {
-		case data.UDH_CONCAT_MSG_8_BIT_REF, data.UDH_CONCAT_MSG_8_BIT_REF_2:
+		case data.UDH_CONCAT_MSG_8_BIT_REF:
 			reference = uint16(options[0])
 			totalParts = options[1]
 			sequence = options[2]
 			found = true
-		case data.UDH_CONCAT_MSG_16_BIT_REF, data.UDH_CONCAT_MSG_16_BIT_REF_2:
+		case data.UDH_CONCAT_MSG_16_BIT_REF:
 			reference = binary.BigEndian.Uint16(options[0:2])
 			totalParts = options[2]
 			sequence = options[3]
