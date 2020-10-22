@@ -241,7 +241,6 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 
 // low level writing
 func (t *transmitter) write(v []byte) (n int, err error) {
-	// set timeout
 	hasTimeout := t.settings.Timeout > 0
 
 	if hasTimeout {
