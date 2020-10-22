@@ -78,7 +78,6 @@ func TestTransmitter(t *testing.T) {
 			_, ok := p.(*pdu.CancelSM)
 			require.True(t, ok)
 		}
-		tr.settings.Timeout = 500 * time.Millisecond
 
 		// do trigger
 		trigger(&tr)
