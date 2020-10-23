@@ -139,10 +139,8 @@ func (t *transmitter) Submit(p pdu.PDU) (err error) {
 		select {
 		case <-t.ctx.Done():
 			err = t.ctx.Err()
-			return
 
 		case t.input <- p:
-			return
 		}
 	} else {
 		err = ErrTransmitterClosing
@@ -246,20 +244,17 @@ func (t *transmitter) write(v []byte) (n int, err error) {
 	hasTimeout := t.settings.Timeout > 0
 
 	if hasTimeout {
-		if err = t.conn.SetWriteTimeout(t.settings.Timeout); err != nil {
-			return
-		}
+		err = t.conn.SetWriteTimeout(t.settings.Timeout)
 	}
 
-	if n, err = t.conn.Write(v); err != nil && n == 0 {
-		// retry again with double timeout
-		if hasTimeout {
-			if err = t.conn.SetWriteTimeout(t.settings.Timeout << 1); err != nil {
-				return
-			}
+	if err == nil {
+		if n, err = t.conn.Write(v); err != nil &&
+			n == 0 &&
+			hasTimeout &&
+			t.conn.SetWriteTimeout(t.settings.Timeout<<1) == nil {
+			// retry again with double timeout
+			n, err = t.conn.Write(v)
 		}
-
-		n, err = t.conn.Write(v)
 	}
 
 	return
