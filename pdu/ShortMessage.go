@@ -23,6 +23,7 @@ type ShortMessage struct {
 
 // NewShortMessage returns new ShortMessage.
 func NewShortMessage(message string) (s ShortMessage, err error) {
+	s.udHeader = nil
 	err = s.SetMessageWithEncoding(message, data.GSM7BIT)
 	return
 }
@@ -102,12 +103,11 @@ func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err
 
 	f, t := 0, len(c.messageData)
 
-	if c.udHeader.UDHL() > 0 {
-		f = c.udHeader.UDHL() + 1
-		if f >= t {
-			err = errors.ErrUDHTooLong
-			return
-		}
+	// skip if UDL is present
+	f = c.udHeader.UDHL()
+	if f >= t {
+		err = errors.ErrUDHTooLong
+		return
 	}
 
 	st, err = enc.Decode(c.messageData[f:t])
@@ -150,7 +150,7 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 			// message: we don't really care
 			messageData:       seg,
 			withoutDataCoding: c.withoutDataCoding,
-			udHeader:          UDH{NewIEConcatMessage(len(segments), i+1, int(ref))},
+			udHeader:          UDH{NewIEConcatMessage(uint8(len(segments)), uint8(i+1), uint8(ref))},
 		})
 	}
 

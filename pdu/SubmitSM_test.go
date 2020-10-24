@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -34,6 +35,7 @@ func TestSubmitSM(t *testing.T) {
 	v.RegisteredDelivery = 83
 	_ = v.Message.SetMessageWithEncoding("nghắ nghiêng nghiễng ngả", data.UCS2)
 	v.Message.message = ""
+	fmt.Println(v.Message.udHeader)
 
 	validate(t,
 		v,

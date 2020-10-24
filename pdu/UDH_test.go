@@ -16,13 +16,13 @@ func TestUserDataHeader(t *testing.T) {
 
 	t.Run("unmarshalBinaryUDHConcatMessage", func(t *testing.T) {
 		u, rd := new(UDH), []byte{0x05, 0x00, 0x03, 0x0c, 0x02, 0x01}
-		_, err := u.UnmarshalBinary(rd)
+		read, err := u.UnmarshalBinary(rd)
+		require.False(t, read <= 0)
 
 		require.NoError(t, err)
 
 		b, err := u.MarshalBinary()
 		require.NoError(t, err)
-
 		require.Equal(t, "0500030c0201", toHex(b))
 	})
 }

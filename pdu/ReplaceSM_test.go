@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -29,6 +30,7 @@ func TestReplaceSM(t *testing.T) {
 	v.Message.message = ""
 	require.Equal(t, data.GSM7BIT, v.Message.Encoding())
 
+	fmt.Println(v.Message.udHeader.UDHL())
 	message, err := v.Message.GetMessage()
 	require.Nil(t, err)
 	require.Equal(t, "nightwish", message)

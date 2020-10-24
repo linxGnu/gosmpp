@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -15,70 +16,98 @@ import (
 type UDH []InfoElement
 
 // UDHL return the length (number of octet) of the encoded UDH itself
+// If the total UDHL is larger than what length(byte) can specified,
+// this will truncate IE until total length fit within 256, if you want to
+// check if any IE has been truncated, see if UDHL() > 2^8
 func (u UDH) UDHL() (l int) {
-	for i := range u {
-		l += len(u[i].Data)
+	if len(u) == 0 {
+		return 0
 	}
-	return l
+	for i := range u {
+		l += 2 + len(u[i].Data) // to account for id and type bytes
+		if l > 255 {
+			l -= 2 + len(u[i].Data)
+			break
+		}
+	}
+	return l + 1 // include the udhlength byte itself
 }
 
 // MarshalBinary marshal UDH into bytes array
 // The first byte is UDHL
 // MarshalBinary preserve InformationElement order as they appears in the UDH
-func (u *UDH) MarshalBinary() (b []byte, err error) {
-	if len(*u) == 0 {
-		return nil, nil
+//
+// If the total UDHL is larger than what length(byte) can specified,
+// this will truncate IE until total length fit within 256, if you want to
+// check if any IE has been truncated, see if UDHL() > 2^8
+func (u UDH) MarshalBinary() (b []byte, err error) {
+	if len(u) == 0 {
+		return
 	}
+	buf := new(bytes.Buffer)
+	buf.WriteByte(0) // reserve the firt byte for UDHL
 
-	b = []byte{byte(u.UDHL())}
-
-	for _, ie := range *u {
-		b = append(b, ie.Data...)
+	truncLimit := uint8(255) // -1 for the UDHL byte itself
+	i, length := 0, uint8(0)
+	for {
+		if i >= len(u) {
+			break
+		}
+		// Begin marshaling UDH data, each IE is composed of 3 parts:
+		//		[ ID_1, LENGTH_1, DATA_N ]
+		// When adding a new IE, if total length ID + LEN + DATA
+		// exceed 256, we skip that IE altogether
+		length += uint8(2 + len(u[i].Data))
+		if length >= truncLimit { // limit exceeded, break loop
+			length -= uint8(2 + len(u[i].Data))
+			break
+		}
+		buf.WriteByte(u[i].ID)
+		buf.WriteByte(byte(len(u[i].Data)))
+		buf.Write(u[i].Data)
+		i++
 	}
-	return b, nil
+	b = buf.Bytes() // final assignment and encode length
+	b[0] = byte(length)
+	return
 }
 
-// UnmarshalBinary reads the InformationElements from the binary User Data
-// Header.
+// UnmarshalBinary reads the InformationElements from raw binary UDH.
 // Unmarshal preserve InfoElement order as they appears in the raw data
 // The src contains the complete UDH, including the UDHL and all IEs.
-// The function returns the number of bytes read from src, and any error
+// Returns the number of bytes read from src, and the first error
 // detected while unmarshalling.
-func (u *UDH) UnmarshalBinary(src []byte) (int, error) {
+//
+// Since UDHL can only represented in 1 byte, UnmarshalBinary
+// will only read up to a maximum of 256 byte regardless of src length
+func (u *UDH) UnmarshalBinary(src []byte) (read int, err error) {
 	if len(src) < 1 {
-		return 0, fmt.Errorf("Decode error UDHL %d underflow", 0)
+		err = fmt.Errorf("Decode error UDHL %d underflow", 0)
+		return
 	}
 
-	udhl := int(src[0])
-	udhl++ // so it includes itself
-	ri := 1
+	udhl, read := int(src[0]), 1
 	if len(src) < udhl {
-		return ri, fmt.Errorf("Decode error InfoElement %d underflow", ri)
+		err = fmt.Errorf("Decode error UDH underflow, expect len %d got %d", udhl, len(src))
+		return
 	}
 
-	ies := []InfoElement(nil)
-	for ri < udhl {
-		if udhl < ri+2 {
-			return ri, fmt.Errorf("Decode error InfoElement %d underflow", ri)
-		}
+	ies := []InfoElement{}
+	for read < udhl { // loop until we still have data to read
 		ie := InfoElement{}
-		ie.ID = src[ri]
-
-		iedl := int(src[ri+1])
-
-		if len(src) < ri+2+iedl {
-			return ri, fmt.Errorf("Decode error InfoElement %d underflow", ri)
+		var r int
+		r, err = ie.UnmarshalBinary(src[read:])
+		if err != nil {
+			return
 		}
-		ie.Data = append([]byte(nil), src[ri:ri+2+iedl]...)
-		ri += iedl + 2
+		read += r
 		ies = append(ies, ie)
 	}
-
 	*u = UDH(ies)
-	return udhl, nil
+	return read, nil
 }
 
-// FindInfoElement find the last occurrence of the Information Element with id
+// FindInfoElement find the first occurrence of the Information Element with id
 func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 	for i := len(u) - 1; i >= 0; i-- {
 		if u[i].ID == id {
@@ -90,15 +119,15 @@ func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 
 // GetConcatInfo return concatenated message info, return 0 if
 // Concat Message InfoElement is not found in the UDH
-func (u UDH) GetConcatInfo() (totalParts, partNum, mref int, found bool) {
+func (u UDH) GetConcatInfo() (totalParts, partNum, mref uint8, found bool) {
 	if len(u) == 0 {
 		found = false
 		return
 	}
 	if ie, found := u.FindInfoElement(data.UDH_CONCAT_MSG_8_BIT_REF); found && len(ie.Data) == 3 {
-		mref = int(ie.Data[0])
-		totalParts = int(ie.Data[1])
-		partNum = int(ie.Data[2])
+		mref = uint8(ie.Data[0])
+		totalParts = uint8(ie.Data[1])
+		partNum = uint8(ie.Data[2])
 	}
 	return
 }
@@ -113,9 +142,29 @@ type InfoElement struct {
 
 // NewIEConcatMessage  turn a new IE element for concat message info
 // IE.Data is populated at time of object creation
-func NewIEConcatMessage(totalParts, partNum, mref int) InfoElement {
+func NewIEConcatMessage(totalParts, partNum, mref uint8) InfoElement {
 	return InfoElement{
 		ID:   data.UDH_CONCAT_MSG_8_BIT_REF,
-		Data: []byte{data.UDH_CONCAT_MSG_8_BIT_REF, 0x03, byte(mref), byte(totalParts), byte(partNum)},
+		Data: []byte{byte(mref), byte(totalParts), byte(partNum)},
 	}
+}
+
+// UnmarshalBinary unmarshal IE from binary in src, only read a single IE,
+// expect src at least of length 2 with correct IE format:
+//		[ ID_1, LENGTH_1, DATA_N ]
+func (ie *InfoElement) UnmarshalBinary(src []byte) (read int, err error) {
+	if len(src) < 2 {
+		err = fmt.Errorf("Decode error InfoElement underflow, len = %d", len(src))
+		return
+	}
+	ieLen := int(src[1]) // second byte is len
+	if len(src) < ieLen+2 {
+		err = fmt.Errorf("Decode error InfoElement underflow, expect length %d, got %d", ieLen, len(src))
+		return
+	}
+
+	ie.ID = src[0]               // first byte is ID
+	ie.Data = src[2:(ieLen + 2)] // 3rd byte onward is data
+	read = int(2 + ieLen)
+	return
 }
