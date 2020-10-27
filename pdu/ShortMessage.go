@@ -23,7 +23,6 @@ type ShortMessage struct {
 
 // NewShortMessage returns new ShortMessage.
 func NewShortMessage(message string) (s ShortMessage, err error) {
-	s.udHeader = nil
 	err = s.SetMessageWithEncoding(message, data.GSM7BIT)
 	return
 }

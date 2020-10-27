@@ -91,6 +91,10 @@ func (u *UDH) UnmarshalBinary(src []byte) (read int, err error) {
 		err = fmt.Errorf("Decode error UDH underflow, expect len %d got %d", udhl, len(src))
 		return
 	}
+	if udhl == 0 {
+		err = fmt.Errorf("error: UDHL length is 0, probably sender mistake forgot to include UDH but still set UDH flag in ESME_CLASS")
+		return
+	}
 
 	ies := []InfoElement{}
 	for read < udhl { // loop until we still have data to read
