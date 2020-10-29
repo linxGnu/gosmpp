@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestReceiver(t *testing.T) {
+func testReceiver(t *testing.T) {
 	auth := nextAuth()
 	receiver, err := NewReceiverSession(NonTLSDialer, auth, ReceiveSettings{
 		OnReceivingError: func(err error) {

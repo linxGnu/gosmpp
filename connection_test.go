@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConnection(t *testing.T) {
+func testConnection(t *testing.T) {
 	conn, err := net.Dial("tcp", "smscsim.melroselabs.com:2775")
 	require.Nil(t, err)
 

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTransmitter(t *testing.T) {
+func testTransmitter(t *testing.T) {
 	t.Run("binding", func(t *testing.T) {
 		auth := nextAuth()
 		transmitter, err := NewTransmitterSession(NonTLSDialer, auth, TransmitSettings{

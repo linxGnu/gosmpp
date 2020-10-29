@@ -48,7 +48,7 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 	}
 }
 
-func TestSubmitSM(t *testing.T) {
+func testSubmitSM(t *testing.T) {
 	auth := nextAuth()
 	trans, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
 		EnquireLink: 200 * time.Millisecond,

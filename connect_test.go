@@ -30,7 +30,7 @@ func nextAuth() Auth {
 }
 
 // TestBindingSMSC test binding connection with SMSC
-func TestBindingSMSC(t *testing.T) {
+func testBindingSMSC(t *testing.T) {
 	// valid
 	connection, err := ConnectAsTransceiver(NonTLSDialer, nextAuth())
 	require.Nil(t, err)
