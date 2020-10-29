@@ -15,7 +15,7 @@ import (
 // as defined in 3GPP TS 23.040 Section 9.2.3.24.
 type UDH []InfoElement
 
-// UDHL return the length (number of octet) of the encoded UDH itself
+// UDHL returns length (octets) of encoded UDH, including the UDHL byte
 // If the total UDHL is larger than what length(byte) can specified,
 // this will truncate IE until total length fit within 256, if you want to
 // check if any IE has been truncated, see if UDHL() > 2^8
@@ -47,25 +47,22 @@ func (u UDH) MarshalBinary() (b []byte, err error) {
 	buf := new(bytes.Buffer)
 	buf.WriteByte(0) // reserve the firt byte for UDHL
 
-	truncLimit := uint8(255) // -1 for the UDHL byte itself
-	i, length := 0, uint8(0)
-	for {
-		if i >= len(u) {
-			break
-		}
+	truncLimit := uint32(255) // -1 for the UDHL byte itself
+	length := uint32(0)
+L:
+	for i := 0; i < len(u); i++ {
 		// Begin marshaling UDH data, each IE is composed of 3 parts:
 		//		[ ID_1, LENGTH_1, DATA_N ]
 		// When adding a new IE, if total length ID + LEN + DATA
 		// exceed 256, we skip that IE altogether
-		length += uint8(2 + len(u[i].Data))
-		if length >= truncLimit { // limit exceeded, break loop
-			length -= uint8(2 + len(u[i].Data))
-			break
+		length += uint32(2 + len(u[i].Data))
+		if length > truncLimit { // limit exceeded, break loop
+			length -= uint32(2 + len(u[i].Data))
+			break L
 		}
 		buf.WriteByte(u[i].ID)
 		buf.WriteByte(byte(len(u[i].Data)))
 		buf.Write(u[i].Data)
-		i++
 	}
 	b = buf.Bytes() // final assignment and encode length
 	b[0] = byte(length)
@@ -121,17 +118,17 @@ func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 	return nil, false
 }
 
-// GetConcatInfo return concatenated message info, return 0 if
-// Concat Message InfoElement is not found in the UDH
+// GetConcatInfo return the FIRST concatenated message IE,
 func (u UDH) GetConcatInfo() (totalParts, partNum, mref uint8, found bool) {
 	if len(u) == 0 {
 		found = false
 		return
 	}
-	if ie, found := u.FindInfoElement(data.UDH_CONCAT_MSG_8_BIT_REF); found && len(ie.Data) == 3 {
+	if ie, ok := u.FindInfoElement(data.UDH_CONCAT_MSG_8_BIT_REF); ok && len(ie.Data) == 3 {
 		mref = uint8(ie.Data[0])
 		totalParts = uint8(ie.Data[1])
 		partNum = uint8(ie.Data[2])
+		found = ok
 	}
 	return
 }
