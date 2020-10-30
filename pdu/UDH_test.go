@@ -56,15 +56,10 @@ func TestUserDataHeader(t *testing.T) {
 		for i := 0; i < 255; i++ {
 			u = append(u, NewIEConcatMessage(2, 1, 12))
 		}
-		require.LessOrEqual(t, u.UDHL(), 256) // UDHL must not exceed 256 ( including UDHL byte )
-		rd, err := u.MarshalBinary()
-		require.NoError(t, err)
 
-		// unmarshal the binary
-		v := UDH{}
-		read, err := v.UnmarshalBinary(rd)
-		require.NoError(t, err)
-		require.False(t, read <= 0)
-		require.Equal(t, 51, len(v)) // 255/5 per IE => expected 51
+		require.LessOrEqual(t, u.UDHL(), 256) // UDHL must not exceed 256 ( including UDHL byte )
+
+		_, err := u.MarshalBinary()
+		require.Error(t, err)
 	})
 }
