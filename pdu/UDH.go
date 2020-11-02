@@ -46,7 +46,7 @@ func (u UDH) UDHL() (l int) {
 //
 // If the total UDHL is larger than what length(byte) can specified,
 // this will truncate IE until total length fit within 256, if you want to
-// check if any IE has been truncated, see if UDHL() > 2^8
+// check if any IE has been truncated, see if UDHL() < -1, notes on UDHL()
 func (u UDH) MarshalBinary() (b []byte, err error) {
 	reservedLength := u.UDHL()
 	if reservedLength == -1 {
@@ -62,7 +62,6 @@ func (u UDH) MarshalBinary() (b []byte, err error) {
 
 	// marshalling elements
 	length := 0
-L:
 	for i := 0; i < len(u); i++ {
 		// Begin marshaling UDH data, each IE is composed of 3 parts:
 		//		[ ID_1, LENGTH_1, DATA_N ]
@@ -73,7 +72,7 @@ L:
 		// limit exceeded, break loop?
 		if length += addition; length > 255 {
 			length -= addition
-			break L
+			break
 		}
 
 		buf.WriteByte(u[i].ID)
