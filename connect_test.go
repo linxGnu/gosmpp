@@ -10,8 +10,8 @@ import (
 var currentAuth int32
 
 var auths = [][2]string{
-	{"976831", "83c6c9"},
-	{"498160", "ce35cd"},
+	{"087051", "1d29a1"},
+	{"863463", "e2e79e"},
 }
 
 const (
@@ -29,7 +29,6 @@ func nextAuth() Auth {
 	}
 }
 
-// TestBindingSMSC test binding connection with SMSC
 func TestBindingSMSC(t *testing.T) {
 	// valid
 	connection, err := ConnectAsTransceiver(NonTLSDialer, nextAuth())

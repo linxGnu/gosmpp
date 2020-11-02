@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -74,6 +75,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 }
 
 func handlePDU() func(pdu.PDU, bool) {
+	concatenated := map[uint8][]string{}
 	return func(p pdu.PDU, responded bool) {
 		switch pd := p.(type) {
 		case *pdu.SubmitSMResp:
@@ -90,7 +92,26 @@ func handlePDU() func(pdu.PDU, bool) {
 
 		case *pdu.DeliverSM:
 			fmt.Printf("DeliverSM:%+v\n", pd)
-			fmt.Println(pd.Message.GetMessage())
+			log.Println(pd.Message.GetMessage())
+			// region concatenated sms (sample code)
+			message, err := pd.Message.GetMessage()
+			if err != nil {
+				log.Fatal(err)
+			}
+			totalParts, sequence, reference, found := pd.Message.UDH().GetConcatInfo()
+			if found {
+				if _, ok := concatenated[reference]; !ok {
+					concatenated[reference] = make([]string, totalParts)
+				}
+				concatenated[reference][sequence-1] = message
+			}
+			if !found {
+				log.Println(message)
+			} else if parts, ok := concatenated[reference]; ok && isConcatenatedDone(parts, totalParts) {
+				log.Println(strings.Join(parts, ""))
+				delete(concatenated, reference)
+			}
+			// endregion
 		}
 	}
 }
@@ -117,4 +138,13 @@ func newSubmitSM() *pdu.SubmitSM {
 	submitSM.EsmClass = 0
 
 	return submitSM
+}
+
+func isConcatenatedDone(parts []string, total byte) bool {
+	for _, part := range parts {
+		if part != "" {
+			total--
+		}
+	}
+	return total == 0
 }
