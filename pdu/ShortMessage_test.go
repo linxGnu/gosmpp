@@ -43,7 +43,7 @@ func TestShortMessage(t *testing.T) {
 
 		s.SetDataCoding(data.GSM7BITCoding)
 
-		require.Equal(t, data.GSM7BITCoding, s.DataCoding)
+		require.Equal(t, data.GSM7BITCoding, s.DataCoding())
 		require.Equal(t, data.GSM7BIT, s.enc)
 	})
 
@@ -52,7 +52,7 @@ func TestShortMessage(t *testing.T) {
 
 		s.SetDataCoding(data.BINARY8BIT1Coding)
 
-		require.Equal(t, data.BINARY8BIT1Coding, s.DataCoding)
+		require.Equal(t, data.BINARY8BIT1Coding, s.DataCoding())
 		require.Nil(t, s.enc)
 	})
 
@@ -112,7 +112,7 @@ func TestShortMessage(t *testing.T) {
 
 		// check encoding
 		require.NoError(t, s.Unmarshal(buf, true))
-		require.Equal(t, data.BINARY8BIT2Coding, s.DataCoding)
+		require.Equal(t, data.BINARY8BIT2Coding, s.DataCoding())
 
 		// check message
 		messageData, err := s.GetMessageData()
@@ -128,7 +128,7 @@ func TestShortMessage(t *testing.T) {
 		// check encoding
 		require.NoError(t, s.Unmarshal(buf, true))
 		require.Equal(t, data.GSM7BIT, s.Encoding())
-		require.Equal(t, data.GSM7BITCoding, s.DataCoding)
+		require.Equal(t, data.GSM7BITCoding, s.DataCoding())
 
 		// check message
 		message, err := s.GetMessageWithEncoding(s.Encoding())

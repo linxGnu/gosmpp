@@ -14,7 +14,7 @@ var (
 // ShortMessage message.
 type ShortMessage struct {
 	SmDefaultMsgID    byte
-	DataCoding        byte
+	dataCoding        byte
 	message           string
 	enc               data.Encoding
 	udHeader          UDH
@@ -56,7 +56,7 @@ func NewLongMessageWithEncoding(message string, enc data.Encoding) (s []*ShortMe
 	sm := &ShortMessage{
 		message:    message,
 		enc:        enc,
-		DataCoding: enc.DataCoding(),
+		dataCoding: enc.DataCoding(),
 	}
 	return sm.Split()
 }
@@ -69,7 +69,7 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 		} else {
 			c.message = message
 			c.enc = enc
-			c.DataCoding = enc.DataCoding()
+			c.dataCoding = enc.DataCoding()
 		}
 	}
 	return
@@ -80,13 +80,19 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 func (c *ShortMessage) SetLongMessageWithEnc(message string, enc data.Encoding) (err error) {
 	c.message = message
 	c.enc = enc
-	c.DataCoding = enc.DataCoding()
+	c.dataCoding = enc.DataCoding()
 	return
 }
 
+// SetDataCoding set ShortMessage's data coding and associated Encoding.
 func (c *ShortMessage) SetDataCoding(coding byte) {
-	c.DataCoding = coding
+	c.dataCoding = coding
 	c.enc = data.FromDataCoding(coding)
+}
+
+// DataCoding returns ShortMessage's data coding.
+func (c *ShortMessage) DataCoding() byte {
+	return c.dataCoding
 }
 
 // UDH get user data header for short message
@@ -105,6 +111,7 @@ func (c *ShortMessage) SetMessageData(data []byte) {
 	c.messageData = data
 }
 
+// GetMessageData returns underlying binary message.
 func (c *ShortMessage) GetMessageData() (data []byte, err error) {
 	if len(c.messageData) == 0 {
 		return
@@ -185,7 +192,7 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 		// create new SM, encode data
 		multiSM = append(multiSM, &ShortMessage{
 			enc:        c.enc,
-			DataCoding: c.enc.DataCoding(),
+			dataCoding: c.enc.DataCoding(),
 			// message: we don't really care
 			messageData:       seg,
 			withoutDataCoding: c.withoutDataCoding,
@@ -212,7 +219,7 @@ func (c *ShortMessage) Marshal(b *ByteBuffer) {
 
 	// data_coding
 	if !c.withoutDataCoding {
-		_ = b.WriteByte(c.DataCoding)
+		_ = b.WriteByte(c.dataCoding)
 	}
 
 	// sm_default_msg_id
@@ -232,10 +239,10 @@ func (c *ShortMessage) Marshal(b *ByteBuffer) {
 
 // Unmarshal implements PDU interface.
 func (c *ShortMessage) Unmarshal(b *ByteBuffer, udhi bool) (err error) {
-	var n byte
+	var dataCoding, n byte
 
 	if !c.withoutDataCoding {
-		if c.DataCoding, err = b.ReadByte(); err != nil {
+		if dataCoding, err = b.ReadByte(); err != nil {
 			return
 		}
 	}
@@ -251,7 +258,7 @@ func (c *ShortMessage) Unmarshal(b *ByteBuffer, udhi bool) (err error) {
 	if c.messageData, err = b.ReadN(int(n)); err != nil {
 		return
 	}
-	c.enc = data.FromDataCoding(c.DataCoding)
+	c.SetDataCoding(dataCoding)
 
 	// If short message length is non zero, short message contains User-Data Header
 	// Else UDH should be in TLV field MessagePayload
