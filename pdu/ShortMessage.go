@@ -42,7 +42,7 @@ func NewBinaryShortMessage(messageData []byte) (s ShortMessage) {
 // NewBinaryShortMessage returns new ShortMessage.
 func NewBinaryShortMessageWithDataCoding(messageData []byte, coding byte) (s ShortMessage) {
 	s.messageData = messageData
-	s.DataCoding = coding
+	s.SetDataCoding(coding)
 	return
 }
 
