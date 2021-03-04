@@ -33,6 +33,18 @@ func NewShortMessageWithEncoding(message string, enc data.Encoding) (s ShortMess
 	return
 }
 
+// NewBinaryShortMessage returns new ShortMessage.
+func NewBinaryShortMessage(messageData []byte) (s ShortMessage, err error) {
+	err = s.SetMessageDataWithEncoding(messageData, data.BINARY8BIT2)
+	return
+}
+
+// NewBinaryShortMessageWithEncoding returns new ShortMessage with predefined encoding.
+func NewBinaryShortMessageWithEncoding(messageData []byte, enc data.Encoding) (s ShortMessage, err error) {
+	err = s.SetMessageDataWithEncoding(messageData, enc)
+	return
+}
+
 // NewLongMessage return long message splitted into multiple short message
 func NewLongMessage(message string) (s []*ShortMessage, err error) {
 	return NewLongMessageWithEncoding(message, data.GSM7BIT)
@@ -79,9 +91,35 @@ func (c *ShortMessage) SetUDH(udh UDH) {
 	c.udHeader = udh
 }
 
-// SetMessageData sets underlying raw data which is used for pdu marshalling.
-func (c *ShortMessage) SetMessageData(data []byte) {
-	c.messageData = data
+// SetMessageDataWithEncoding sets underlying raw data which is used for pdu marshalling.
+func (c *ShortMessage) SetMessageDataWithEncoding(d []byte, enc data.Encoding) (err error) {
+	if len(d) > data.SM_MSG_LEN {
+		err = errors.ErrShortMessageLengthTooLarge
+	} else {
+		c.messageData = d
+		c.enc = enc
+	}
+	return
+}
+
+// GetMessageData returns underlying binary message.
+func (c *ShortMessage) GetMessageData() (d []byte, err error) {
+	if len(c.messageData) == 0 {
+		d = []byte{}
+		return
+	}
+
+	t := len(c.messageData)
+
+	// skip if UDHL is present
+	f := c.udHeader.UDHL()
+	if f >= t {
+		err = errors.ErrUDHTooLong
+		return
+	}
+
+	d = c.messageData[f:t]
+	return
 }
 
 // GetMessage returns underlying message.
@@ -163,7 +201,7 @@ func (c *ShortMessage) Marshal(b *ByteBuffer) {
 		n      = byte(len(c.messageData))
 	)
 
-	// Prepend UDH to messgae data if there are any
+	// Prepend UDH to message data if there are any
 	if c.udHeader != nil && c.udHeader.UDHL() > 0 {
 		udhBin, _ = c.udHeader.MarshalBinary()
 	}

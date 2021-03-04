@@ -30,9 +30,29 @@ func TestShortMessage(t *testing.T) {
 		require.Equal(t, "abc", m)
 	})
 
+	t.Run("getMessageData", func(t *testing.T) {
+		s, err := NewBinaryShortMessage([]byte{0x00, 0x01, 0x02, 0x03})
+		require.NoError(t, err)
+
+		messageData, err := s.GetMessageData()
+		require.NoError(t, err)
+		require.Equal(t, "00010203", toHex(messageData))
+	})
+
+	t.Run("marshalBinaryMessage", func(t *testing.T) {
+		s, err := NewBinaryShortMessage([]byte{0x00, 0x01, 0x02, 0x03, 0x04})
+		require.NoError(t, err)
+
+		buf := NewBuffer(nil)
+		s.Marshal(buf)
+
+		require.Equal(t, "0400050001020304", toHex(buf.Bytes()))
+	})
+
 	t.Run("marshalWithoutCoding", func(t *testing.T) {
 		var s ShortMessage
-		s.SetMessageData([]byte("abc"))
+		err := s.SetMessageDataWithEncoding([]byte("abc"), nil)
+		require.NoError(t, err)
 		s.messageData = append(s.messageData, 0)
 		s.enc = nil
 
@@ -68,6 +88,21 @@ func TestShortMessage(t *testing.T) {
 		buf := NewBuffer(nil)
 		s.Marshal(buf)
 		require.Equal(t, "0000090500030c0201616263", toHex(buf.Bytes()))
+	})
+
+	t.Run("unmarshalBinaryWithUDHConcat", func(t *testing.T) {
+		s := &ShortMessage{}
+
+		buf := NewBuffer([]byte{0x04, 0x00, 0x09, 0x05, 0x00, 0x03, 0x0c, 0x02, 0x01, 0x01, 0x02, 0x03})
+
+		// check encoding
+		require.NoError(t, s.Unmarshal(buf, true))
+		require.Equal(t, data.BINARY8BIT2, s.Encoding())
+
+		// check message
+		messageData, err := s.GetMessageData()
+		require.NoError(t, err)
+		require.Equal(t, []byte{0x01, 0x02, 0x03}, messageData)
 	})
 
 	t.Run("unmarshalGSM7WithUDHConcat", func(t *testing.T) {
