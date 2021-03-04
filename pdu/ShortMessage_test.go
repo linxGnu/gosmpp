@@ -30,6 +30,41 @@ func TestShortMessage(t *testing.T) {
 		require.Equal(t, "abc", m)
 	})
 
+	t.Run("getMessageData", func(t *testing.T) {
+		s := NewBinaryShortMessage([]byte{0x00, 0x01, 0x02, 0x03})
+
+		messageData, err := s.GetMessageData()
+		require.NoError(t, err)
+		require.Equal(t, "00010203", toHex(messageData))
+	})
+
+	t.Run("setDataCoding", func(t *testing.T) {
+		var s ShortMessage
+
+		s.SetDataCoding(data.GSM7BITCoding)
+
+		require.Equal(t, data.GSM7BITCoding, s.DataCoding)
+		require.Equal(t, data.GSM7BIT, s.enc)
+	})
+
+	t.Run("setBinaryDataCoding", func(t *testing.T) {
+		var s ShortMessage
+
+		s.SetDataCoding(data.BINARY8BIT1Coding)
+
+		require.Equal(t, data.BINARY8BIT1Coding, s.DataCoding)
+		require.Nil(t, s.enc)
+	})
+
+	t.Run("marshalBinaryMessage", func(t *testing.T) {
+		s := NewBinaryShortMessage([]byte{0x00, 0x01, 0x02, 0x03, 0x04})
+
+		buf := NewBuffer(nil)
+		s.Marshal(buf)
+
+		require.Equal(t, "0400050001020304", toHex(buf.Bytes()))
+	})
+
 	t.Run("marshalWithoutCoding", func(t *testing.T) {
 		var s ShortMessage
 		s.SetMessageData([]byte("abc"))
@@ -70,6 +105,21 @@ func TestShortMessage(t *testing.T) {
 		require.Equal(t, "0000090500030c0201616263", toHex(buf.Bytes()))
 	})
 
+	t.Run("unmarshalBinaryWithUDHConcat", func(t *testing.T) {
+		s := &ShortMessage{}
+
+		buf := NewBuffer([]byte{0x04, 0x00, 0x09, 0x05, 0x00, 0x03, 0x0c, 0x02, 0x01, 0x01, 0x02, 0x03})
+
+		// check encoding
+		require.NoError(t, s.Unmarshal(buf, true))
+		require.Equal(t, data.BINARY8BIT2Coding, s.DataCoding)
+
+		// check message
+		messageData, err := s.GetMessageData()
+		require.NoError(t, err)
+		require.Equal(t, []byte{0x01, 0x02, 0x03}, messageData)
+	})
+
 	t.Run("unmarshalGSM7WithUDHConcat", func(t *testing.T) {
 		s := &ShortMessage{}
 
@@ -78,6 +128,7 @@ func TestShortMessage(t *testing.T) {
 		// check encoding
 		require.NoError(t, s.Unmarshal(buf, true))
 		require.Equal(t, data.GSM7BIT, s.Encoding())
+		require.Equal(t, data.GSM7BITCoding, s.DataCoding)
 
 		// check message
 		message, err := s.GetMessageWithEncoding(s.Encoding())

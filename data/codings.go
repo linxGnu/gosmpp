@@ -11,8 +11,12 @@ const (
 	GSM7BITCoding byte = 0x00
 	// ASCIICoding is ascii coding
 	ASCIICoding byte = 0x01
+	// BINARY8BIT1Coding is 8-bit binary coding
+	BINARY8BIT1Coding byte = 0x02
 	// LATIN1Coding is iso-8859-1 coding
 	LATIN1Coding byte = 0x03
+	// BINARY8BIT2Coding is 8-bit binary coding
+	BINARY8BIT2Coding byte = 0x04
 	// CYRILLICCoding is iso-8859-5 coding
 	CYRILLICCoding byte = 0x06
 	// HEBREWCoding is iso-8859-8 coding
