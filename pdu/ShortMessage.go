@@ -220,8 +220,9 @@ func (c *ShortMessage) Unmarshal(b *ByteBuffer, udhi bool) (err error) {
 	}
 	c.enc = data.FromDataCoding(dataCoding)
 
-	// short message contain User-Data Header
-	if udhi {
+	// If short message length is non zero, short message contains User-Data Header
+	// Else UDH should be in TLV field MessagePayload
+	if udhi && n > 0 {
 		udh := UDH{}
 		_, err = udh.UnmarshalBinary(c.messageData)
 		if err != nil {
