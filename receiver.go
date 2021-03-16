@@ -9,16 +9,10 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-const (
-	defaultReadTimeout = 2 * time.Second
-)
-
 // ReceiveSettings is event listener for Receiver.
 type ReceiveSettings struct {
 	// Timeout represents conn read timeout.
 	// This field is very important to detect connection failure.
-	//
-	// Default: 2 secs
 	Timeout time.Duration
 
 	// OnPDU handles received PDU from SMSC.
@@ -40,12 +34,6 @@ type ReceiveSettings struct {
 	response func(pdu.PDU)
 }
 
-func (s *ReceiveSettings) normalize() {
-	if s.Timeout <= 0 {
-		s.Timeout = defaultReadTimeout
-	}
-}
-
 type receiver struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
@@ -56,8 +44,6 @@ type receiver struct {
 }
 
 func newReceiver(conn *Connection, settings ReceiveSettings) *receiver {
-	settings.normalize()
-
 	r := &receiver{
 		settings: settings,
 		conn:     conn,

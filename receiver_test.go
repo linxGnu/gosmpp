@@ -13,6 +13,8 @@ import (
 func TestReceiver(t *testing.T) {
 	auth := nextAuth()
 	receiver, err := NewReceiverSession(NonTLSDialer, auth, ReceiveSettings{
+		Timeout: 2 * time.Second,
+
 		OnReceivingError: func(err error) {
 			fmt.Println(err)
 		},

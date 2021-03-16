@@ -43,15 +43,6 @@ type TransceiveSettings struct {
 	OnClosed ClosedCallback
 }
 
-func (s *TransceiveSettings) normalize() {
-	if s.ReadTimeout <= 0 {
-		s.ReadTimeout = defaultReadTimeout
-	}
-	if s.ReadTimeout <= s.EnquireLink {
-		s.ReadTimeout = s.EnquireLink + time.Second
-	}
-}
-
 type transceiver struct {
 	settings TransceiveSettings
 	conn     *Connection
@@ -61,8 +52,6 @@ type transceiver struct {
 }
 
 func newTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
-	settings.normalize()
-
 	t := &transceiver{
 		settings: settings,
 		conn:     conn,

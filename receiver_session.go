@@ -1,6 +1,7 @@
 package gosmpp
 
 import (
+	"fmt"
 	"sync/atomic"
 	"time"
 )
@@ -30,6 +31,10 @@ type ReceiverSession struct {
 //
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
 func NewReceiverSession(dialer Dialer, auth Auth, settings ReceiveSettings, rebindingInterval time.Duration) (session *ReceiverSession, err error) {
+	if settings.Timeout <= 0 {
+		return nil, fmt.Errorf("invalid settings: Timeout must greater than 0")
+	}
+
 	conn, err := ConnectAsReceiver(dialer, auth)
 	if err == nil {
 		session = &ReceiverSession{

@@ -51,7 +51,7 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 func TestSubmitSM(t *testing.T) {
 	auth := nextAuth()
 	trans, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
-		EnquireLink: 2 * time.Second,
+		ReadTimeout: 2 * time.Second,
 
 		OnSubmitError: func(_ pdu.PDU, err error) {
 			t.Fatal(err)
