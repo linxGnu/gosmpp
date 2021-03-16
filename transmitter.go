@@ -10,11 +10,6 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-const (
-	// EnquireLinkIntervalMinimum represents minimum interval for enquire link.
-	EnquireLinkIntervalMinimum = 20 * time.Second
-)
-
 var (
 	// ErrTransmitterClosing indicates transmitter is closing. Can not send any PDU.
 	ErrTransmitterClosing = fmt.Errorf("Transmitter is closing. Can not send PDU to SMSC")
@@ -51,12 +46,6 @@ type TransmitSettings struct {
 	OnClosed ClosedCallback
 }
 
-func (s *TransmitSettings) normalize() {
-	if s.EnquireLink <= EnquireLinkIntervalMinimum {
-		s.EnquireLink = EnquireLinkIntervalMinimum
-	}
-}
-
 type transmitter struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
@@ -69,8 +58,6 @@ type transmitter struct {
 }
 
 func newTransmitter(conn *Connection, settings TransmitSettings) *transmitter {
-	settings.normalize()
-
 	t := &transmitter{
 		settings: settings,
 		conn:     conn,
@@ -185,10 +172,6 @@ func (t *transmitter) loop() {
 
 // PDU loop processing with enquire link support
 func (t *transmitter) loopWithEnquireLink() {
-	if t.settings.EnquireLink < EnquireLinkIntervalMinimum {
-		t.settings.EnquireLink = EnquireLinkIntervalMinimum
-	}
-
 	ticker := time.NewTicker(t.settings.EnquireLink)
 	defer ticker.Stop()
 
