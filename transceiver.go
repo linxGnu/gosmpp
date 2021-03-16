@@ -9,6 +9,13 @@ import (
 
 // TransceiveSettings is listener for Transceiver.
 type TransceiveSettings struct {
+	// ReadTimeout is timeout for reading PDU from SMSC.
+	// Underlying net.Conn will be stricted with ReadDeadline(now + timeout).
+	// This setting is very important to detect connection failure.
+	//
+	// Default: 2 secs
+	ReadTimeout time.Duration
+
 	// WriteTimeout is timeout for submitting PDU.
 	WriteTimeout time.Duration
 
@@ -36,6 +43,15 @@ type TransceiveSettings struct {
 	OnClosed ClosedCallback
 }
 
+func (s *TransceiveSettings) normalize() {
+	if s.ReadTimeout <= 0 {
+		s.ReadTimeout = defaultReadTimeout
+	}
+	if s.ReadTimeout <= s.EnquireLink {
+		s.ReadTimeout = s.EnquireLink + time.Second
+	}
+}
+
 type transceiver struct {
 	settings TransceiveSettings
 	conn     *Connection
@@ -45,6 +61,8 @@ type transceiver struct {
 }
 
 func newTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
+	settings.normalize()
+
 	t := &transceiver{
 		settings: settings,
 		conn:     conn,
@@ -74,6 +92,8 @@ func newTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 	})
 
 	t.in = newReceiver(conn, ReceiveSettings{
+		Timeout: settings.ReadTimeout,
+
 		OnPDU: settings.OnPDU,
 
 		OnReceivingError: settings.OnReceivingError,
