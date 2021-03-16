@@ -106,6 +106,9 @@ func (t *transmitter) close(state State) (err error) {
 		t.wg.Wait()
 
 		// try to send unbind
+		if t.settings.Timeout > 0 {
+			_ = t.conn.SetWriteTimeout(t.settings.Timeout)
+		}
 		_, _ = t.conn.Write(marshal(pdu.NewUnbind()))
 
 		// close connection
