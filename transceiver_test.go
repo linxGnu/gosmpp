@@ -53,7 +53,7 @@ func TestSubmitSM(t *testing.T) {
 	trans, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
 		EnquireLink: 200 * time.Millisecond,
 
-		OnSubmitError: func(p pdu.PDU, err error) {
+		OnSubmitError: func(_ pdu.PDU, err error) {
 			t.Fatal(err)
 		},
 

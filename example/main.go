@@ -36,11 +36,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 
 		WriteTimeout: time.Second,
 
-		// this setting is very important to detect broken conn.
-		// After timeout, there is no read packet, then we decide it's connection broken.
-		ReadTimeout: 10 * time.Second,
-
-		OnSubmitError: func(p pdu.PDU, err error) {
+		OnSubmitError: func(_ pdu.PDU, err error) {
 			log.Fatal("SubmitPDU error:", err)
 		},
 
@@ -76,7 +72,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 
 func handlePDU() func(pdu.PDU, bool) {
 	concatenated := map[uint8][]string{}
-	return func(p pdu.PDU, responded bool) {
+	return func(p pdu.PDU, _ bool) {
 		switch pd := p.(type) {
 		case *pdu.SubmitSMResp:
 			fmt.Printf("SubmitSMResp:%+v\n", pd)

@@ -59,7 +59,9 @@ func NewReceiverSession(dialer Dialer, auth Auth, settings ReceiveSettings, rebi
 		}
 
 		// create new receiver
-		r := NewReceiver(conn, session.settings)
+		r := newReceiver(conn, session.settings)
+		r.settings.response = r.defaultResponse
+		r.start()
 
 		// bind to session
 		session.r.Store(r)
@@ -103,7 +105,9 @@ func (s *ReceiverSession) rebind() {
 				}
 				time.Sleep(s.rebindingInterval)
 			} else {
-				r := NewReceiver(conn, s.settings)
+				r := newReceiver(conn, s.settings)
+				r.settings.response = r.defaultResponse
+				r.start()
 
 				// bind to session
 				s.r.Store(r)

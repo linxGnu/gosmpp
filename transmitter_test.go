@@ -19,12 +19,18 @@ func TestTransmitter(t *testing.T) {
 		transmitter, err := NewTransmitterSession(NonTLSDialer, auth, TransmitSettings{
 			Timeout: time.Second,
 
-			OnSubmitError: func(p pdu.PDU, err error) {
+			OnPDU: func(p pdu.PDU, _ bool) {
+				fmt.Println(p)
+			},
+
+			OnSubmitError: func(_ pdu.PDU, err error) {
 				t.Fatal(err)
 			},
+
 			OnRebindingError: func(err error) {
 				t.Fatal(err)
 			},
+
 			OnClosed: func(state State) {
 				fmt.Println(state)
 			},
@@ -69,7 +75,7 @@ func TestTransmitter(t *testing.T) {
 		tr.ctx, tr.cancel = context.WithCancel(context.Background())
 
 		var count int32
-		tr.settings.OnClosed = func(state State) {
+		tr.settings.OnClosed = func(State) {
 			atomic.AddInt32(&count, 1)
 		}
 

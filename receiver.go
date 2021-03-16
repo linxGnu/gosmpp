@@ -9,17 +9,8 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-const (
-	defaultReadTimeout = 2 * time.Second
-)
-
 // ReceiveSettings is event listener for Receiver.
 type ReceiveSettings struct {
-	// Timeout represents conn read timeout.
-	// This field is very important to detect connection failure.
-	// Default: 2 secs
-	Timeout time.Duration
-
 	// OnPDU handles received PDU from SMSC.
 	//
 	// `Responded` flag indicates this pdu is responded automatically,
@@ -39,12 +30,6 @@ type ReceiveSettings struct {
 	response func(pdu.PDU)
 }
 
-func (s *ReceiveSettings) normalize() {
-	if s.Timeout <= 0 {
-		s.Timeout = defaultReadTimeout
-	}
-}
-
 type receiver struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
@@ -54,24 +39,12 @@ type receiver struct {
 	state    int32
 }
 
-// NewReceiver returns new Receiver, bound with inputStream stream.
-func NewReceiver(conn *Connection, settings ReceiveSettings) Receiver {
-	return newReceiver(conn, settings, true)
-}
-
-func newReceiver(conn *Connection, settings ReceiveSettings, startDaemon bool) *receiver {
-	settings.normalize()
-
+func newReceiver(conn *Connection, settings ReceiveSettings) *receiver {
 	r := &receiver{
 		settings: settings,
 		conn:     conn,
 	}
 	r.ctx, r.cancel = context.WithCancel(context.Background())
-
-	// start receiver daemon(s)
-	if startDaemon {
-		r.start()
-	}
 
 	return r
 }
@@ -148,11 +121,7 @@ func (t *receiver) loop() {
 		}
 
 		// read pdu from conn
-		var p pdu.PDU
-		err := t.conn.SetReadTimeout(t.settings.Timeout)
-		if err == nil {
-			p, err = pdu.Parse(t.conn)
-		}
+		p, err := pdu.Parse(t.conn)
 
 		// check error
 		if closeOnError := t.check(err); closeOnError || t.handleOrClose(p) {
@@ -196,4 +165,8 @@ func (t *receiver) handleOrClose(p pdu.PDU) (closing bool) {
 		}
 	}
 	return
+}
+
+func (t *receiver) defaultResponse(p pdu.PDU) {
+	_, _ = t.conn.Write(marshal(p))
 }

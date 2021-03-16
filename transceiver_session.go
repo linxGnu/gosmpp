@@ -59,7 +59,7 @@ func NewTransceiverSession(dialer Dialer, auth Auth, settings TransceiveSettings
 		}
 
 		// create new Transceiver
-		r := NewTransceiver(conn, session.settings)
+		r := newTransceiver(conn, session.settings)
 
 		// bind to session
 		session.r.Store(r)
@@ -103,7 +103,7 @@ func (s *TransceiverSession) rebind() {
 				}
 				time.Sleep(s.rebindingInterval)
 			} else {
-				r := NewTransceiver(conn, s.settings)
+				r := newTransceiver(conn, s.settings)
 
 				// bind to session
 				s.r.Store(r)

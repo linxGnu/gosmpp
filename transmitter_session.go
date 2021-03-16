@@ -59,7 +59,8 @@ func NewTransmitterSession(dialer Dialer, auth Auth, settings TransmitSettings, 
 		}
 
 		// create new Transmitter
-		r := NewTransmitter(conn, session.settings)
+		r := newTransmitter(conn, session.settings)
+		r.start(true)
 
 		// bind to session
 		session.r.Store(r)
@@ -103,7 +104,8 @@ func (s *TransmitterSession) rebind() {
 				}
 				time.Sleep(s.rebindingInterval)
 			} else {
-				r := NewTransmitter(conn, s.settings)
+				r := newTransmitter(conn, s.settings)
+				r.start(true)
 
 				// bind to session
 				s.r.Store(r)

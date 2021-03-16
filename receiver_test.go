@@ -16,12 +16,15 @@ func TestReceiver(t *testing.T) {
 		OnReceivingError: func(err error) {
 			fmt.Println(err)
 		},
+
 		OnRebindingError: func(err error) {
 			fmt.Println(err)
 		},
-		OnPDU: func(p pdu.PDU, responded bool) {
+
+		OnPDU: func(p pdu.PDU, _ bool) {
 			fmt.Println(p)
 		},
+
 		OnClosed: func(state State) {
 			fmt.Println(state)
 		},

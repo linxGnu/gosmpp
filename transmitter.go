@@ -31,6 +31,16 @@ type TransmitSettings struct {
 	// Zero duration disables auto enquire link.
 	EnquireLink time.Duration
 
+	// OnPDU handles received PDU from SMSC.
+	//
+	// `Responded` flag indicates this pdu is responded automatically,
+	// no manual respond needed.
+	OnPDU PDUCallback
+
+	// OnReceivingError notifies happened error while reading PDU
+	// from SMSC.
+	OnReceivingError ErrorCallback
+
 	// OnSubmitError notifies fail-to-submit PDU with along error.
 	OnSubmitError PDUErrorCallback
 
@@ -58,12 +68,7 @@ type transmitter struct {
 	state    int32
 }
 
-// NewTransmitter returns new Transmitter.
-func NewTransmitter(conn *Connection, settings TransmitSettings) Transmitter {
-	return newTransmitter(conn, settings, true)
-}
-
-func newTransmitter(conn *Connection, settings TransmitSettings, startDaemon bool) *transmitter {
+func newTransmitter(conn *Connection, settings TransmitSettings) *transmitter {
 	settings.normalize()
 
 	t := &transmitter{
@@ -72,11 +77,6 @@ func newTransmitter(conn *Connection, settings TransmitSettings, startDaemon boo
 		input:    make(chan pdu.PDU, 1),
 	}
 	t.ctx, t.cancel = context.WithCancel(context.Background())
-
-	// start transmitter daemon(s)
-	if startDaemon {
-		t.start()
-	}
 
 	return t
 }
@@ -152,7 +152,7 @@ func (t *transmitter) Submit(p pdu.PDU) (err error) {
 	return
 }
 
-func (t *transmitter) start() {
+func (t *transmitter) start(receiving bool) {
 	t.wg.Add(1)
 	if t.settings.EnquireLink > 0 {
 		go func() {
@@ -164,6 +164,10 @@ func (t *transmitter) start() {
 			t.loop()
 			t.wg.Done()
 		}()
+	}
+
+	if receiving {
+		go t.loopReceiving()
 	}
 }
 
@@ -260,5 +264,69 @@ func (t *transmitter) write(v []byte) (n int, err error) {
 		}
 	}
 
+	return
+}
+
+// PDU loop processing
+func (t *transmitter) loopReceiving() {
+	checkErr := func(err error) (closing bool) {
+		if err == nil {
+			return
+		}
+
+		if t.settings.OnReceivingError != nil {
+			t.settings.OnReceivingError(err)
+		}
+
+		closing = true
+		return
+	}
+
+	for {
+		select {
+		case <-t.ctx.Done():
+			return
+		default:
+		}
+
+		// read pdu from conn
+		p, err := pdu.Parse(t.conn)
+
+		// check error
+		if closeOnError := checkErr(err); closeOnError || t.handleOrClose(p) {
+			if closeOnError {
+				t.closing(InvalidStreaming)
+			}
+			return
+		}
+	}
+}
+
+func (t *transmitter) handleOrClose(p pdu.PDU) (closing bool) {
+	if p != nil {
+		switch pp := p.(type) {
+		case *pdu.EnquireLink:
+			_ = t.Submit(pp.GetResponse())
+
+		case *pdu.Unbind:
+			_ = t.Submit(pp.GetResponse())
+
+			// wait to send response before closing
+			time.Sleep(50 * time.Millisecond)
+
+			closing = true
+			t.closing(UnbindClosing)
+
+		default:
+			var responded bool
+			if p.CanResponse() {
+				_ = t.Submit(p.GetResponse())
+			}
+
+			if t.settings.OnPDU != nil {
+				t.settings.OnPDU(p, responded)
+			}
+		}
+	}
 	return
 }
