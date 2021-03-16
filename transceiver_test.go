@@ -49,56 +49,75 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 }
 
 func TestSubmitSM(t *testing.T) {
-	auth := nextAuth()
-	trans, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
-		ReadTimeout: 2 * time.Second,
+	t.Run("InvalidTimeout", func(t *testing.T) {
+		t.Parallel()
 
-		EnquireLink: 200 * time.Millisecond,
+		auth := nextAuth()
+		_, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{}, 2*time.Second)
+		require.Error(t, err)
 
-		OnSubmitError: func(_ pdu.PDU, err error) {
-			t.Fatal(err)
-		},
+		auth = nextAuth()
+		_, err = NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
+			ReadTimeout: 200 * time.Millisecond,
+			EnquireLink: 333 * time.Millisecond,
+		}, 2*time.Second)
+		require.Error(t, err)
+	})
 
-		OnReceivingError: func(err error) {
-			fmt.Println(err)
-		},
+	t.Run("Valid", func(t *testing.T) {
+		t.Parallel()
 
-		OnRebindingError: func(err error) {
-			fmt.Println(err)
-		},
+		auth := nextAuth()
+		trans, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
+			ReadTimeout: 2 * time.Second,
 
-		OnPDU: handlePDU(t),
+			EnquireLink: 200 * time.Millisecond,
 
-		OnClosed: func(state State) {
-			fmt.Println(state)
-		},
-	}, 5*time.Second)
-	require.Nil(t, err)
-	require.NotNil(t, trans)
-	defer func() {
-		_ = trans.Close()
-	}()
+			OnSubmitError: func(_ pdu.PDU, err error) {
+				t.Fatal(err)
+			},
 
-	require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
+			OnReceivingError: func(err error) {
+				fmt.Println(err)
+			},
 
-	// sending 20 SMS
-	for i := 0; i < 20; i++ {
+			OnRebindingError: func(err error) {
+				fmt.Println(err)
+			},
+
+			OnPDU: handlePDU(t),
+
+			OnClosed: func(state State) {
+				fmt.Println(state)
+			},
+		}, 5*time.Second)
+		require.Nil(t, err)
+		require.NotNil(t, trans)
+		defer func() {
+			_ = trans.Close()
+		}()
+
+		require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
+
+		// sending 20 SMS
+		for i := 0; i < 20; i++ {
+			err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
+			require.Nil(t, err)
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		time.Sleep(5 * time.Second)
+
+		// wait response received
+		require.EqualValues(t, 20, atomic.LoadInt32(&countSubmitSMResp))
+
+		// rebind and submit again
+		trans.rebind()
 		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
 		require.Nil(t, err)
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	time.Sleep(5 * time.Second)
-
-	// wait response received
-	require.EqualValues(t, 20, atomic.LoadInt32(&countSubmitSMResp))
-
-	// rebind and submit again
-	trans.rebind()
-	err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
-	require.Nil(t, err)
-	time.Sleep(time.Second)
-	require.EqualValues(t, 21, atomic.LoadInt32(&countSubmitSMResp))
+		time.Sleep(time.Second)
+		require.EqualValues(t, 21, atomic.LoadInt32(&countSubmitSMResp))
+	})
 }
 
 func newSubmitSM(systemID string) *pdu.SubmitSM {

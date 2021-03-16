@@ -11,34 +11,46 @@ import (
 )
 
 func TestReceiver(t *testing.T) {
-	auth := nextAuth()
-	receiver, err := NewReceiverSession(NonTLSDialer, auth, ReceiveSettings{
-		Timeout: 2 * time.Second,
+	t.Run("Invalid", func(t *testing.T) {
+		t.Parallel()
 
-		OnReceivingError: func(err error) {
-			fmt.Println(err)
-		},
+		auth := nextAuth()
+		_, err := NewReceiverSession(NonTLSDialer, auth, ReceiveSettings{}, 2*time.Second)
+		require.Error(t, err)
+	})
 
-		OnRebindingError: func(err error) {
-			fmt.Println(err)
-		},
+	t.Run("Valid", func(t *testing.T) {
+		t.Parallel()
 
-		OnPDU: func(p pdu.PDU, _ bool) {
-			fmt.Println(p)
-		},
+		auth := nextAuth()
+		receiver, err := NewReceiverSession(NonTLSDialer, auth, ReceiveSettings{
+			Timeout: 2 * time.Second,
 
-		OnClosed: func(state State) {
-			fmt.Println(state)
-		},
-	}, 5*time.Second)
-	require.Nil(t, err)
-	require.NotNil(t, receiver)
-	defer func() {
-		_ = receiver.Close()
-	}()
+			OnReceivingError: func(err error) {
+				fmt.Println(err)
+			},
 
-	require.Equal(t, "MelroseLabsSMSC", receiver.Receiver().SystemID())
+			OnRebindingError: func(err error) {
+				fmt.Println(err)
+			},
 
-	time.Sleep(time.Second)
-	receiver.rebind()
+			OnPDU: func(p pdu.PDU, _ bool) {
+				fmt.Println(p)
+			},
+
+			OnClosed: func(state State) {
+				fmt.Println(state)
+			},
+		}, 5*time.Second)
+		require.Nil(t, err)
+		require.NotNil(t, receiver)
+		defer func() {
+			_ = receiver.Close()
+		}()
+
+		require.Equal(t, "MelroseLabsSMSC", receiver.Receiver().SystemID())
+
+		time.Sleep(time.Second)
+		receiver.rebind()
+	})
 }
