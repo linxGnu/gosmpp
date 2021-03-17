@@ -32,6 +32,8 @@ type Settings struct {
 	// ReadTimeout is timeout for reading PDU from SMSC.
 	// Underlying net.Conn will be stricted with ReadDeadline(now + timeout).
 	// This setting is very important to detect connection failure.
+	//
+	// Must: ReadTimeout > max(0, EnquireLink)
 	ReadTimeout time.Duration
 
 	// WriteTimeout is timeout for submitting PDU.

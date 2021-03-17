@@ -18,10 +18,8 @@ type Dialer func(addr string) (net.Conn, error)
 
 // Auth represents basic authentication to SMSC.
 type Auth struct {
-	// SMSC represents SMSC address.
-	SMSC string
-
-	// authentication infos
+	// SMSC is SMSC address.
+	SMSC       string
 	SystemID   string
 	Password   string
 	SystemType string
@@ -35,7 +33,7 @@ func newBindRequest(s Auth, bindingType pdu.BindingType) (bindReq *pdu.BindReque
 	return
 }
 
-// Connector represents factory that could make a connection.
+// Connector is connection factory interface.
 type Connector interface {
 	Connect() (conn *Connection, err error)
 }

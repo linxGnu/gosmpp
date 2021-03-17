@@ -80,7 +80,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 	return t
 }
 
-// SystemID returns tagged SystemID, returned from bind_resp from SMSC.
+// SystemID returns tagged SystemID which is attached with bind_resp from SMSC.
 func (t *transceivable) SystemID() string {
 	return t.conn.systemID
 }

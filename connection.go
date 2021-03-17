@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Connection wraps over net.Conn with buffer reader data reading.
+// Connection wraps over net.Conn with buffered data reader.
 type Connection struct {
 	systemID string
 	conn     net.Conn

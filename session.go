@@ -31,7 +31,7 @@ type Session struct {
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
 func NewSession(c Connector, settings Settings, rebindingInterval time.Duration) (session *Session, err error) {
 	if settings.ReadTimeout <= 0 || settings.ReadTimeout <= settings.EnquireLink {
-		return nil, fmt.Errorf("invalid settings: ReadTimeout must greater than max(0, EnquireLinkDuration)")
+		return nil, fmt.Errorf("invalid settings: ReadTimeout must greater than max(0, EnquireLink)")
 	}
 
 	conn, err := c.Connect()

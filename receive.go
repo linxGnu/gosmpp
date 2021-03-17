@@ -80,7 +80,6 @@ func (t *receivable) check(err error) (closing bool) {
 	return
 }
 
-// PDU loop processing
 func (t *receivable) loop() {
 	var err error
 	for {

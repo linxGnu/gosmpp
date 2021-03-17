@@ -114,7 +114,6 @@ func (t *transmitable) start() {
 	}
 }
 
-// PDU loop processing
 func (t *transmitable) loop() {
 	for p := range t.input {
 		if p != nil {
@@ -126,7 +125,6 @@ func (t *transmitable) loop() {
 	}
 }
 
-// PDU loop processing with enquire link support
 func (t *transmitable) loopWithEnquireLink() {
 	ticker := time.NewTicker(t.settings.EnquireLink)
 	defer ticker.Stop()
