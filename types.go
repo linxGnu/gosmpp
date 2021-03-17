@@ -11,5 +11,5 @@ type PDUErrorCallback func(pdu pdu.PDU, err error)
 // ErrorCallback notifies happened error while reading PDU.
 type ErrorCallback func(error)
 
-// ClosedCallback notifies `closed` event due to State.
+// ClosedCallback notifies closed event due to State.
 type ClosedCallback func(State)

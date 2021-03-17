@@ -10,88 +10,38 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-const (
-	// EnquireLinkIntervalMinimum represents minimum interval for enquire link.
-	EnquireLinkIntervalMinimum = 20 * time.Second
-)
-
 var (
-	// ErrTransmitterClosing indicates transmitter is closing. Can not send any PDU.
-	ErrTransmitterClosing = fmt.Errorf("Transmitter is closing. Can not send PDU to SMSC")
+	// ErrConnectionClosing indicates transmitter is closing. Can not send any PDU.
+	ErrConnectionClosing = fmt.Errorf("connection is closing, can not send PDU to SMSC")
 )
 
-// TransmitSettings is listener for transmitter.
-type TransmitSettings struct {
-	// Timeout is timeout/deadline for submitting PDU.
-	Timeout time.Duration
+type transmittable struct {
+	ctx    context.Context
+	cancel context.CancelFunc
 
-	// EnquireLink periodically sends EnquireLink to SMSC.
-	// The duration must not be smaller than 1 minute.
-	//
-	// Zero duration disables auto enquire link.
-	EnquireLink time.Duration
+	conn *Connection
 
-	// OnSubmitError notifies fail-to-submit PDU with along error.
-	OnSubmitError PDUErrorCallback
+	wg    sync.WaitGroup
+	input chan pdu.PDU
 
-	// OnRebindingError notifies error while rebinding.
-	OnRebindingError ErrorCallback
+	settings Settings
 
-	// OnClosed notifies `closed` event due to State.
-	OnClosed ClosedCallback
+	lock  sync.RWMutex
+	state int32
 }
 
-func (s *TransmitSettings) normalize() {
-	if s.EnquireLink <= EnquireLinkIntervalMinimum {
-		s.EnquireLink = EnquireLinkIntervalMinimum
-	}
-}
-
-type transmitter struct {
-	ctx      context.Context
-	cancel   context.CancelFunc
-	wg       sync.WaitGroup
-	settings TransmitSettings
-	conn     *Connection
-	input    chan pdu.PDU
-	lock     sync.RWMutex
-	state    int32
-}
-
-// NewTransmitter returns new Transmitter.
-func NewTransmitter(conn *Connection, settings TransmitSettings) Transmitter {
-	return newTransmitter(conn, settings, true)
-}
-
-func newTransmitter(conn *Connection, settings TransmitSettings, startDaemon bool) *transmitter {
-	settings.normalize()
-
-	t := &transmitter{
+func newTransmittable(conn *Connection, settings Settings) *transmittable {
+	t := &transmittable{
 		settings: settings,
 		conn:     conn,
 		input:    make(chan pdu.PDU, 1),
 	}
 	t.ctx, t.cancel = context.WithCancel(context.Background())
 
-	// start transmitter daemon(s)
-	if startDaemon {
-		t.start()
-	}
-
 	return t
 }
 
-// SystemID returns tagged SystemID, returned from bind_resp from SMSC.
-func (t *transmitter) SystemID() string {
-	return t.conn.systemID
-}
-
-// Close transmitter and stop underlying daemons.
-func (t *transmitter) Close() (err error) {
-	return t.close(ExplicitClosing)
-}
-
-func (t *transmitter) close(state State) (err error) {
+func (t *transmittable) close(state State) (err error) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -106,10 +56,7 @@ func (t *transmitter) close(state State) (err error) {
 		t.wg.Wait()
 
 		// try to send unbind
-		if t.settings.Timeout > 0 {
-			_ = t.conn.SetWriteTimeout(t.settings.Timeout)
-		}
-		_, _ = t.conn.Write(marshal(pdu.NewUnbind()))
+		_, _ = t.write(pdu.NewUnbind())
 
 		// close connection
 		if state != StoppingProcessOnly {
@@ -127,14 +74,14 @@ func (t *transmitter) close(state State) (err error) {
 	return
 }
 
-func (t *transmitter) closing(state State) {
+func (t *transmittable) closing(state State) {
 	go func() {
 		_ = t.close(state)
 	}()
 }
 
 // Submit a PDU.
-func (t *transmitter) Submit(p pdu.PDU) (err error) {
+func (t *transmittable) Submit(p pdu.PDU) (err error) {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -146,13 +93,13 @@ func (t *transmitter) Submit(p pdu.PDU) (err error) {
 		case t.input <- p:
 		}
 	} else {
-		err = ErrTransmitterClosing
+		err = ErrConnectionClosing
 	}
 
 	return
 }
 
-func (t *transmitter) start() {
+func (t *transmittable) start() {
 	t.wg.Add(1)
 	if t.settings.EnquireLink > 0 {
 		go func() {
@@ -167,11 +114,10 @@ func (t *transmitter) start() {
 	}
 }
 
-// PDU loop processing
-func (t *transmitter) loop() {
+func (t *transmittable) loop() {
 	for p := range t.input {
 		if p != nil {
-			n, err := t.write(marshal(p))
+			n, err := t.write(p)
 			if t.check(p, n, err) {
 				return
 			}
@@ -179,23 +125,15 @@ func (t *transmitter) loop() {
 	}
 }
 
-// PDU loop processing with enquire link support
-func (t *transmitter) loopWithEnquireLink() {
-	if t.settings.EnquireLink < EnquireLinkIntervalMinimum {
-		t.settings.EnquireLink = EnquireLinkIntervalMinimum
-	}
-
+func (t *transmittable) loopWithEnquireLink() {
 	ticker := time.NewTicker(t.settings.EnquireLink)
 	defer ticker.Stop()
-
-	// enquireLink payload
-	eqp := pdu.NewEnquireLink()
-	enquireLink := marshal(eqp)
 
 	for {
 		select {
 		case <-ticker.C:
-			n, err := t.write(enquireLink)
+			eqp := pdu.NewEnquireLink()
+			n, err := t.write(eqp)
 			if t.check(eqp, n, err) {
 				return
 			}
@@ -206,7 +144,7 @@ func (t *transmitter) loopWithEnquireLink() {
 			}
 
 			if p != nil {
-				n, err := t.write(marshal(p))
+				n, err := t.write(p)
 				if t.check(p, n, err) {
 					return
 				}
@@ -216,7 +154,7 @@ func (t *transmitter) loopWithEnquireLink() {
 }
 
 // check error and do closing if need
-func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
+func (t *transmittable) check(p pdu.PDU, n int, err error) (closing bool) {
 	if err == nil {
 		return
 	}
@@ -243,21 +181,13 @@ func (t *transmitter) check(p pdu.PDU, n int, err error) (closing bool) {
 }
 
 // low level writing
-func (t *transmitter) write(v []byte) (n int, err error) {
-	hasTimeout := t.settings.Timeout > 0
-
-	if hasTimeout {
-		err = t.conn.SetWriteTimeout(t.settings.Timeout)
+func (t *transmittable) write(p pdu.PDU) (n int, err error) {
+	if t.settings.WriteTimeout > 0 {
+		err = t.conn.SetWriteTimeout(t.settings.WriteTimeout)
 	}
 
 	if err == nil {
-		if n, err = t.conn.Write(v); err != nil &&
-			n == 0 &&
-			hasTimeout &&
-			t.conn.SetWriteTimeout(t.settings.Timeout<<1) == nil {
-			// retry again with double timeout
-			n, err = t.conn.Write(v)
-		}
+		n, err = t.conn.WritePDU(p)
 	}
 
 	return

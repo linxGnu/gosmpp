@@ -2,64 +2,28 @@ package gosmpp
 
 import (
 	"sync/atomic"
-	"time"
 
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-// TransceiveSettings is listener for Transceiver.
-type TransceiveSettings struct {
-	// WriteTimeout is timeout for submitting PDU.
-	WriteTimeout time.Duration
+type transceivable struct {
+	settings Settings
 
-	// ReadTimeout is timeout for reading PDU from SMSC.
-	// Underlying net.Conn will be stricted with ReadDeadline(now + timeout).
-	// This setting is very important to detect connection failure.
-	//
-	// Default: 2 secs
-	ReadTimeout time.Duration
+	conn *Connection
+	in   *receivable
+	out  *transmittable
 
-	// EnquireLink periodically sends EnquireLink to SMSC.
-	// Zero duration means disable auto enquire link.
-	EnquireLink time.Duration
-
-	// OnPDU handles received PDU from SMSC.
-	//
-	// `Responded` flag indicates this pdu is responded automatically,
-	// no manual respond needed.
-	OnPDU PDUCallback
-
-	// OnSubmitError notifies fail-to-submit PDU with along error.
-	OnSubmitError PDUErrorCallback
-
-	// OnReceivingError notifies happened error while reading PDU
-	// from SMSC.
-	OnReceivingError ErrorCallback
-
-	// OnRebindingError notifies error while rebinding.
-	OnRebindingError ErrorCallback
-
-	// OnClosed notifies `closed` event due to State.
-	OnClosed ClosedCallback
+	state int32
 }
 
-type transceiver struct {
-	settings TransceiveSettings
-	conn     *Connection
-	in       *receiver
-	out      *transmitter
-	state    int32
-}
-
-// NewTransceiver creates new Transceiver from bound connection.
-func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
-	t := &transceiver{
+func newTransceivable(conn *Connection, settings Settings) *transceivable {
+	t := &transceivable{
 		settings: settings,
 		conn:     conn,
 	}
 
-	t.out = newTransmitter(conn, TransmitSettings{
-		Timeout: settings.WriteTimeout,
+	t.out = newTransmittable(conn, Settings{
+		WriteTimeout: settings.WriteTimeout,
 
 		EnquireLink: settings.EnquireLink,
 
@@ -72,17 +36,17 @@ func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 
 			case ConnectionIssue:
 				// also close input
-				_ = t.in.Close()
+				_ = t.in.close(ExplicitClosing)
 
 				if t.settings.OnClosed != nil {
 					t.settings.OnClosed(ConnectionIssue)
 				}
 			}
 		},
-	}, false)
+	})
 
-	t.in = newReceiver(conn, ReceiveSettings{
-		Timeout: settings.ReadTimeout,
+	t.in = newReceivable(conn, Settings{
+		ReadTimeout: settings.ReadTimeout,
 
 		OnPDU: settings.OnPDU,
 
@@ -95,7 +59,7 @@ func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 
 			case InvalidStreaming, UnbindClosing:
 				// also close output
-				_ = t.out.Close()
+				_ = t.out.close(ExplicitClosing)
 
 				if t.settings.OnClosed != nil {
 					t.settings.OnClosed(state)
@@ -105,10 +69,10 @@ func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 
 		response: func(p pdu.PDU) {
 			if t.out.Submit(p) != nil { // only happened when transceiver is closed
-				_, _ = t.out.write(marshal(p))
+				_, _ = t.out.write(p)
 			}
 		},
-	}, false)
+	})
 
 	t.out.start()
 	t.in.start()
@@ -116,13 +80,13 @@ func NewTransceiver(conn *Connection, settings TransceiveSettings) Transceiver {
 	return t
 }
 
-// SystemID returns tagged SystemID, returned from bind_resp from SMSC.
-func (t *transceiver) SystemID() string {
+// SystemID returns tagged SystemID which is attached with bind_resp from SMSC.
+func (t *transceivable) SystemID() string {
 	return t.conn.systemID
 }
 
 // Close transceiver and stop underlying daemons.
-func (t *transceiver) Close() (err error) {
+func (t *transceivable) Close() (err error) {
 	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
 		// closing input and output
 		_ = t.out.close(StoppingProcessOnly)
@@ -140,6 +104,6 @@ func (t *transceiver) Close() (err error) {
 }
 
 // Submit a PDU.
-func (t *transceiver) Submit(p pdu.PDU) error {
+func (t *transceivable) Submit(p pdu.PDU) error {
 	return t.out.Submit(p)
 }

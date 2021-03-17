@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -10,22 +9,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestReceiver(t *testing.T) {
+func TestReceive(t *testing.T) {
 	auth := nextAuth()
-	receiver, err := NewReceiverSession(NonTLSDialer, auth, ReceiveSettings{
-		OnReceivingError: func(err error) {
-			fmt.Println(err)
-		},
-		OnRebindingError: func(err error) {
-			fmt.Println(err)
-		},
-		OnPDU: func(p pdu.PDU, responded bool) {
-			fmt.Println(p)
-		},
-		OnClosed: func(state State) {
-			fmt.Println(state)
-		},
-	}, 5*time.Second)
+	receiver, err := NewSession(
+		RXConnector(NonTLSDialer, auth),
+		Settings{
+			ReadTimeout: 2 * time.Second,
+
+			OnReceivingError: func(err error) {
+				t.Log(err)
+			},
+
+			OnRebindingError: func(err error) {
+				t.Log(err)
+			},
+
+			OnPDU: func(p pdu.PDU, _ bool) {
+				t.Log(p)
+			},
+
+			OnClosed: func(state State) {
+				t.Log(state)
+			},
+		}, 5*time.Second)
 	require.Nil(t, err)
 	require.NotNil(t, receiver)
 	defer func() {

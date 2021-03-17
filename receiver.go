@@ -9,84 +9,26 @@ import (
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
-const (
-	defaultReadTimeout = 2 * time.Second
-)
-
-// ReceiveSettings is event listener for Receiver.
-type ReceiveSettings struct {
-	// Timeout represents conn read timeout.
-	// This field is very important to detect connection failure.
-	// Default: 2 secs
-	Timeout time.Duration
-
-	// OnPDU handles received PDU from SMSC.
-	//
-	// `Responded` flag indicates this pdu is responded automatically,
-	// no manual respond needed.
-	OnPDU PDUCallback
-
-	// OnReceivingError notifies happened error while reading PDU
-	// from SMSC.
-	OnReceivingError ErrorCallback
-
-	// OnRebindingError notifies error while rebinding.
-	OnRebindingError ErrorCallback
-
-	// OnClosed notifies `closed` event due to State.
-	OnClosed ClosedCallback
-
-	response func(pdu.PDU)
-}
-
-func (s *ReceiveSettings) normalize() {
-	if s.Timeout <= 0 {
-		s.Timeout = defaultReadTimeout
-	}
-}
-
-type receiver struct {
+type receivable struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	wg       sync.WaitGroup
-	settings ReceiveSettings
+	settings Settings
 	conn     *Connection
 	state    int32
 }
 
-// NewReceiver returns new Receiver, bound with inputStream stream.
-func NewReceiver(conn *Connection, settings ReceiveSettings) Receiver {
-	return newReceiver(conn, settings, true)
-}
-
-func newReceiver(conn *Connection, settings ReceiveSettings, startDaemon bool) *receiver {
-	settings.normalize()
-
-	r := &receiver{
+func newReceivable(conn *Connection, settings Settings) *receivable {
+	r := &receivable{
 		settings: settings,
 		conn:     conn,
 	}
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 
-	// start receiver daemon(s)
-	if startDaemon {
-		r.start()
-	}
-
 	return r
 }
 
-// SystemID returns tagged SystemID, returned from bind_resp from SMSC.
-func (t *receiver) SystemID() string {
-	return t.conn.systemID
-}
-
-// Close receiver, close connection and stop underlying daemons.
-func (t *receiver) Close() (err error) {
-	return t.close(ExplicitClosing)
-}
-
-func (t *receiver) close(state State) (err error) {
+func (t *receivable) close(state State) (err error) {
 	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
 		// cancel to notify stop
 		t.cancel()
@@ -110,13 +52,13 @@ func (t *receiver) close(state State) (err error) {
 	return
 }
 
-func (t *receiver) closing(state State) {
+func (t *receivable) closing(state State) {
 	go func() {
 		_ = t.close(state)
 	}()
 }
 
-func (t *receiver) start() {
+func (t *receivable) start() {
 	t.wg.Add(1)
 	go func() {
 		t.loop()
@@ -125,7 +67,7 @@ func (t *receiver) start() {
 }
 
 // check error and do closing if need
-func (t *receiver) check(err error) (closing bool) {
+func (t *receivable) check(err error) (closing bool) {
 	if err == nil {
 		return
 	}
@@ -138,8 +80,8 @@ func (t *receiver) check(err error) (closing bool) {
 	return
 }
 
-// PDU loop processing
-func (t *receiver) loop() {
+func (t *receivable) loop() {
+	var err error
 	for {
 		select {
 		case <-t.ctx.Done():
@@ -149,8 +91,7 @@ func (t *receiver) loop() {
 
 		// read pdu from conn
 		var p pdu.PDU
-		err := t.conn.SetReadTimeout(t.settings.Timeout)
-		if err == nil {
+		if err = t.conn.SetReadTimeout(t.settings.ReadTimeout); err == nil {
 			p, err = pdu.Parse(t.conn)
 		}
 
@@ -164,7 +105,7 @@ func (t *receiver) loop() {
 	}
 }
 
-func (t *receiver) handleOrClose(p pdu.PDU) (closing bool) {
+func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 	if p != nil {
 		switch pp := p.(type) {
 		case *pdu.EnquireLink:

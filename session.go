@@ -1,27 +1,27 @@
 package gosmpp
 
 import (
+	"fmt"
 	"sync/atomic"
 	"time"
 )
 
-// ReceiverSession represents session for Receiver.
-type ReceiverSession struct {
-	dialer Dialer
-	auth   Auth
+// Session represents session for TX, RX, TRX.
+type Session struct {
+	c Connector
 
 	originalOnClosed func(State)
-	settings         ReceiveSettings
+	settings         Settings
 
 	rebindingInterval time.Duration
 
-	r atomic.Value // Receiver
+	trx atomic.Value // transceivable
 
 	state     int32
 	rebinding int32
 }
 
-// NewReceiverSession creates new session for Receiver.
+// NewSession creates new session for TX, RX, TRX.
 //
 // Session will `non-stop`, automatically rebind (create new and authenticate connection with SMSC) when
 // unexpected error happened.
@@ -29,12 +29,15 @@ type ReceiverSession struct {
 // `rebindingInterval` indicates duration that Session has to wait before rebinding again.
 //
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
-func NewReceiverSession(dialer Dialer, auth Auth, settings ReceiveSettings, rebindingInterval time.Duration) (session *ReceiverSession, err error) {
-	conn, err := ConnectAsReceiver(dialer, auth)
+func NewSession(c Connector, settings Settings, rebindingInterval time.Duration) (session *Session, err error) {
+	if settings.ReadTimeout <= 0 || settings.ReadTimeout <= settings.EnquireLink {
+		return nil, fmt.Errorf("invalid settings: ReadTimeout must greater than max(0, EnquireLink)")
+	}
+
+	conn, err := c.Connect()
 	if err == nil {
-		session = &ReceiverSession{
-			dialer:            dialer,
-			auth:              auth,
+		session = &Session{
+			c:                 c,
 			rebindingInterval: rebindingInterval,
 			originalOnClosed:  settings.OnClosed,
 		}
@@ -58,55 +61,61 @@ func NewReceiverSession(dialer Dialer, auth Auth, settings ReceiveSettings, rebi
 			session.settings = settings
 		}
 
-		// create new receiver
-		r := NewReceiver(conn, session.settings)
-
 		// bind to session
-		session.r.Store(r)
+		session.trx.Store(newTransceivable(conn, session.settings))
 	}
 	return
 }
 
+func (s *Session) bound() *transceivable {
+	r, _ := s.trx.Load().(*transceivable)
+	return r
+}
+
+// Transmitter returns bound Transmitter.
+func (s *Session) Transmitter() Transmitter {
+	return s.bound()
+}
+
 // Receiver returns bound Receiver.
-func (s *ReceiverSession) Receiver() (r Receiver) {
-	r, _ = s.r.Load().(Receiver)
-	return
+func (s *Session) Receiver() Receiver {
+	return s.bound()
+}
+
+// Transceiver returns bound Transceiver.
+func (s *Session) Transceiver() Transceiver {
+	return s.bound()
 }
 
 // Close session.
-func (s *ReceiverSession) Close() (err error) {
+func (s *Session) Close() (err error) {
 	if atomic.CompareAndSwapInt32(&s.state, 0, 1) {
-		// close underlying Receiver
 		err = s.close()
 	}
 	return
 }
 
-// close underlying Receiver
-func (s *ReceiverSession) close() (err error) {
-	if r := s.Receiver(); r != nil {
-		err = r.Close()
+func (s *Session) close() (err error) {
+	if b := s.bound(); b != nil {
+		err = b.Close()
 	}
 	return
 }
 
-func (s *ReceiverSession) rebind() {
+func (s *Session) rebind() {
 	if atomic.CompareAndSwapInt32(&s.rebinding, 0, 1) {
-		// close underlying Receiver
 		_ = s.close()
 
 		for atomic.LoadInt32(&s.state) == 0 {
-			conn, err := ConnectAsReceiver(s.dialer, s.auth)
+			conn, err := s.c.Connect()
 			if err != nil {
 				if s.settings.OnRebindingError != nil {
 					s.settings.OnRebindingError(err)
 				}
 				time.Sleep(s.rebindingInterval)
 			} else {
-				r := NewReceiver(conn, s.settings)
-
 				// bind to session
-				s.r.Store(r)
+				s.trx.Store(newTransceivable(conn, s.settings))
 
 				// reset rebinding state
 				atomic.StoreInt32(&s.rebinding, 0)

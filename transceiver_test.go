@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -32,7 +31,7 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 
 		case *pdu.DataSM:
 			require.True(t, responded)
-			fmt.Println(pd.Header)
+			t.Logf("%+v\n", pd)
 
 		case *pdu.DeliverSM:
 			require.True(t, responded)
@@ -48,29 +47,35 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 	}
 }
 
-func TestSubmitSM(t *testing.T) {
+func TestTRXSubmitSM(t *testing.T) {
 	auth := nextAuth()
-	trans, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
-		EnquireLink: 200 * time.Millisecond,
+	trans, err := NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
+			ReadTimeout: 2 * time.Second,
 
-		OnSubmitError: func(p pdu.PDU, err error) {
-			t.Fatal(err)
-		},
+			WriteTimeout: 3 * time.Second,
 
-		OnReceivingError: func(err error) {
-			fmt.Println(err)
-		},
+			EnquireLink: 200 * time.Millisecond,
 
-		OnRebindingError: func(err error) {
-			fmt.Println(err)
-		},
+			OnSubmitError: func(_ pdu.PDU, err error) {
+				t.Fatal(err)
+			},
 
-		OnPDU: handlePDU(t),
+			OnReceivingError: func(err error) {
+				t.Log(err)
+			},
 
-		OnClosed: func(state State) {
-			fmt.Println(state)
-		},
-	}, 5*time.Second)
+			OnRebindingError: func(err error) {
+				t.Log(err)
+			},
+
+			OnPDU: handlePDU(t),
+
+			OnClosed: func(state State) {
+				t.Log(state)
+			},
+		}, 5*time.Second)
 	require.Nil(t, err)
 	require.NotNil(t, trans)
 	defer func() {
@@ -83,7 +88,7 @@ func TestSubmitSM(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
 		require.Nil(t, err)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	time.Sleep(5 * time.Second)

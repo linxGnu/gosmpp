@@ -31,33 +31,31 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 		SystemType: "",
 	}
 
-	trans, err := gosmpp.NewTransceiverSession(gosmpp.NonTLSDialer, auth, gosmpp.TransceiveSettings{
-		EnquireLink: 5 * time.Second,
+	trans, err := gosmpp.NewSession(
+		gosmpp.TRXConnector(gosmpp.NonTLSDialer, auth),
+		gosmpp.Settings{
+			EnquireLink: 5 * time.Second,
 
-		WriteTimeout: time.Second,
+			ReadTimeout: 10 * time.Second,
 
-		// this setting is very important to detect broken conn.
-		// After timeout, there is no read packet, then we decide it's connection broken.
-		ReadTimeout: 10 * time.Second,
+			OnSubmitError: func(_ pdu.PDU, err error) {
+				log.Fatal("SubmitPDU error:", err)
+			},
 
-		OnSubmitError: func(p pdu.PDU, err error) {
-			log.Fatal("SubmitPDU error:", err)
-		},
+			OnReceivingError: func(err error) {
+				fmt.Println("Receiving PDU/Network error:", err)
+			},
 
-		OnReceivingError: func(err error) {
-			fmt.Println("Receiving PDU/Network error:", err)
-		},
+			OnRebindingError: func(err error) {
+				fmt.Println("Rebinding but error:", err)
+			},
 
-		OnRebindingError: func(err error) {
-			fmt.Println("Rebinding but error:", err)
-		},
+			OnPDU: handlePDU(),
 
-		OnPDU: handlePDU(),
-
-		OnClosed: func(state gosmpp.State) {
-			fmt.Println(state)
-		},
-	}, 5*time.Second)
+			OnClosed: func(state gosmpp.State) {
+				fmt.Println(state)
+			},
+		}, 5*time.Second)
 	if err != nil {
 		log.Println(err)
 	}
@@ -76,7 +74,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 
 func handlePDU() func(pdu.PDU, bool) {
 	concatenated := map[uint8][]string{}
-	return func(p pdu.PDU, responded bool) {
+	return func(p pdu.PDU, _ bool) {
 		switch pd := p.(type) {
 		case *pdu.SubmitSMResp:
 			fmt.Printf("SubmitSMResp:%+v\n", pd)
