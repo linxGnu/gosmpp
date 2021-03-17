@@ -11,7 +11,7 @@ type transceivable struct {
 
 	conn *Connection
 	in   *receivable
-	out  *transmitable
+	out  *transmittable
 
 	state int32
 }
@@ -22,7 +22,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 		conn:     conn,
 	}
 
-	t.out = newTransmitable(conn, Settings{
+	t.out = newTransmittable(conn, Settings{
 		WriteTimeout: settings.WriteTimeout,
 
 		EnquireLink: settings.EnquireLink,
@@ -69,7 +69,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 
 		response: func(p pdu.PDU) {
 			if t.out.Submit(p) != nil { // only happened when transceiver is closed
-				_, _ = t.out.write(marshal(p))
+				_, _ = t.out.write(p)
 			}
 		},
 	})

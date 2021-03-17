@@ -55,11 +55,11 @@ func TestTransmit(t *testing.T) {
 		require.Nil(t, err)
 	})
 
-	errorHandling := func(t *testing.T, trigger func(*transmitable)) {
+	errorHandling := func(t *testing.T, trigger func(*transmittable)) {
 		conn, err := net.Dial("tcp", "smscsim.melroselabs.com:2775")
 		require.Nil(t, err)
 
-		var tr transmitable
+		var tr transmittable
 		tr.input = make(chan pdu.PDU, 1)
 
 		c := NewConnection(conn)
@@ -67,7 +67,7 @@ func TestTransmit(t *testing.T) {
 			_ = c.Close()
 
 			// write on closed conn?
-			n, err := tr.write([]byte{1, 2, 3})
+			n, err := tr.write(pdu.NewEnquireLink())
 			require.NotNil(t, err)
 			require.Zero(t, n)
 		}()
@@ -95,24 +95,24 @@ func TestTransmit(t *testing.T) {
 	}
 
 	t.Run("ErrorHandling", func(t *testing.T) {
-		errorHandling(t, func(tr *transmitable) {
+		errorHandling(t, func(tr *transmittable) {
 			var p pdu.CancelSM
 			tr.check(&p, 100, fmt.Errorf("fake error"))
 		})
 
-		errorHandling(t, func(tr *transmitable) {
+		errorHandling(t, func(tr *transmittable) {
 			var p pdu.CancelSM
 			tr.check(&p, 0, fmt.Errorf("fake error"))
 		})
 
-		errorHandling(t, func(tr *transmitable) {
+		errorHandling(t, func(tr *transmittable) {
 			var p pdu.CancelSM
 			tr.check(&p, 0, &net.DNSError{IsTemporary: false})
 		})
 	})
 
 	t.Run("SubmitErr", func(t *testing.T) {
-		var tr transmitable
+		var tr transmittable
 		tr.state = 1
 		err := tr.Submit(nil)
 		require.Error(t, err)

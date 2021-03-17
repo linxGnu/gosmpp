@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	// ErrTransmitterClosing indicates transmitter is closing. Can not send any PDU.
-	ErrTransmitterClosing = fmt.Errorf("Transmitter is closing. Can not send PDU to SMSC")
+	// ErrConnectionClosing indicates transmitter is closing. Can not send any PDU.
+	ErrConnectionClosing = fmt.Errorf("connection is closing, can not send PDU to SMSC")
 )
 
-type transmitable struct {
+type transmittable struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -30,8 +30,8 @@ type transmitable struct {
 	state int32
 }
 
-func newTransmitable(conn *Connection, settings Settings) *transmitable {
-	t := &transmitable{
+func newTransmittable(conn *Connection, settings Settings) *transmittable {
+	t := &transmittable{
 		settings: settings,
 		conn:     conn,
 		input:    make(chan pdu.PDU, 1),
@@ -41,7 +41,7 @@ func newTransmitable(conn *Connection, settings Settings) *transmitable {
 	return t
 }
 
-func (t *transmitable) close(state State) (err error) {
+func (t *transmittable) close(state State) (err error) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -56,7 +56,7 @@ func (t *transmitable) close(state State) (err error) {
 		t.wg.Wait()
 
 		// try to send unbind
-		_, _ = t.write(marshal(pdu.NewUnbind()))
+		_, _ = t.write(pdu.NewUnbind())
 
 		// close connection
 		if state != StoppingProcessOnly {
@@ -74,14 +74,14 @@ func (t *transmitable) close(state State) (err error) {
 	return
 }
 
-func (t *transmitable) closing(state State) {
+func (t *transmittable) closing(state State) {
 	go func() {
 		_ = t.close(state)
 	}()
 }
 
 // Submit a PDU.
-func (t *transmitable) Submit(p pdu.PDU) (err error) {
+func (t *transmittable) Submit(p pdu.PDU) (err error) {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -93,13 +93,13 @@ func (t *transmitable) Submit(p pdu.PDU) (err error) {
 		case t.input <- p:
 		}
 	} else {
-		err = ErrTransmitterClosing
+		err = ErrConnectionClosing
 	}
 
 	return
 }
 
-func (t *transmitable) start() {
+func (t *transmittable) start() {
 	t.wg.Add(1)
 	if t.settings.EnquireLink > 0 {
 		go func() {
@@ -114,10 +114,10 @@ func (t *transmitable) start() {
 	}
 }
 
-func (t *transmitable) loop() {
+func (t *transmittable) loop() {
 	for p := range t.input {
 		if p != nil {
-			n, err := t.write(marshal(p))
+			n, err := t.write(p)
 			if t.check(p, n, err) {
 				return
 			}
@@ -125,18 +125,15 @@ func (t *transmitable) loop() {
 	}
 }
 
-func (t *transmitable) loopWithEnquireLink() {
+func (t *transmittable) loopWithEnquireLink() {
 	ticker := time.NewTicker(t.settings.EnquireLink)
 	defer ticker.Stop()
-
-	// enquireLink payload
-	eqp := pdu.NewEnquireLink()
-	enquireLink := marshal(eqp)
 
 	for {
 		select {
 		case <-ticker.C:
-			n, err := t.write(enquireLink)
+			eqp := pdu.NewEnquireLink()
+			n, err := t.write(eqp)
 			if t.check(eqp, n, err) {
 				return
 			}
@@ -147,7 +144,7 @@ func (t *transmitable) loopWithEnquireLink() {
 			}
 
 			if p != nil {
-				n, err := t.write(marshal(p))
+				n, err := t.write(p)
 				if t.check(p, n, err) {
 					return
 				}
@@ -157,7 +154,7 @@ func (t *transmitable) loopWithEnquireLink() {
 }
 
 // check error and do closing if need
-func (t *transmitable) check(p pdu.PDU, n int, err error) (closing bool) {
+func (t *transmittable) check(p pdu.PDU, n int, err error) (closing bool) {
 	if err == nil {
 		return
 	}
@@ -184,13 +181,13 @@ func (t *transmitable) check(p pdu.PDU, n int, err error) (closing bool) {
 }
 
 // low level writing
-func (t *transmitable) write(v []byte) (n int, err error) {
+func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	if t.settings.WriteTimeout > 0 {
 		err = t.conn.SetWriteTimeout(t.settings.WriteTimeout)
 	}
 
 	if err == nil {
-		n, err = t.conn.Write(v)
+		n, err = t.conn.WritePDU(p)
 	}
 
 	return

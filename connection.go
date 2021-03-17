@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"net"
 	"time"
+
+	"github.com/linxGnu/gosmpp/pdu"
 )
 
 // Connection wraps over net.Conn with buffered data reader.
@@ -35,6 +37,14 @@ func (c *Connection) Read(b []byte) (n int, err error) {
 // after a fixed time limit; see SetDeadline and SetWriteDeadline.
 func (c *Connection) Write(b []byte) (n int, err error) {
 	n, err = c.conn.Write(b)
+	return
+}
+
+// WritePDU data to the connection.
+func (c *Connection) WritePDU(p pdu.PDU) (n int, err error) {
+	buf := pdu.NewBuffer(make([]byte, 0, 64))
+	p.Marshal(buf)
+	n, err = c.conn.Write(buf.Bytes())
 	return
 }
 

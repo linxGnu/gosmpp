@@ -1,8 +1,10 @@
 package gosmpp
 
 import (
+	"fmt"
 	"net"
 
+	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
@@ -46,6 +48,50 @@ type connector struct {
 
 func (c *connector) Connect() (conn *Connection, err error) {
 	conn, err = connect(c.dialer, c.auth.SMSC, newBindRequest(c.auth, c.bindingType))
+	return
+}
+
+func connect(dialer Dialer, addr string, bindReq *pdu.BindRequest) (c *Connection, err error) {
+	conn, err := dialer(addr)
+	if err != nil {
+		return
+	}
+
+	// create wrapped connection
+	c = NewConnection(conn)
+
+	// send binding request
+	_, err = c.WritePDU(bindReq)
+	if err != nil {
+		_ = conn.Close()
+		return
+	}
+
+	// catching response
+	var (
+		p    pdu.PDU
+		resp *pdu.BindResp
+	)
+
+	for {
+		if p, err = pdu.Parse(c); err != nil {
+			_ = conn.Close()
+			return
+		}
+
+		if pd, ok := p.(*pdu.BindResp); ok {
+			resp = pd
+			break
+		}
+	}
+
+	if resp.CommandStatus != data.ESME_ROK {
+		err = fmt.Errorf("Binding error. Command status: [%d]. Please refer to: https://github.com/linxGnu/gosmpp/blob/master/data/pkg.go for more detail about this status code", resp.CommandStatus)
+		_ = conn.Close()
+	} else {
+		c.systemID = resp.SystemID
+	}
+
 	return
 }
 
