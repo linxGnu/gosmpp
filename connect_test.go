@@ -29,21 +29,22 @@ func nextAuth() Auth {
 }
 
 func TestBindingSMSC(t *testing.T) {
-	// valid
-	connection, err := ConnectAsTransceiver(NonTLSDialer, nextAuth())
-	require.Nil(t, err)
-	require.NotNil(t, connection)
-	_ = connection.Close()
+	checker := func(t *testing.T, c Connector) {
+		conn, err := c.Connect()
+		require.Nil(t, err)
+		require.NotNil(t, conn)
+		_ = conn.Close()
+	}
 
-	// valid
-	connection, err = ConnectAsReceiver(NonTLSDialer, nextAuth())
-	require.Nil(t, err)
-	require.NotNil(t, connection)
-	_ = connection.Close()
+	t.Run("TX", func(t *testing.T) {
+		checker(t, TXConnector(NonTLSDialer, nextAuth()))
+	})
 
-	// valid
-	connection, err = ConnectAsTransmitter(NonTLSDialer, nextAuth())
-	require.Nil(t, err)
-	require.NotNil(t, connection)
-	_ = connection.Close()
+	t.Run("RX", func(t *testing.T) {
+		checker(t, RXConnector(NonTLSDialer, nextAuth()))
+	})
+
+	t.Run("TRX", func(t *testing.T) {
+		checker(t, TRXConnector(NonTLSDialer, nextAuth()))
+	})
 }

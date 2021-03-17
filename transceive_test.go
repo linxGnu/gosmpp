@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -32,7 +31,7 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 
 		case *pdu.DataSM:
 			require.True(t, responded)
-			fmt.Println(pd.Header)
+			t.Logf("%+v\n", pd)
 
 		case *pdu.DeliverSM:
 			require.True(t, responded)
@@ -48,28 +47,14 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 	}
 }
 
-func TestSubmitSM(t *testing.T) {
-	t.Run("InvalidTimeout", func(t *testing.T) {
-		t.Parallel()
-
-		auth := nextAuth()
-		_, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{}, 2*time.Second)
-		require.Error(t, err)
-
-		auth = nextAuth()
-		_, err = NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
-			ReadTimeout: 200 * time.Millisecond,
-			EnquireLink: 333 * time.Millisecond,
-		}, 2*time.Second)
-		require.Error(t, err)
-	})
-
-	t.Run("Valid", func(t *testing.T) {
-		t.Parallel()
-
-		auth := nextAuth()
-		trans, err := NewTransceiverSession(NonTLSDialer, auth, TransceiveSettings{
+func TestTRXSubmitSM(t *testing.T) {
+	auth := nextAuth()
+	trans, err := NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
 			ReadTimeout: 2 * time.Second,
+
+			WriteTimeout: 3 * time.Second,
 
 			EnquireLink: 200 * time.Millisecond,
 
@@ -78,46 +63,45 @@ func TestSubmitSM(t *testing.T) {
 			},
 
 			OnReceivingError: func(err error) {
-				fmt.Println(err)
+				t.Log(err)
 			},
 
 			OnRebindingError: func(err error) {
-				fmt.Println(err)
+				t.Log(err)
 			},
 
 			OnPDU: handlePDU(t),
 
 			OnClosed: func(state State) {
-				fmt.Println(state)
+				t.Log(state)
 			},
 		}, 5*time.Second)
-		require.Nil(t, err)
-		require.NotNil(t, trans)
-		defer func() {
-			_ = trans.Close()
-		}()
+	require.Nil(t, err)
+	require.NotNil(t, trans)
+	defer func() {
+		_ = trans.Close()
+	}()
 
-		require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
+	require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
 
-		// sending 20 SMS
-		for i := 0; i < 20; i++ {
-			err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
-			require.Nil(t, err)
-			time.Sleep(100 * time.Millisecond)
-		}
-
-		time.Sleep(5 * time.Second)
-
-		// wait response received
-		require.EqualValues(t, 20, atomic.LoadInt32(&countSubmitSMResp))
-
-		// rebind and submit again
-		trans.rebind()
+	// sending 20 SMS
+	for i := 0; i < 20; i++ {
 		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
 		require.Nil(t, err)
-		time.Sleep(time.Second)
-		require.EqualValues(t, 21, atomic.LoadInt32(&countSubmitSMResp))
-	})
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	// wait response received
+	require.EqualValues(t, 20, atomic.LoadInt32(&countSubmitSMResp))
+
+	// rebind and submit again
+	trans.rebind()
+	err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
+	require.Nil(t, err)
+	time.Sleep(time.Second)
+	require.EqualValues(t, 21, atomic.LoadInt32(&countSubmitSMResp))
 }
 
 func newSubmitSM(systemID string) *pdu.SubmitSM {

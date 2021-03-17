@@ -13,28 +13,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTransmitter(t *testing.T) {
-	t.Run("binding", func(t *testing.T) {
+func TestTransmit(t *testing.T) {
+	t.Run("Binding", func(t *testing.T) {
 		auth := nextAuth()
-		transmitter, err := NewTransmitterSession(NonTLSDialer, auth, TransmitSettings{
-			Timeout: time.Second,
+		transmitter, err := NewSession(
+			TXConnector(NonTLSDialer, auth),
+			Settings{
+				ReadTimeout: 2 * time.Second,
 
-			OnPDU: func(p pdu.PDU, _ bool) {
-				fmt.Println(p)
-			},
+				OnPDU: func(p pdu.PDU, _ bool) {
+					t.Logf("%+v\n", p)
+				},
 
-			OnSubmitError: func(_ pdu.PDU, err error) {
-				t.Fatal(err)
-			},
+				OnSubmitError: func(_ pdu.PDU, err error) {
+					t.Fatal(err)
+				},
 
-			OnRebindingError: func(err error) {
-				t.Fatal(err)
-			},
+				OnRebindingError: func(err error) {
+					t.Fatal(err)
+				},
 
-			OnClosed: func(state State) {
-				fmt.Println(state)
-			},
-		}, 5*time.Second)
+				OnClosed: func(state State) {
+					t.Log(state)
+				},
+			}, -1)
 		require.Nil(t, err)
 		require.NotNil(t, transmitter)
 		defer func() {
@@ -53,11 +55,11 @@ func TestTransmitter(t *testing.T) {
 		require.Nil(t, err)
 	})
 
-	errorHandling := func(t *testing.T, trigger func(*transmitter)) {
+	errorHandling := func(t *testing.T, trigger func(*transmitable)) {
 		conn, err := net.Dial("tcp", "smscsim.melroselabs.com:2775")
 		require.Nil(t, err)
 
-		var tr transmitter
+		var tr transmitable
 		tr.input = make(chan pdu.PDU, 1)
 
 		c := NewConnection(conn)
@@ -92,24 +94,33 @@ func TestTransmitter(t *testing.T) {
 		require.NotZero(t, atomic.LoadInt32(&count))
 	}
 
-	t.Run("errorHandling1", func(t *testing.T) {
-		errorHandling(t, func(tr *transmitter) {
+	t.Run("ErrorHandling", func(t *testing.T) {
+		errorHandling(t, func(tr *transmitable) {
 			var p pdu.CancelSM
 			tr.check(&p, 100, fmt.Errorf("fake error"))
 		})
-	})
 
-	t.Run("errorHandling2", func(t *testing.T) {
-		errorHandling(t, func(tr *transmitter) {
+		errorHandling(t, func(tr *transmitable) {
 			var p pdu.CancelSM
 			tr.check(&p, 0, fmt.Errorf("fake error"))
 		})
-	})
 
-	t.Run("errorHandling3", func(t *testing.T) {
-		errorHandling(t, func(tr *transmitter) {
+		errorHandling(t, func(tr *transmitable) {
 			var p pdu.CancelSM
 			tr.check(&p, 0, &net.DNSError{IsTemporary: false})
 		})
+	})
+
+	t.Run("SubmitErr", func(t *testing.T) {
+		var tr transmitable
+		tr.state = 1
+		err := tr.Submit(nil)
+		require.Error(t, err)
+
+		tr.state = 0
+		tr.ctx, tr.cancel = context.WithCancel(context.Background())
+		tr.cancel()
+		err = tr.Submit(nil)
+		require.Error(t, err)
 	})
 }
