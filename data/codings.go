@@ -11,8 +11,12 @@ const (
 	GSM7BITCoding byte = 0x00
 	// ASCIICoding is ascii coding
 	ASCIICoding byte = 0x01
+	// BINARY8BIT1Coding is 8-bit binary coding
+	BINARY8BIT1Coding byte = 0x02
 	// LATIN1Coding is iso-8859-1 coding
 	LATIN1Coding byte = 0x03
+	// BINARY8BIT2Coding is 8-bit binary coding
+	BINARY8BIT2Coding byte = 0x04
 	// CYRILLICCoding is iso-8859-5 coding
 	CYRILLICCoding byte = 0x06
 	// HEBREWCoding is iso-8859-8 coding
@@ -111,6 +115,30 @@ func (c iso88591) Decode(data []byte) (string, error) {
 
 func (c iso88591) DataCoding() byte { return LATIN1Coding }
 
+type binary8bit1 struct{}
+
+func (c binary8bit1) Encode(_ string) ([]byte, error) {
+	return []byte{}, ErrNotImplEncode
+}
+
+func (c binary8bit1) Decode(_ []byte) (string, error) {
+	return "", ErrNotImplDecode
+}
+
+func (c binary8bit1) DataCoding() byte { return BINARY8BIT1Coding }
+
+type binary8bit2 struct{}
+
+func (c binary8bit2) Encode(_ string) ([]byte, error) {
+	return []byte{}, ErrNotImplEncode
+}
+
+func (c binary8bit2) Decode(_ []byte) (string, error) {
+	return "", ErrNotImplDecode
+}
+
+func (c binary8bit2) DataCoding() byte { return BINARY8BIT2Coding }
+
 type iso88595 struct{}
 
 func (c iso88595) Encode(str string) ([]byte, error) {
@@ -193,8 +221,14 @@ var (
 	// ASCII is ascii encoding.
 	ASCII Encoding = &ascii{}
 
+	// BINARY8BIT1 is binary 8-bit encoding.
+	BINARY8BIT1 Encoding = &binary8bit1{}
+
 	// LATIN1 encoding.
 	LATIN1 Encoding = &iso88591{}
+
+	// BINARY8BIT2 is binary 8-bit encoding.
+	BINARY8BIT2 Encoding = &binary8bit2{}
 
 	// CYRILLIC encoding.
 	CYRILLIC Encoding = &iso88595{}
@@ -209,7 +243,9 @@ var (
 var codingMap = map[byte]Encoding{
 	GSM7BITCoding:  GSM7BIT,
 	ASCIICoding:    ASCII,
+	BINARY8BIT1Coding: BINARY8BIT1,
 	LATIN1Coding:   LATIN1,
+	BINARY8BIT2Coding: BINARY8BIT2,
 	CYRILLICCoding: CYRILLIC,
 	HEBREWCoding:   HEBREW,
 	UCS2Coding:     UCS2,
