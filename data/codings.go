@@ -241,14 +241,14 @@ var (
 )
 
 var codingMap = map[byte]Encoding{
-	GSM7BITCoding:  GSM7BIT,
-	ASCIICoding:    ASCII,
+	GSM7BITCoding:     GSM7BIT,
+	ASCIICoding:       ASCII,
 	BINARY8BIT1Coding: BINARY8BIT1,
-	LATIN1Coding:   LATIN1,
+	LATIN1Coding:      LATIN1,
 	BINARY8BIT2Coding: BINARY8BIT2,
-	CYRILLICCoding: CYRILLIC,
-	HEBREWCoding:   HEBREW,
-	UCS2Coding:     UCS2,
+	CYRILLICCoding:    CYRILLIC,
+	HEBREWCoding:      HEBREW,
+	UCS2Coding:        UCS2,
 }
 
 // FromDataCoding returns encoding from DataCoding value.
