@@ -283,11 +283,6 @@ func (c *ShortMessage) Encoding() data.Encoding {
 	return c.enc
 }
 
-// SetEncoding manually.
-func (c *ShortMessage) SetEncoding(enc data.Encoding) {
-	c.enc = enc
-}
-
 // getRefNum return a atomically incrementing number each time it's called
 func getRefNum() uint32 {
 	return atomic.AddUint32(&ref, 1)

@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type noOpEncDec struct{}
+type customEncoder struct{}
 
-func (*noOpEncDec) Encode(str string) ([]byte, error) {
+func (*customEncoder) Encode(str string) ([]byte, error) {
 	return []byte(str), nil
 }
 
-func (*noOpEncDec) Decode(data []byte) (string, error) {
+func (*customEncoder) Decode(data []byte) (string, error) {
 	return string(data), nil
 }
 
@@ -28,13 +28,22 @@ func TestShortMessage(t *testing.T) {
 	t.Run("customCoding", func(t *testing.T) {
 		var s ShortMessage
 
-		customCoding := data.NewCustomEncoding(59, &noOpEncDec{})
+		customCoding := data.NewCustomEncoding(246, &customEncoder{})
 		err := s.SetMessageDataWithEncoding([]byte{0x61, 0x62, 0x63}, customCoding) // "abc"
 		require.NoError(t, err)
+		require.EqualValues(t, 246, s.Encoding().DataCoding())
 
 		m, err := s.GetMessage()
 		require.Nil(t, err)
 		require.Equal(t, "abc", m)
+
+		m, err = s.GetMessageWithEncoding(customCoding)
+		require.Nil(t, err)
+		require.Equal(t, "abc", m)
+
+		m, err = s.GetMessageWithEncoding(data.FromDataCoding(data.UCS2Coding))
+		require.Nil(t, err)
+		require.NotEqual(t, "abc", m)
 	})
 
 	t.Run("invalidSize", func(t *testing.T) {
