@@ -27,8 +27,10 @@ func TestShortMessage(t *testing.T) {
 
 	t.Run("customCoding", func(t *testing.T) {
 		var s ShortMessage
-		s.SetEncoding(data.NewCustomEncoding(59, &noOpEncDec{}))
-		s.SetMessageData([]byte{0x61, 0x62, 0x63}) // "abc"
+
+		customCoding := data.NewCustomEncoding(59, &noOpEncDec{})
+		err := s.SetMessageDataWithEncoding([]byte{0x61, 0x62, 0x63}, customCoding) // "abc"
+		require.NoError(t, err)
 
 		m, err := s.GetMessage()
 		require.Nil(t, err)
