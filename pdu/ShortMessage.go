@@ -18,7 +18,7 @@ type ShortMessage struct {
 	enc               data.Encoding
 	udHeader          UDH
 	messageData       []byte
-	withoutDataCoding bool
+	withoutDataCoding bool // purpose of ReplaceSM usage
 }
 
 // NewShortMessage returns new ShortMessage.
@@ -178,8 +178,13 @@ func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
 		return nil, err
 	}
 
-	ref := getRefNum() // all segments will have the same ref id
-	multiSM = []*ShortMessage{}
+	// prealloc result
+	multiSM = make([]*ShortMessage, 0, len(segments))
+
+	// all segments will have the same ref id
+	ref := getRefNum()
+
+	// construct SM(s)
 	for i, seg := range segments {
 		// create new SM, encode data
 		multiSM = append(multiSM, &ShortMessage{

@@ -182,3 +182,26 @@ func TestOtherCodings(t *testing.T) {
 	testEncoding(t, UTF16BE, "ngưỡng cứa cuỗc đợi", "006e006701b01ee1006e0067002000631ee900610020006300751ed70063002001111ee30069")
 	testEncoding(t, UTF16LE, "ngưỡng cứa cuỗc đợi", "6e006700b001e11e6e00670020006300e91e6100200063007500d71e630020001101e31e6900")
 }
+
+type noOpEncDec struct{}
+
+func (*noOpEncDec) Encode(str string) ([]byte, error) {
+	return []byte(str), nil
+}
+
+func (*noOpEncDec) Decode(data []byte) (string, error) {
+	return string(data), nil
+}
+
+func TestCustomEncoding(t *testing.T) {
+	enc := NewCustomEncoding(GSM7BITCoding, &noOpEncDec{})
+	require.EqualValues(t, GSM7BITCoding, enc.DataCoding())
+
+	encoded, err := enc.Encode("abc")
+	require.NoError(t, err)
+	require.Equal(t, []byte("abc"), encoded)
+
+	decoded, err := enc.Decode(encoded)
+	require.NoError(t, err)
+	require.Equal(t, "abc", decoded)
+}

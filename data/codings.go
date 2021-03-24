@@ -49,25 +49,52 @@ func decode(data []byte, decoder *encoding.Decoder) (st string, err error) {
 	return
 }
 
+type CustomEncoding struct {
+	encDec EncDec
+	coding byte
+}
+
+func NewCustomEncoding(coding byte, encDec EncDec) Encoding {
+	return &CustomEncoding{
+		coding: coding,
+		encDec: encDec,
+	}
+}
+
+// Encode string.
+func (c *CustomEncoding) Encode(str string) ([]byte, error) {
+	return c.encDec.Encode(str)
+}
+
+// Decode data to string.
+func (c *CustomEncoding) Decode(data []byte) (string, error) {
+	return c.encDec.Decode(data)
+}
+
+// DataCoding flag.
+func (c *CustomEncoding) DataCoding() byte {
+	return c.coding
+}
+
 type gsm7bit struct {
 	packed bool
 }
 
-func (c gsm7bit) Encode(str string) ([]byte, error) {
+func (c *gsm7bit) Encode(str string) ([]byte, error) {
 	return encode(str, GSM7(c.packed).NewEncoder())
 }
 
-func (c gsm7bit) Decode(data []byte) (string, error) {
+func (c *gsm7bit) Decode(data []byte) (string, error) {
 	return decode(data, GSM7(c.packed).NewDecoder())
 }
 
-func (c gsm7bit) DataCoding() byte { return GSM7BITCoding }
+func (c *gsm7bit) DataCoding() byte { return GSM7BITCoding }
 
-func (c gsm7bit) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+func (c *gsm7bit) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
 	return uint(len(text)) > octetLimit
 }
 
-func (c gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
+func (c *gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
 	if octetLimit < 64 {
 		octetLimit = 134
 	}
@@ -93,93 +120,93 @@ func (c gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err
 
 type ascii struct{}
 
-func (c ascii) Encode(str string) ([]byte, error) {
+func (*ascii) Encode(str string) ([]byte, error) {
 	return []byte(str), nil
 }
 
-func (c ascii) Decode(data []byte) (string, error) {
+func (*ascii) Decode(data []byte) (string, error) {
 	return string(data), nil
 }
 
-func (c ascii) DataCoding() byte { return ASCIICoding }
+func (*ascii) DataCoding() byte { return ASCIICoding }
 
 type iso88591 struct{}
 
-func (c iso88591) Encode(str string) ([]byte, error) {
+func (*iso88591) Encode(str string) ([]byte, error) {
 	return encode(str, charmap.ISO8859_1.NewEncoder())
 }
 
-func (c iso88591) Decode(data []byte) (string, error) {
+func (*iso88591) Decode(data []byte) (string, error) {
 	return decode(data, charmap.ISO8859_1.NewDecoder())
 }
 
-func (c iso88591) DataCoding() byte { return LATIN1Coding }
+func (*iso88591) DataCoding() byte { return LATIN1Coding }
 
 type binary8bit1 struct{}
 
-func (c binary8bit1) Encode(_ string) ([]byte, error) {
+func (*binary8bit1) Encode(_ string) ([]byte, error) {
 	return []byte{}, ErrNotImplEncode
 }
 
-func (c binary8bit1) Decode(_ []byte) (string, error) {
+func (*binary8bit1) Decode(_ []byte) (string, error) {
 	return "", ErrNotImplDecode
 }
 
-func (c binary8bit1) DataCoding() byte { return BINARY8BIT1Coding }
+func (*binary8bit1) DataCoding() byte { return BINARY8BIT1Coding }
 
 type binary8bit2 struct{}
 
-func (c binary8bit2) Encode(_ string) ([]byte, error) {
+func (*binary8bit2) Encode(_ string) ([]byte, error) {
 	return []byte{}, ErrNotImplEncode
 }
 
-func (c binary8bit2) Decode(_ []byte) (string, error) {
+func (*binary8bit2) Decode(_ []byte) (string, error) {
 	return "", ErrNotImplDecode
 }
 
-func (c binary8bit2) DataCoding() byte { return BINARY8BIT2Coding }
+func (*binary8bit2) DataCoding() byte { return BINARY8BIT2Coding }
 
 type iso88595 struct{}
 
-func (c iso88595) Encode(str string) ([]byte, error) {
+func (*iso88595) Encode(str string) ([]byte, error) {
 	return encode(str, charmap.ISO8859_5.NewEncoder())
 }
 
-func (c iso88595) Decode(data []byte) (string, error) {
+func (*iso88595) Decode(data []byte) (string, error) {
 	return decode(data, charmap.ISO8859_5.NewDecoder())
 }
 
-func (c iso88595) DataCoding() byte { return CYRILLICCoding }
+func (*iso88595) DataCoding() byte { return CYRILLICCoding }
 
 type iso88598 struct{}
 
-func (c iso88598) Encode(str string) ([]byte, error) {
+func (*iso88598) Encode(str string) ([]byte, error) {
 	return encode(str, charmap.ISO8859_8.NewEncoder())
 }
 
-func (c iso88598) Decode(data []byte) (string, error) {
+func (*iso88598) Decode(data []byte) (string, error) {
 	return decode(data, charmap.ISO8859_8.NewDecoder())
 }
 
-func (c iso88598) DataCoding() byte { return HEBREWCoding }
+func (*iso88598) DataCoding() byte { return HEBREWCoding }
 
 type ucs2 struct{}
 
-func (c ucs2) Encode(str string) ([]byte, error) {
+func (*ucs2) Encode(str string) ([]byte, error) {
 	tmp := unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM)
 	return encode(str, tmp.NewEncoder())
 }
 
-func (c ucs2) Decode(data []byte) (string, error) {
+func (*ucs2) Decode(data []byte) (string, error) {
 	tmp := unicode.UTF16(unicode.BigEndian, unicode.IgnoreBOM)
 	return decode(data, tmp.NewDecoder())
 }
 
-func (c ucs2) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+func (*ucs2) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
 	return uint(len(text)*2) > octetLimit
 }
 
-func (c ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
+func (c *ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
 	if octetLimit < 64 {
 		octetLimit = 134
 	}
@@ -207,7 +234,7 @@ func (c ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err er
 	return
 }
 
-func (c ucs2) DataCoding() byte { return UCS2Coding }
+func (*ucs2) DataCoding() byte { return UCS2Coding }
 
 var (
 	// GSM7BIT is gsm-7bit encoding.
@@ -241,14 +268,14 @@ var (
 )
 
 var codingMap = map[byte]Encoding{
-	GSM7BITCoding:  GSM7BIT,
-	ASCIICoding:    ASCII,
+	GSM7BITCoding:     GSM7BIT,
+	ASCIICoding:       ASCII,
 	BINARY8BIT1Coding: BINARY8BIT1,
-	LATIN1Coding:   LATIN1,
+	LATIN1Coding:      LATIN1,
 	BINARY8BIT2Coding: BINARY8BIT2,
-	CYRILLICCoding: CYRILLIC,
-	HEBREWCoding:   HEBREW,
-	UCS2Coding:     UCS2,
+	CYRILLICCoding:    CYRILLIC,
+	HEBREWCoding:      HEBREW,
+	UCS2Coding:        UCS2,
 }
 
 // FromDataCoding returns encoding from DataCoding value.
