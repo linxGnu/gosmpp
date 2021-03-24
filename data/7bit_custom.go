@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"math"
 
-	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 )
 
@@ -14,8 +13,8 @@ GSM 7-bit default alphabet and extension table
 Source: https://en.wikipedia.org/wiki/GSM_03.38#GSM_7-bit_default_alphabet_and_extension_table_of_3GPP_TS_23.038_/_GSM_03.38
 */
 
-// GSM7Custom returns a GSM 7-bit Bit Encoding with custom alphabets
-func GSM7Custom(alphabet map[rune]byte, alphabetEx map[rune]byte, escape byte, packed bool) encoding.Encoding {
+// NewGSM7BitCustom returns a GSM 7-bit Bit Encoding with custom alphabets
+func NewGSM7BitCustom(alphabet map[rune]byte, alphabetEx map[rune]byte, escape byte, packed bool) EncDec {
 	e := gsm7Custom{
 		alphabet:       make(map[rune]byte),
 		alphabetEx:     make(map[rune]byte),
@@ -30,7 +29,7 @@ func GSM7Custom(alphabet map[rune]byte, alphabetEx map[rune]byte, escape byte, p
 		e.forwardEsc[r] = b
 		e.reverseEsc[b] = r
 	}
-	return nil
+	return &GSM7BCustom{e}
 }
 
 type gsm7Custom struct {
@@ -130,6 +129,7 @@ func (g *gsm7Custom) EncodeBytes(dst, src []byte) (nDst, nSrc int, err error) {
 	return
 }
 
+// GSM7BCustom expose gsm7custom as a EncDec interface
 type GSM7BCustom struct {
 	gsm7Custom
 }
