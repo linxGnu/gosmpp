@@ -9,10 +9,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type noOpEncDec struct{}
+
+func (*noOpEncDec) Encode(str string) ([]byte, error) {
+	return []byte(str), nil
+}
+
+func (*noOpEncDec) Decode(data []byte) (string, error) {
+	return string(data), nil
+}
+
 func TestShortMessage(t *testing.T) {
 	t.Run("invalidCoding", func(t *testing.T) {
 		var s ShortMessage
 		require.NotNil(t, s.SetMessageWithEncoding("agjwklgjkwPфngưỡng", data.LATIN1))
+	})
+
+	t.Run("customCoding", func(t *testing.T) {
+		var s ShortMessage
+		s.SetEncoding(data.NewCustomEncoding(59, &noOpEncDec{}))
+		s.SetMessageData([]byte{0x61, 0x62, 0x63}) // "abc"
+
+		m, err := s.GetMessage()
+		require.Nil(t, err)
+		require.Equal(t, "abc", m)
 	})
 
 	t.Run("invalidSize", func(t *testing.T) {
