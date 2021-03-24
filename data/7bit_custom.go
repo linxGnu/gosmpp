@@ -14,12 +14,22 @@ GSM 7-bit default alphabet and extension table
 Source: https://en.wikipedia.org/wiki/GSM_03.38#GSM_7-bit_default_alphabet_and_extension_table_of_3GPP_TS_23.038_/_GSM_03.38
 */
 
-// GSM7 returns a GSM 7-bit Bit Encoding.
-//
-// Set the packed flag to true if you wish to convert septets to octets,
-// this should be false for most SMPP providers.
-func GSM7Custom(alphabet map[rune]byte, escape byte, packed bool) encoding.Encoding {
-	// return gsm7Custom{packed: packed}
+// GSM7Custom returns a GSM 7-bit Bit Encoding with custom alphabets
+func GSM7Custom(alphabet map[rune]byte, alphabetEx map[rune]byte, escape byte, packed bool) encoding.Encoding {
+	e := gsm7Custom{
+		alphabet:       make(map[rune]byte),
+		alphabetEx:     make(map[rune]byte),
+		escapeSequence: escape,
+		packed:         packed,
+	}
+	for r, b := range alphabet {
+		e.forward[r] = b
+		e.reverse[b] = r
+	}
+	for r, b := range alphabetEx {
+		e.forwardEsc[r] = b
+		e.reverseEsc[b] = r
+	}
 	return nil
 }
 
@@ -45,7 +55,7 @@ func (g gsm7Custom) String() string {
 	return "GSM 7-bit Customized Alphabet (Unpacked)"
 }
 
-func (g *gsm7Custom) DecodeBytes(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
+func (g *gsm7Custom) DecodeBytes(dst, src []byte) (nDst, nSrc int, err error) {
 	if len(src) == 0 {
 		return 0, 0, nil
 	}
@@ -85,7 +95,7 @@ func (g *gsm7Custom) DecodeBytes(dst, src []byte, atEOF bool) (nDst, nSrc int, e
 	return
 }
 
-func (g *gsm7Custom) EncodeBytes(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
+func (g *gsm7Custom) EncodeBytes(dst, src []byte) (nDst, nSrc int, err error) {
 	if len(src) == 0 {
 		return 0, 0, nil
 	}
@@ -118,4 +128,19 @@ func (g *gsm7Custom) EncodeBytes(dst, src []byte, atEOF bool) (nDst, nSrc int, e
 
 	nDst = pack(dst, septets)
 	return
+}
+
+type GSM7BCustom struct {
+	gsm7Custom
+}
+
+func (g *GSM7BCustom) Encode(w string) (dst []byte, err error) {
+	_, _, err = g.EncodeBytes(dst, []byte(w))
+	return
+}
+
+func (g *GSM7BCustom) Decode(src []byte) (w string, err error) {
+	z := []byte{}
+	_, _, err = g.DecodeBytes(z, src)
+	return string(z), err
 }
