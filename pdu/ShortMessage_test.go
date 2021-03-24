@@ -37,13 +37,15 @@ func TestShortMessage(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, "abc", m)
 
-		m, err = s.GetMessageWithEncoding(customCoding)
-		require.Nil(t, err)
-		require.Equal(t, "abc", m)
-
+		// try to get message string with other encoding
 		m, err = s.GetMessageWithEncoding(data.FromDataCoding(data.UCS2Coding))
 		require.Nil(t, err)
 		require.NotEqual(t, "abc", m)
+
+		// get message string with custom encoding
+		m, err = s.GetMessageWithEncoding(customCoding)
+		require.Nil(t, err)
+		require.Equal(t, "abc", m)
 	})
 
 	t.Run("invalidSize", func(t *testing.T) {
