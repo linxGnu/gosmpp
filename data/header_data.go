@@ -1,10 +1,14 @@
 //go:generate stringer -type=CommandStatusType,CommandIDType -output header_data_string.go
+
 package data
 
+// CommandStatusType is type of command status
 type CommandStatusType int32
 
+// CommandIDType is type of command id.
 type CommandIDType int32
 
+//nolint
 const (
 	// SMPP Command ID Set
 	GENERIC_NACK          = CommandIDType(-2147483648)

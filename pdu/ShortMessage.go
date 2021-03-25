@@ -45,12 +45,12 @@ func NewBinaryShortMessageWithEncoding(messageData []byte, enc data.Encoding) (s
 	return
 }
 
-// NewLongMessage return long message splitted into multiple short message
+// NewLongMessage returns long message splitted into multiple short message
 func NewLongMessage(message string) (s []*ShortMessage, err error) {
 	return NewLongMessageWithEncoding(message, data.GSM7BIT)
 }
 
-// NewLongMessage return long message splitted into multiple short message with encoding of choice
+// NewLongMessageWithEncoding returns long message splitted into multiple short message with encoding of choice
 func NewLongMessageWithEncoding(message string, enc data.Encoding) (s []*ShortMessage, err error) {
 	sm := &ShortMessage{
 		message: message,
@@ -59,7 +59,7 @@ func NewLongMessageWithEncoding(message string, enc data.Encoding) (s []*ShortMe
 	return sm.Split()
 }
 
-// SetMessageWithEncoding set message with encoding.
+// SetMessageWithEncoding sets message with encoding.
 func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding) (err error) {
 	if c.messageData, err = enc.Encode(message); err == nil {
 		if len(c.messageData) > data.SM_MSG_LEN {
@@ -72,7 +72,7 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 	return
 }
 
-// SetLongMessageWithEnc set ShortMessage with message longer than  256 bytes
+// SetLongMessageWithEnc sets ShortMessage with message longer than  256 bytes
 // callers are expected to call Split() after this
 func (c *ShortMessage) SetLongMessageWithEnc(message string, enc data.Encoding) (err error) {
 	c.message = message
@@ -80,12 +80,12 @@ func (c *ShortMessage) SetLongMessageWithEnc(message string, enc data.Encoding) 
 	return
 }
 
-// UDH get user data header for short message
+// UDH gets user data header for short message
 func (c *ShortMessage) UDH() UDH {
 	return c.udHeader
 }
 
-// SetUDH set user data header for short message
+// SetUDH sets user data header for short message
 // also appends udh to the beginning of messageData
 func (c *ShortMessage) SetUDH(udh UDH) {
 	c.udHeader = udh
@@ -151,7 +151,7 @@ func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err
 	return
 }
 
-// Split split one short message and split into multiple short message, with UDH
+// Split one short message and split into multiple short message, with UDH
 // according to 33GP TS 23.040 section 9.2.3.24.1
 // NOTE: Split() will return array of length 1 if data length is still within the limit
 // The encoding interface can implement the data.Splitter interface for ad-hoc splitting rule
@@ -283,7 +283,7 @@ func (c *ShortMessage) Encoding() data.Encoding {
 	return c.enc
 }
 
-// getRefNum return a atomically incrementing number each time it's called
+// returns an atomically incrementing number each time it's called
 func getRefNum() uint32 {
 	return atomic.AddUint32(&ref, 1)
 }

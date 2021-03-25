@@ -49,11 +49,13 @@ func decode(data []byte, decoder *encoding.Decoder) (st string, err error) {
 	return
 }
 
+// CustomEncoding is wrapper for user-defined data encoding.
 type CustomEncoding struct {
 	encDec EncDec
 	coding byte
 }
 
+// NewCustomEncoding creates new custom encoding.
 func NewCustomEncoding(coding byte, encDec EncDec) Encoding {
 	return &CustomEncoding{
 		coding: coding,
