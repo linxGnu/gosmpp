@@ -40,8 +40,8 @@ const (
 	DATA_SM_RESP          = CommandIDType(-2147483389)
 )
 
+//nolint
 const (
-
 	// Command_Status Error Codes
 	ESME_ROK           = CommandStatusType(0x00000000)
 	ESME_RINVMSGLEN    = CommandStatusType(0x00000001)
