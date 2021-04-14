@@ -56,7 +56,7 @@ func NewLongMessageWithEncoding(message string, enc data.Encoding) (s []*ShortMe
 		message: message,
 		enc:     enc,
 	}
-	return sm.Split()
+	return sm.split()
 }
 
 // SetMessageWithEncoding sets message with encoding.
@@ -104,22 +104,7 @@ func (c *ShortMessage) SetMessageDataWithEncoding(d []byte, enc data.Encoding) (
 
 // GetMessageData returns underlying binary message.
 func (c *ShortMessage) GetMessageData() (d []byte, err error) {
-	if len(c.messageData) == 0 {
-		d = []byte{}
-		return
-	}
-
-	t := len(c.messageData)
-
-	// skip if UDHL is present
-	f := c.udHeader.UDHL()
-	if f >= t {
-		err = errors.ErrUDHTooLong
-		return
-	}
-
-	d = c.messageData[f:t]
-	return
+	return c.messageData, nil
 }
 
 // GetMessage returns underlying message.
@@ -134,28 +119,18 @@ func (c *ShortMessage) GetMessage() (st string, err error) {
 
 // GetMessageWithEncoding returns (decoded) underlying message.
 func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err error) {
-	if len(c.messageData) == 0 {
-		return
+	if len(c.messageData) > 0 {
+		st, err = enc.Decode(c.messageData)
 	}
-
-	f, t := 0, len(c.messageData)
-
-	// skip if UDL is present
-	f = c.udHeader.UDHL()
-	if f >= t {
-		err = errors.ErrUDHTooLong
-		return
-	}
-
-	st, err = enc.Decode(c.messageData[f:t])
 	return
 }
 
-// Split one short message and split into multiple short message, with UDH
+// split one short message and split into multiple short message, with UDH
 // according to 33GP TS 23.040 section 9.2.3.24.1
-// NOTE: Split() will return array of length 1 if data length is still within the limit
+//
+// NOTE: split() will return array of length 1 if data length is still within the limit
 // The encoding interface can implement the data.Splitter interface for ad-hoc splitting rule
-func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
+func (c *ShortMessage) split() (multiSM []*ShortMessage, err error) {
 	var encoding data.Encoding
 	if c.enc == nil {
 		encoding = data.GSM7BIT
@@ -273,6 +248,14 @@ func (c *ShortMessage) Unmarshal(b *ByteBuffer, udhi bool) (err error) {
 		}
 
 		c.udHeader = udh
+
+		f := c.udHeader.UDHL()
+		if f > len(c.messageData) {
+			err = errors.ErrUDHTooLong
+			return
+		}
+
+		c.messageData = c.messageData[f:]
 	}
 
 	return
