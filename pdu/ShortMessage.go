@@ -104,22 +104,7 @@ func (c *ShortMessage) SetMessageDataWithEncoding(d []byte, enc data.Encoding) (
 
 // GetMessageData returns underlying binary message.
 func (c *ShortMessage) GetMessageData() (d []byte, err error) {
-	if len(c.messageData) == 0 {
-		d = []byte{}
-		return
-	}
-
-	t := len(c.messageData)
-
-	// skip if UDHL is present
-	f := c.udHeader.UDHL()
-	if f >= t {
-		err = errors.ErrUDHTooLong
-		return
-	}
-
-	d = c.messageData[f:t]
-	return
+	return c.messageData, nil
 }
 
 // GetMessage returns underlying message.
@@ -134,20 +119,9 @@ func (c *ShortMessage) GetMessage() (st string, err error) {
 
 // GetMessageWithEncoding returns (decoded) underlying message.
 func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err error) {
-	if len(c.messageData) == 0 {
-		return
+	if len(c.messageData) > 0 {
+		st, err = enc.Decode(c.messageData)
 	}
-
-	f, t := 0, len(c.messageData)
-
-	// skip if UDL is present
-	f = c.udHeader.UDHL()
-	if f >= t {
-		err = errors.ErrUDHTooLong
-		return
-	}
-
-	st, err = enc.Decode(c.messageData[f:t])
 	return
 }
 
@@ -273,6 +247,14 @@ func (c *ShortMessage) Unmarshal(b *ByteBuffer, udhi bool) (err error) {
 		}
 
 		c.udHeader = udh
+
+		f := c.udHeader.UDHL()
+		if f > len(c.messageData) {
+			err = errors.ErrUDHTooLong
+			return
+		}
+
+		c.messageData = c.messageData[f:]
 	}
 
 	return
