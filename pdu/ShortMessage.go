@@ -56,7 +56,7 @@ func NewLongMessageWithEncoding(message string, enc data.Encoding) (s []*ShortMe
 		message: message,
 		enc:     enc,
 	}
-	return sm.Split()
+	return sm.split()
 }
 
 // SetMessageWithEncoding sets message with encoding.
@@ -125,11 +125,12 @@ func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err
 	return
 }
 
-// Split one short message and split into multiple short message, with UDH
+// split one short message and split into multiple short message, with UDH
 // according to 33GP TS 23.040 section 9.2.3.24.1
-// NOTE: Split() will return array of length 1 if data length is still within the limit
+//
+// NOTE: split() will return array of length 1 if data length is still within the limit
 // The encoding interface can implement the data.Splitter interface for ad-hoc splitting rule
-func (c *ShortMessage) Split() (multiSM []*ShortMessage, err error) {
+func (c *ShortMessage) split() (multiSM []*ShortMessage, err error) {
 	var encoding data.Encoding
 	if c.enc == nil {
 		encoding = data.GSM7BIT

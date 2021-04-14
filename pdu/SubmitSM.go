@@ -66,7 +66,7 @@ func (c *SubmitSM) GetResponse() PDU {
 func (c *SubmitSM) Split() (multiSubSM []*SubmitSM, err error) {
 	multiSubSM = []*SubmitSM{}
 
-	multiMsg, err := c.Message.Split()
+	multiMsg, err := c.Message.split()
 	if err != nil {
 		return
 	}
