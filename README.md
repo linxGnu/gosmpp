@@ -17,7 +17,45 @@ go get -u github.com/linxGnu/gosmpp
 
 ## Usage
 
-## Version (0.1.4.RC+)
+### Highlight
+
+- From `v0.1.4`, gosmpp is written in event-based style and fully-manage your smpp session, connection, error, rebinding, etc. You only need to implement some hooks:
+
+```go
+		trans, err := gosmpp.NewSession(
+		gosmpp.TRXConnector(gosmpp.NonTLSDialer, auth),
+		gosmpp.Settings{
+			EnquireLink: 5 * time.Second,
+
+			ReadTimeout: 10 * time.Second,
+
+			OnSubmitError: func(_ pdu.PDU, err error) {
+				log.Fatal("SubmitPDU error:", err)
+			},
+
+			OnReceivingError: func(err error) {
+				fmt.Println("Receiving PDU/Network error:", err)
+			},
+
+			OnRebindingError: func(err error) {
+				fmt.Println("Rebinding but error:", err)
+			},
+
+			OnPDU: handlePDU(),
+
+			OnClosed: func(state gosmpp.State) {
+				fmt.Println(state)
+			},
+		}, 5*time.Second)
+		if err != nil {
+		  log.Println(err)
+		}
+		defer func() {
+		  _ = trans.Close()
+		}()
+```
+
+### Version (0.1.4.RC+)
 
 - Full example could be found: [here](https://github.com/linxGnu/gosmpp/blob/master/example)
   - In this example, you should run smsc first:
@@ -28,7 +66,7 @@ go get -u github.com/linxGnu/gosmpp
     - Run: `./example`
   - You should see: logs of communication between SMSC and Example. Each SubmitSM will trigger SMSC to simulate a MO.
 
-## Old version (0.1.3 and previous)
+### Old version (0.1.3 and previous)
 Full example could be found: [gist](https://gist.github.com/linxGnu/b488997a0e62b3f6a7060ba2af6391ea)
 
 ## Supported PDUs
