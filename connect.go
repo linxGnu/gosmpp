@@ -86,7 +86,7 @@ func connect(dialer Dialer, addr string, bindReq *pdu.BindRequest) (c *Connectio
 	}
 
 	if resp.CommandStatus != data.ESME_ROK {
-		err = fmt.Errorf("Binding error. Command status: [%d]. Please refer to: https://github.com/linxGnu/gosmpp/blob/master/data/pkg.go for more detail about this status code", resp.CommandStatus)
+		err = fmt.Errorf("binding error. Command status: [%d]. Please refer to: https://github.com/linxGnu/gosmpp/blob/master/data/pkg.go for more detail about this status code", resp.CommandStatus)
 		_ = conn.Close()
 	} else {
 		c.systemID = resp.SystemID
