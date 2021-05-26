@@ -107,7 +107,9 @@ func (c *ShortMessage) GetMessageData() (d []byte, err error) {
 	return c.messageData, nil
 }
 
-// GetMessage returns underlying message.
+// GetMessage returns underlying message,
+// NOTE: GetMessage will automatically decide which decoder to use based
+// on the encoding bit specified
 func (c *ShortMessage) GetMessage() (st string, err error) {
 	enc := c.enc
 	if enc == nil {
@@ -117,7 +119,8 @@ func (c *ShortMessage) GetMessage() (st string, err error) {
 	return
 }
 
-// GetMessageWithEncoding returns (decoded) underlying message.
+// GetMessageWithEncoding returns character message using the decoder specified by caller
+// NOTE: use this function if you are absolutely sure about the encoded message and want to ignore the encoding bit
 func (c *ShortMessage) GetMessageWithEncoding(enc data.Encoding) (st string, err error) {
 	if len(c.messageData) > 0 {
 		st, err = enc.Decode(c.messageData)
