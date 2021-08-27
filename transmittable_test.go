@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"sync/atomic"
@@ -74,7 +73,6 @@ func TestTransmit(t *testing.T) {
 
 		// fake settings
 		tr.conn = c
-		tr.ctx, tr.cancel = context.WithCancel(context.Background())
 
 		var count int32
 		tr.settings.OnClosed = func(State) {
@@ -113,14 +111,14 @@ func TestTransmit(t *testing.T) {
 
 	t.Run("SubmitErr", func(t *testing.T) {
 		var tr transmittable
-		tr.state = 1
+		tr.input = make(chan pdu.PDU, 1)
+
+		tr.closed = true
 		err := tr.Submit(nil)
 		require.Error(t, err)
 
-		tr.state = 0
-		tr.ctx, tr.cancel = context.WithCancel(context.Background())
-		tr.cancel()
+		tr.closed = false
 		err = tr.Submit(nil)
-		require.Error(t, err)
+		require.NoError(t, err)
 	})
 }

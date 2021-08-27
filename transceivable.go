@@ -13,7 +13,7 @@ type transceivable struct {
 	in   *receivable
 	out  *transmittable
 
-	state int32
+	closedState int32 // 0: not closed, 1: closed
 }
 
 func newTransceivable(conn *Connection, settings Settings) *transceivable {
@@ -87,7 +87,7 @@ func (t *transceivable) SystemID() string {
 
 // Close transceiver and stop underlying daemons.
 func (t *transceivable) Close() (err error) {
-	if atomic.CompareAndSwapInt32(&t.state, 0, 1) {
+	if atomic.CompareAndSwapInt32(&t.closedState, 0, 1) {
 		// closing input and output
 		_ = t.out.close(StoppingProcessOnly)
 		_ = t.in.close(StoppingProcessOnly)

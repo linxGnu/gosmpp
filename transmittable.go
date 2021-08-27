@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"sync"
@@ -16,9 +15,6 @@ var (
 )
 
 type transmittable struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-
 	conn *Connection
 
 	wg    sync.WaitGroup
@@ -26,8 +22,8 @@ type transmittable struct {
 
 	settings Settings
 
-	lock  sync.RWMutex
-	state int32
+	lock   sync.RWMutex
+	closed bool
 }
 
 func newTransmittable(conn *Connection, settings Settings) *transmittable {
@@ -36,7 +32,6 @@ func newTransmittable(conn *Connection, settings Settings) *transmittable {
 		conn:     conn,
 		input:    make(chan pdu.PDU, 1),
 	}
-	t.ctx, t.cancel = context.WithCancel(context.Background())
 
 	return t
 }
@@ -45,9 +40,8 @@ func (t *transmittable) close(state State) (err error) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	if t.state == 0 {
-		// don't receive anymore SubmitSM
-		t.cancel()
+	if !t.closed {
+		t.closed = true
 
 		// notify daemon
 		close(t.input)
@@ -67,8 +61,6 @@ func (t *transmittable) close(state State) (err error) {
 		if t.settings.OnClosed != nil {
 			t.settings.OnClosed(state)
 		}
-
-		t.state = 1
 	}
 
 	return
@@ -85,13 +77,8 @@ func (t *transmittable) Submit(p pdu.PDU) (err error) {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
-	if t.state == 0 {
-		select {
-		case <-t.ctx.Done():
-			err = t.ctx.Err()
-
-		case t.input <- p:
-		}
+	if !t.closed {
+		t.input <- p
 	} else {
 		err = ErrConnectionClosing
 	}
