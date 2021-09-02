@@ -89,7 +89,7 @@ func (s *Session) Transceiver() Transceiver {
 
 // Close session.
 func (s *Session) Close() (err error) {
-	if atomic.CompareAndSwapInt32(&s.state, 0, 1) {
+	if atomic.CompareAndSwapInt32(&s.state, Alive, Closed) {
 		err = s.close()
 	}
 	return
@@ -106,7 +106,7 @@ func (s *Session) rebind() {
 	if atomic.CompareAndSwapInt32(&s.rebinding, 0, 1) {
 		_ = s.close()
 
-		for atomic.LoadInt32(&s.state) == 0 {
+		for atomic.LoadInt32(&s.state) == Alive {
 			conn, err := s.c.Connect()
 			if err != nil {
 				if s.settings.OnRebindingError != nil {

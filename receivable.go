@@ -10,12 +10,12 @@ import (
 )
 
 type receivable struct {
-	ctx         context.Context
-	cancel      context.CancelFunc
-	wg          sync.WaitGroup
-	settings    Settings
-	conn        *Connection
-	closedState int32 // 0: not closed, 1: closed
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	settings   Settings
+	conn       *Connection
+	aliveState int32
 }
 
 func newReceivable(conn *Connection, settings Settings) *receivable {
@@ -29,7 +29,7 @@ func newReceivable(conn *Connection, settings Settings) *receivable {
 }
 
 func (t *receivable) close(state State) (err error) {
-	if atomic.CompareAndSwapInt32(&t.closedState, 0, 1) {
+	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
 		// cancel to notify stop
 		t.cancel()
 

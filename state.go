@@ -1,5 +1,10 @@
 package gosmpp
 
+const (
+	Alive int32 = iota
+	Closed
+)
+
 // State represents Transmitter/Receiver/Transceiver state.
 type State byte
 

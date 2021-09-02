@@ -3,6 +3,7 @@ package gosmpp
 import (
 	"fmt"
 	"net"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -113,12 +114,73 @@ func TestTransmit(t *testing.T) {
 		var tr transmittable
 		tr.input = make(chan pdu.PDU, 1)
 
-		tr.closed = true
+		tr.aliveState = 1
 		err := tr.Submit(nil)
 		require.Error(t, err)
 
-		tr.closed = false
+		tr.aliveState = 0
 		err = tr.Submit(nil)
 		require.NoError(t, err)
 	})
+}
+
+func TestConcurrentSubmitClose(t *testing.T) {
+	auth := nextAuth()
+	transmitter, err := NewSession(
+		TXConnector(NonTLSDialer, auth),
+		Settings{
+			ReadTimeout: 2 * time.Second,
+
+			OnPDU: func(p pdu.PDU, _ bool) {
+				t.Logf("%+v\n", p)
+			},
+
+			OnSubmitError: func(_ pdu.PDU, err error) {
+				t.Fatal(err)
+			},
+
+			OnRebindingError: func(err error) {
+				t.Fatal(err)
+			},
+
+			OnClosed: func(state State) {
+				t.Log(state)
+			},
+		}, -1)
+	require.Nil(t, err)
+	require.NotNil(t, transmitter)
+	defer func() {
+		_ = transmitter.Close()
+	}()
+
+	require.Equal(t, "MelroseLabsSMSC", transmitter.Transmitter().SystemID())
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+
+	toStart := make(chan struct{}, 1)
+	go func() {
+		defer wg.Done()
+
+		time.Sleep(time.Millisecond)
+		for i := 0; i < 100; i++ {
+			err := transmitter.Transmitter().Submit(newSubmitSM(auth.SystemID))
+			require.True(t, err == nil || err == ErrConnectionClosing)
+
+			if i == 10 {
+				toStart <- struct{}{}
+			}
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		<-toStart
+		_ = transmitter.close()
+	}()
+
+	wg.Wait()
 }
