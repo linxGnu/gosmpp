@@ -68,9 +68,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 		},
 
 		response: func(p pdu.PDU) {
-			if t.out.Submit(p) != nil { // only happened when transceiver is closed
-				_, _ = t.out.write(p)
-			}
+			t.Submit(p)
 		},
 	})
 
