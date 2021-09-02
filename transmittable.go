@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/linxGnu/gosmpp/pdu"
@@ -15,15 +16,14 @@ var (
 )
 
 type transmittable struct {
-	conn *Connection
+	settings Settings
 
 	wg    sync.WaitGroup
 	input chan pdu.PDU
 
-	settings Settings
+	conn *Connection
 
-	lock   sync.RWMutex
-	closed bool
+	aliveState int32
 }
 
 func newTransmittable(conn *Connection, settings Settings) *transmittable {
@@ -37,12 +37,7 @@ func newTransmittable(conn *Connection, settings Settings) *transmittable {
 }
 
 func (t *transmittable) close(state State) (err error) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-
-	if !t.closed {
-		t.closed = true
-
+	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
 		// notify daemon
 		close(t.input)
 
@@ -74,10 +69,7 @@ func (t *transmittable) closing(state State) {
 
 // Submit a PDU.
 func (t *transmittable) Submit(p pdu.PDU) (err error) {
-	t.lock.RLock()
-	defer t.lock.RUnlock()
-
-	if !t.closed {
+	if atomic.LoadInt32(&t.aliveState) == Alive {
 		t.input <- p
 	} else {
 		err = ErrConnectionClosing

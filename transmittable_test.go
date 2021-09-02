@@ -113,11 +113,11 @@ func TestTransmit(t *testing.T) {
 		var tr transmittable
 		tr.input = make(chan pdu.PDU, 1)
 
-		tr.closed = true
+		tr.aliveState = 1
 		err := tr.Submit(nil)
 		require.Error(t, err)
 
-		tr.closed = false
+		tr.aliveState = 0
 		err = tr.Submit(nil)
 		require.NoError(t, err)
 	})
