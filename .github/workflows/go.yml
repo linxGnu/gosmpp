@@ -1,6 +1,6 @@
 name: Build
 
-on: [ push, pull_request ]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -18,7 +18,7 @@ jobs:
       - name: Linter
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.31
+          version: v1.42
 
       - name: Test Coverage
         run: go test -v -race -count=1 -coverprofile=coverage.out

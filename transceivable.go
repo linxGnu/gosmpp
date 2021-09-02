@@ -68,7 +68,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 		},
 
 		response: func(p pdu.PDU) {
-			t.Submit(p)
+			_ = t.Submit(p)
 		},
 	})
 
