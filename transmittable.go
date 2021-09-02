@@ -3,6 +3,7 @@ package gosmpp
 import (
 	"fmt"
 	"net"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -23,14 +24,17 @@ type transmittable struct {
 
 	conn *Connection
 
-	aliveState int32
+	aliveState   int32
+	pendingWrite int32
 }
 
 func newTransmittable(conn *Connection, settings Settings) *transmittable {
 	t := &transmittable{
-		settings: settings,
-		conn:     conn,
-		input:    make(chan pdu.PDU, 1),
+		settings:     settings,
+		conn:         conn,
+		input:        make(chan pdu.PDU, 1),
+		aliveState:   Alive,
+		pendingWrite: 0,
 	}
 
 	return t
@@ -38,6 +42,10 @@ func newTransmittable(conn *Connection, settings Settings) *transmittable {
 
 func (t *transmittable) close(state State) (err error) {
 	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
+		for atomic.LoadInt32(&t.pendingWrite) != 0 {
+			runtime.Gosched()
+		}
+
 		// notify daemon
 		close(t.input)
 
@@ -69,12 +77,15 @@ func (t *transmittable) closing(state State) {
 
 // Submit a PDU.
 func (t *transmittable) Submit(p pdu.PDU) (err error) {
+	atomic.AddInt32(&t.pendingWrite, 1)
+
 	if atomic.LoadInt32(&t.aliveState) == Alive {
 		t.input <- p
 	} else {
 		err = ErrConnectionClosing
 	}
 
+	atomic.AddInt32(&t.pendingWrite, -1)
 	return
 }
 
@@ -93,7 +104,14 @@ func (t *transmittable) start() {
 	}
 }
 
+func (t *transmittable) drain() {
+	for range t.input {
+	}
+}
+
 func (t *transmittable) loop() {
+	defer t.drain()
+
 	for p := range t.input {
 		if p != nil {
 			n, err := t.write(p)
@@ -106,7 +124,10 @@ func (t *transmittable) loop() {
 
 func (t *transmittable) loopWithEnquireLink() {
 	ticker := time.NewTicker(t.settings.EnquireLink)
-	defer ticker.Stop()
+	defer func() {
+		ticker.Stop()
+		t.drain()
+	}()
 
 	for {
 		select {
