@@ -2,6 +2,7 @@ package pdu
 
 import (
 	"io"
+	"io/ioutil"
 
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/errors"
@@ -83,17 +84,21 @@ func (c *base) unmarshal(b *ByteBuffer, bodyReader func(*ByteBuffer) error) (err
 				return
 			}
 
-			// have optional body?
-			if got < cmdLength {
+			skipOptionalBody := c.CommandID == data.SUBMIT_SM_RESP && c.CommandStatus != data.ESME_ROK
+			if skipOptionalBody {
+				io.Copy(ioutil.Discard, b)
+			} else {
+				// have optional body?
+				if got < cmdLength {
+					// the rest is optional body
+					var optionalBody []byte
+					if optionalBody, err = b.ReadN(cmdLength - got); err == nil {
+						err = c.unmarshalOptionalBody(optionalBody)
+					}
 
-				// the rest is optional body
-				var optionalBody []byte
-				if optionalBody, err = b.ReadN(cmdLength - got); err == nil {
-					err = c.unmarshalOptionalBody(optionalBody)
-				}
-
-				if err != nil {
-					return
+					if err != nil {
+						return
+					}
 				}
 			}
 
@@ -188,6 +193,5 @@ func Parse(r io.Reader) (pdu PDU, err error) {
 		}
 		err = pdu.Unmarshal(buf)
 	}
-
 	return
 }
