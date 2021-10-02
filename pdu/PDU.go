@@ -86,7 +86,10 @@ func (c *base) unmarshal(b *ByteBuffer, bodyReader func(*ByteBuffer) error) (err
 
 			skipOptionalBody := c.CommandID == data.SUBMIT_SM_RESP && c.CommandStatus != data.ESME_ROK
 			if skipOptionalBody {
-				io.Copy(ioutil.Discard, b)
+				_, err = io.Copy(ioutil.Discard, b)
+				if err != nil {
+					return
+				}
 			} else {
 				// have optional body?
 				if got < cmdLength {
