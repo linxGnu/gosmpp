@@ -83,15 +83,12 @@ func (c *base) unmarshal(b *ByteBuffer, bodyReader func(*ByteBuffer) error) (err
 				return
 			}
 
-			// have optional body?
+			// body < command_length, still have optional parameters ?
 			if got < cmdLength {
-
-				// the rest is optional body
-				var optionalBody []byte
-				if optionalBody, err = b.ReadN(cmdLength - got); err == nil {
-					err = c.unmarshalOptionalBody(optionalBody)
+				var optParam []byte
+				if optParam, err = b.ReadN(cmdLength - got); err == nil {
+					err = c.unmarshalOptionalParam(optParam)
 				}
-
 				if err != nil {
 					return
 				}
@@ -107,8 +104,8 @@ func (c *base) unmarshal(b *ByteBuffer, bodyReader func(*ByteBuffer) error) (err
 	return
 }
 
-func (c *base) unmarshalOptionalBody(body []byte) (err error) {
-	buf := NewBuffer(body)
+func (c *base) unmarshalOptionalParam(optParam []byte) (err error) {
+	buf := NewBuffer(optParam)
 	for buf.Len() > 0 {
 		var field Field
 		if err = field.Unmarshal(buf); err == nil {
