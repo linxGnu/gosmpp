@@ -10,7 +10,7 @@ import (
 var currentAuth int32
 
 var auths = [][2]string{
-	{"491328", "79d474"},
+	{"689528", "1a97ae"},
 }
 
 const (
