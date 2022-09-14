@@ -37,7 +37,7 @@ jobs:
       - name: Convert coverage to lcov
         uses: jandelgado/gcov2lcov-action@v1
         with:
-          version: v1.0.9
+          version: latest
           infile: coverage.out
           outfile: coverage.lcov
 
