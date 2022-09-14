@@ -8,29 +8,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Go 1.15
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.15
 
       - name: Linter
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.42
+          version: v1.29
 
       - name: Test Coverage
         run: go test -v -race -count=1 -coverprofile=coverage.out
 
       - name: Convert coverage to lcov
-        uses: jandelgado/gcov2lcov-action@v1.0.4
+        uses: jandelgado/gcov2lcov-action@v1
         with:
+          version: v1.0.9
           infile: coverage.out
           outfile: coverage.lcov
 
       - name: Coveralls
-        uses: coverallsapp/github-action@v1.1.0
+        uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.github_token }}
           path-to-lcov: coverage.lcov
