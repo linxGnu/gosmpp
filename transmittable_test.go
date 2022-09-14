@@ -56,8 +56,8 @@ func TestTransmit(t *testing.T) {
 	})
 
 	errorHandling := func(t *testing.T, trigger func(*transmittable)) {
-		conn, err := net.Dial("tcp", "smscsim.melroselabs.com:2775")
-		require.Nil(t, err)
+		conn, err := net.Dial("tcp", smscAddr)
+		require.NoError(t, err)
 
 		var tr transmittable
 		tr.input = make(chan pdu.PDU, 1)
@@ -102,11 +102,6 @@ func TestTransmit(t *testing.T) {
 		errorHandling(t, func(tr *transmittable) {
 			var p pdu.CancelSM
 			tr.check(&p, 0, fmt.Errorf("fake error"))
-		})
-
-		errorHandling(t, func(tr *transmittable) {
-			var p pdu.CancelSM
-			tr.check(&p, 0, &net.DNSError{IsTemporary: false})
 		})
 	})
 

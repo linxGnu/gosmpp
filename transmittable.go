@@ -165,7 +165,7 @@ func (t *transmittable) check(p pdu.PDU, n int, err error) (closing bool) {
 
 	if n == 0 {
 		if nErr, ok := err.(net.Error); ok {
-			closing = nErr.Timeout() || !nErr.Temporary()
+			closing = nErr.Timeout()
 		} else {
 			closing = true
 		}
