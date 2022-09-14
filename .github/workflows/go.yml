@@ -29,6 +29,7 @@ jobs:
         run: |
           g++ smsc.cpp -o smsc
           ./smsc&
+        shell: bash
 
       - name: Test Coverage
         run: go test -v -race -count=1 -coverprofile=coverage.out
