@@ -27,7 +27,7 @@ jobs:
 
       - name: Start SMSC
         run: |
-          g++ smsc.cpp -o smsc
+          g++ example/smsc.cpp -o smsc
           ./smsc&
         shell: bash
 
