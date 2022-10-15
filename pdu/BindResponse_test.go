@@ -53,4 +53,19 @@ func TestBindResponse(t *testing.T) {
 			data.BIND_TRANSCEIVER_RESP,
 		)
 	})
+
+	t.Run("failed bind", func(t *testing.T) {
+		v := NewBindTransceiverResp().(*BindResp)
+		require.False(t, v.CanResponse())
+		require.Nil(t, v.GetResponse())
+		v.SequenceNumber = 13
+
+		v.SystemID = "system_id_fake"
+
+		validate(t,
+			v,
+			"0000001f80000009000000000000000d73797374656d5f69645f66616b6500",
+			data.BIND_TRANSCEIVER_RESP,
+		)
+	})
 }

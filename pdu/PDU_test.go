@@ -15,6 +15,12 @@ func TestParsePDU(t *testing.T) {
 		require.Nil(t, err)
 	})
 
+	t.Run("bind-fail-cmd-len-16", func(t *testing.T) {
+		buf := NewBuffer(fromHex("00020010800000060000000000000001"))
+		_, err := Parse(buf)
+		require.Nil(t, err)
+	})
+
 	t.Run("eof", func(t *testing.T) {
 		buf := NewBuffer(nil)
 		_, err := Parse(buf)

@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -157,6 +158,42 @@ func (c *base) IsGNack() bool {
 	return c.CommandID == data.GENERIC_NACK
 }
 
+// ParseBind
+func ParseBind(r io.Reader) (pdu PDU, err error) {
+	var headerBytes [16]byte
+
+	if _, err = io.ReadFull(r, headerBytes[:]); err != nil {
+		return
+	}
+
+	header := ParseHeader(headerBytes)
+	if header.CommandLength < 16 || header.CommandLength > data.MAX_PDU_LEN {
+		err = errors.ErrInvalidPDU
+		return
+	}
+
+	// read pdu body
+	bodyBytes := make([]byte, header.CommandLength-16)
+	if len(bodyBytes) > 0 {
+		if _, err = io.ReadFull(r, bodyBytes); err != nil {
+			return
+		}
+	}
+
+	// try to create pdu
+	if pdu, err = CreatePDUFromCmdID(header.CommandID); err == nil {
+		buf := NewBuffer(make([]byte, 0, header.CommandLength))
+		_, _ = buf.Write(headerBytes[:])
+		if len(bodyBytes) > 0 {
+			_, _ = buf.Write(bodyBytes)
+		}
+		err = pdu.Unmarshal(buf)
+	}
+
+	return
+
+}
+
 // Parse PDU from reader.
 func Parse(r io.Reader) (pdu PDU, err error) {
 	var headerBytes [16]byte
@@ -167,6 +204,7 @@ func Parse(r io.Reader) (pdu PDU, err error) {
 
 	header := ParseHeader(headerBytes)
 	if header.CommandLength < 16 || header.CommandLength > data.MAX_PDU_LEN {
+		fmt.Println(header.CommandLength)
 		err = errors.ErrInvalidPDU
 		return
 	}
