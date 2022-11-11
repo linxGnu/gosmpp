@@ -25,7 +25,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	auth := gosmpp.Auth{
-		SMSC:       "smscsim.melroselabs.com:2775",
+		SMSC:       "localhost:2775",
 		SystemID:   "169994",
 		Password:   "EDXPJU",
 		SystemType: "",

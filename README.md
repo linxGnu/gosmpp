@@ -59,12 +59,15 @@ go get -u github.com/linxGnu/gosmpp
 
 - Full example could be found: [here](https://github.com/linxGnu/gosmpp/blob/master/example)
   - In this example, you should run smsc first:
-    - Please point to: https://github.com/linxGnu/gosmpp/blob/master/example/smsc
-    - Build & Run SMSC (g++ required): `./run.sh`
-  - Next is build and run: https://github.com/linxGnu/gosmpp/blob/master/example/main.go
-    - Build: `go build`
-    - Run: `./example`
-  - You should see: logs of communication between SMSC and Example. Each SubmitSM will trigger SMSC to simulate a MO.
+    - Build and run SMSC Simulator:
+	```bash
+	g++ example/smsc_simulator/smsc.cpp -o smsc
+	./smsc &
+	```
+    - Run smpp client in the example: https://github.com/linxGnu/gosmpp/blob/master/example/main.go
+    ```bash
+	go run example/main.go
+	```
 
 ### Old version (0.1.3 and previous)
 Full example could be found: [gist](https://gist.github.com/linxGnu/b488997a0e62b3f6a7060ba2af6391ea)
