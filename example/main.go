@@ -57,7 +57,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 			},
 		}, 5*time.Second)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 	defer func() {
 		_ = trans.Close()
