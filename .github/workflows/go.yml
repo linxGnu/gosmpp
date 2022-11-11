@@ -15,10 +15,10 @@ jobs:
           sudo apt install gcc g++ -y
         shell: bash
 
-      - name: Set up Go 1.15
+      - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.15
+          go-version: 1.16
 
       - name: Linter
         uses: golangci/golangci-lint-action@v3
@@ -27,8 +27,8 @@ jobs:
 
       - name: Start SMSC
         run: |
-          g++ example/smsc.cpp -o smsc
-          ./smsc&
+          g++ example/smsc_simulator/smsc.cpp -o smsc
+          ./smsc &
         shell: bash
 
       - name: Test Coverage
