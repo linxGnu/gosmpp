@@ -67,6 +67,8 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 			}
 		},
 
+		DisablePDUAutoResponse: settings.DisablePDUAutoResponse,
+
 		response: func(p pdu.PDU) {
 			_ = t.Submit(p)
 		},
