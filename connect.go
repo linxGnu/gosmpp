@@ -27,6 +27,14 @@ type Auth struct {
 	SystemType string
 }
 
+type BindError struct {
+	CommandStatus data.CommandStatusType
+}
+
+func (err BindError) Error() string {
+	return fmt.Sprintf("binding error (%s): %s", err.CommandStatus, err.CommandStatus.Desc())
+}
+
 func newBindRequest(s Auth, bindingType pdu.BindingType) (bindReq *pdu.BindRequest) {
 	bindReq = pdu.NewBindRequest(bindingType)
 	bindReq.SystemID = s.SystemID
@@ -86,7 +94,7 @@ func connect(dialer Dialer, addr string, bindReq *pdu.BindRequest) (c *Connectio
 	}
 
 	if resp.CommandStatus != data.ESME_ROK {
-		err = fmt.Errorf("binding error. Command status: [%d]. Please refer to: https://github.com/linxGnu/gosmpp/blob/master/data/pkg.go for more detail about this status code", resp.CommandStatus)
+		err = BindError{CommandStatus: resp.CommandStatus}
 		_ = conn.Close()
 	} else {
 		c.systemID = resp.SystemID
