@@ -1,7 +1,6 @@
 package gosmpp
 
 import (
-	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -177,11 +176,11 @@ func TestTRXSubmitSMDisablePDUAutoResponse(t *testing.T) {
 					err = trans.Transceiver().Submit(m)
 					require.Nil(t, err)
 				} else {
-					fmt.Println("bind state is close, dropping PDU")
+					t.Log("bind state is close, dropping PDU")
 				}
 
 			} else {
-				fmt.Println("channel is closed")
+				t.Log("channel is closed")
 				return
 			}
 		}
