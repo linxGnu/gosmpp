@@ -1,6 +1,7 @@
 package gosmpp
 
 import (
+	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -126,4 +127,120 @@ func newSubmitSM(systemID string) *pdu.SubmitSM {
 	submitSM.EsmClass = 0
 
 	return submitSM
+}
+
+func TestTRXSubmitSMDisablePDUAutoResponse(t *testing.T) {
+	auth := nextAuth()
+	messages := make(chan pdu.PDU)
+	trans, err := NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
+			ReadTimeout: 2 * time.Second,
+
+			WriteTimeout: 3 * time.Second,
+
+			EnquireLink: 200 * time.Millisecond,
+
+			OnSubmitError: func(_ pdu.PDU, err error) {
+				t.Fatal(err)
+			},
+
+			OnReceivingError: func(err error) {
+				t.Log(err)
+			},
+
+			OnRebindingError: func(err error) {
+				t.Log(err)
+			},
+
+			DisablePDUAutoResponse: true,
+
+			OnPDU: handlePDUDisablePDUAutoResponsee(t, messages),
+
+			OnClosed: func(state State) {
+				t.Log(state)
+			},
+		}, 5*time.Second)
+	require.Nil(t, err)
+	require.NotNil(t, trans)
+	defer func() {
+		_ = trans.Close()
+	}()
+
+	require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
+
+	go func() {
+		for {
+			m, open := <-messages
+			if open {
+				if atomic.LoadInt32(&trans.state) == Alive {
+					err = trans.Transceiver().Submit(m)
+					if err != nil {
+						fmt.Println("error sending pdu")
+					}
+				} else {
+					fmt.Println("bind state is close, dropping PDU")
+				}
+
+			} else {
+				fmt.Println("channel is closed")
+				return
+			}
+		}
+	}()
+	defer close(messages)
+
+	// sending 20 SMS
+	for i := 0; i < 20; i++ {
+		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
+		require.Nil(t, err)
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	// wait response received
+	require.True(t, atomic.LoadInt32(&countSubmitSMResp) >= 15)
+
+	// rebind and submit again
+	trans.rebind()
+	err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
+	require.Nil(t, err)
+	time.Sleep(time.Second)
+	require.True(t, atomic.LoadInt32(&countSubmitSMResp) >= 16)
+}
+
+func handlePDUDisablePDUAutoResponsee(t *testing.T, sendPdu chan<- pdu.PDU) func(pdu.PDU, bool) {
+	return func(p pdu.PDU, responded bool) {
+		switch pd := p.(type) {
+		case *pdu.SubmitSMResp:
+			require.False(t, responded)
+			require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
+			require.NotZero(t, len(pd.MessageID))
+			atomic.AddInt32(&countSubmitSMResp, 1)
+
+		case *pdu.GenericNack:
+			require.False(t, responded)
+			t.Fatal(pd)
+
+		case *pdu.DataSM:
+			require.False(t, responded)
+			t.Logf("%+v\n", pd)
+
+		case *pdu.DeliverSM:
+			require.False(t, responded)
+			if p.CanResponse() {
+				sendPdu <- p.GetResponse()
+			}
+
+			require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
+
+			_mess, err := pd.Message.GetMessageWithEncoding(data.UCS2)
+			assert.Nil(t, err)
+			if mess == _mess {
+				atomic.AddInt32(&countDeliverSM, 1)
+			}
+
+		}
+	}
 }
