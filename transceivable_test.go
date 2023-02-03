@@ -131,7 +131,7 @@ func newSubmitSM(systemID string) *pdu.SubmitSM {
 
 func TestTRXSubmitSMDisablePDUAutoResponse(t *testing.T) {
 	auth := nextAuth()
-	messages := make(chan pdu.PDU)
+	sendPdu := make(chan pdu.PDU)
 	trans, err := NewSession(
 		TRXConnector(NonTLSDialer, auth),
 		Settings{
@@ -155,7 +155,7 @@ func TestTRXSubmitSMDisablePDUAutoResponse(t *testing.T) {
 
 			DisablePDUAutoResponse: true,
 
-			OnPDU: handlePDUDisablePDUAutoResponsee(t, messages),
+			OnPDU: handlePDUDisablePDUAutoResponsee(t, sendPdu),
 
 			OnClosed: func(state State) {
 				t.Log(state)
@@ -171,13 +171,11 @@ func TestTRXSubmitSMDisablePDUAutoResponse(t *testing.T) {
 
 	go func() {
 		for {
-			m, open := <-messages
+			m, open := <-sendPdu
 			if open {
 				if atomic.LoadInt32(&trans.state) == Alive {
 					err = trans.Transceiver().Submit(m)
-					if err != nil {
-						fmt.Println("error sending pdu")
-					}
+					require.Nil(t, err)
 				} else {
 					fmt.Println("bind state is close, dropping PDU")
 				}
@@ -188,12 +186,11 @@ func TestTRXSubmitSMDisablePDUAutoResponse(t *testing.T) {
 			}
 		}
 	}()
-	defer close(messages)
+	defer close(sendPdu)
 
 	// sending 20 SMS
 	for i := 0; i < 20; i++ {
-		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
-		require.Nil(t, err)
+		sendPdu <- newSubmitSM(auth.SystemID)
 		time.Sleep(50 * time.Millisecond)
 	}
 
@@ -204,8 +201,7 @@ func TestTRXSubmitSMDisablePDUAutoResponse(t *testing.T) {
 
 	// rebind and submit again
 	trans.rebind()
-	err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
-	require.Nil(t, err)
+	sendPdu <- newSubmitSM(auth.SystemID)
 	time.Sleep(time.Second)
 	require.True(t, atomic.LoadInt32(&countSubmitSMResp) >= 16)
 }
