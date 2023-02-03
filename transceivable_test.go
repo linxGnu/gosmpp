@@ -230,7 +230,9 @@ func handlePDUDisablePDUAutoResponsee(t *testing.T, sendPdu chan<- pdu.PDU) func
 		case *pdu.DeliverSM:
 			require.False(t, responded)
 			if p.CanResponse() {
-				sendPdu <- p.GetResponse()
+				resp := p.GetResponse().(*pdu.DeliverSMResp)
+				resp.CommandStatus = data.ESME_RINVDSTADR
+				sendPdu <- resp
 			}
 
 			require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
