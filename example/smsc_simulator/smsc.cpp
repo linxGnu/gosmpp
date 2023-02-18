@@ -246,6 +246,7 @@ class SMPP {
     static const uint64_t ESME_RINVBNDSTS = 0x00000004;
     static const uint64_t ESME_INVDSTADR = 0x0000000B;
     static const uint64_t ESME_RBINDFAIL = 0x0000000D;
+    static const uint64_t ESME_RINVSYSID = 0x0000000F;
     static const uint64_t ESME_RSUBMITFAIL = 0x00000045;
     static const uint64_t ESME_RINVSCHED = 0x00000061;
   };
@@ -944,7 +945,19 @@ class SMPPSession : public Session {
             system_id = esme_system_id;
 
             char smsc_system_id[] = "MelroseLabsSMSC";
-            memcpy(sbuf, smsc_system_id, strlen(smsc_system_id) + 1);
+            uint64_t cmdStatus = SMPP::CmdStatus::ESME_ROK;
+            if (system_id == "invalid") {
+                cmdStatus = SMPP::CmdStatus::ESME_RINVSYSID;
+                // If there is an error in the bind_transmitter or bind_receiver request,
+                // the SMSC system_id is not returned (see SMPP reference 4.1.2 and 4.1.4).
+                if (cmdid == SMPP::CmdID::BindTransmitter || cmdid == SMPP::CmdID::BindReceiver) {
+                    std::fill_n(sbuf, 1024, 0);
+                } else {
+                    memcpy(sbuf, smsc_system_id, strlen(smsc_system_id) + 1);
+                }
+            } else {
+                memcpy(sbuf, smsc_system_id, strlen(smsc_system_id) + 1);
+            }
 
             if (ClientConfig::instance().is(
                     esme_system_id,
@@ -958,10 +971,10 @@ class SMPPSession : public Session {
               };
 
               memcpy(sbuf + strlen(smsc_system_id) + 1, params, sizeof(params));
-              send(seqno, cmdid + 0x80000000, SMPP::CmdStatus::ESME_ROK, sbuf,
+              send(seqno, cmdid + 0x80000000, cmdStatus, sbuf,
                    strlen(smsc_system_id) + 1 + sizeof(params));
             } else
-              send(seqno, cmdid + 0x80000000, SMPP::CmdStatus::ESME_ROK, sbuf,
+              send(seqno, cmdid + 0x80000000, cmdStatus, sbuf,
                    strlen(smsc_system_id) + 1);
 
             if (cmdid == SMPP::CmdID::BindTransceiver)

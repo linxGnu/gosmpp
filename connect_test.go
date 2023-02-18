@@ -48,3 +48,24 @@ func TestBindingSMSC(t *testing.T) {
 		checker(t, TRXConnector(NonTLSDialer, nextAuth()))
 	})
 }
+
+func TestBindingSMSC_Error(t *testing.T) {
+	auth := Auth{SMSC: smscAddr, SystemID: "invalid"}
+	checker := func(t *testing.T, c Connector) {
+		conn, err := c.Connect()
+		require.ErrorContains(t, err, "Invalid System ID")
+		_ = conn.Close()
+	}
+
+	t.Run("TX", func(t *testing.T) {
+		checker(t, TXConnector(NonTLSDialer, auth))
+	})
+
+	t.Run("RX", func(t *testing.T) {
+		checker(t, RXConnector(NonTLSDialer, auth))
+	})
+
+	t.Run("TRX", func(t *testing.T) {
+		checker(t, TRXConnector(NonTLSDialer, auth))
+	})
+}

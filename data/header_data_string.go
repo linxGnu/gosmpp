@@ -221,6 +221,213 @@ func (i CommandStatusType) String() string {
 	}
 	return "CommandStatusType(" + strconv.FormatInt(int64(i), 10) + ")"
 }
+
+func (i CommandStatusType) Desc() string {
+	switch i {
+	case ESME_ROK:
+		return "No Error"
+	case ESME_RINVMSGLEN:
+		return "Message Length is invalid"
+	case ESME_RINVCMDLEN:
+		return "Command Length is invalid"
+	case ESME_RINVCMDID:
+		return "Invalid Command ID"
+	case ESME_RINVBNDSTS:
+		return "Incorrect BIND Status for given command"
+	case ESME_RALYBND:
+		return "ESME Already in Bound State"
+	case ESME_RINVPRTFLG:
+		return "Invalid Priority Flag"
+	case ESME_RINVREGDLVFLG:
+		return "Invalid Registered Delivery Flag"
+	case ESME_RSYSERR:
+		return "System Error"
+	case ESME_RINVSRCADR:
+		return "Invalid Source Address"
+	case ESME_RINVDSTADR:
+		return "Invalid Dest Addr"
+	case ESME_RINVMSGID:
+		return "Message ID is invalid"
+	case ESME_RBINDFAIL:
+		return "Bind Failed"
+	case ESME_RINVPASWD:
+		return "Invalid Password"
+	case ESME_RINVSYSID:
+		return "Invalid System ID"
+	case ESME_RCANCELFAIL:
+		return "Cancel SM Failed"
+	case ESME_RREPLACEFAIL:
+		return "Replace SM Failed"
+	case ESME_RMSGQFUL:
+		return "Message Queue Full"
+	case ESME_RINVSERTYP:
+		return "Invalid Service Type"
+	case ESME_RADDCUSTFAIL:
+		return "Failed to Add Customer"
+	case ESME_RDELCUSTFAIL:
+		return "Failed to delete Customer"
+	case ESME_RMODCUSTFAIL:
+		return "Failed to modify customer"
+	case ESME_RENQCUSTFAIL:
+		return "Failed to Enquire Customer"
+	case ESME_RINVCUSTID:
+		return "Invalid Customer ID"
+	case ESME_RINVCUSTNAME:
+		return "Invalid Customer Name"
+	case ESME_RINVCUSTADR:
+		return "Invalid Customer Address"
+	case ESME_RINVADR:
+		return "Invalid Address"
+	case ESME_RCUSTEXIST:
+		return "Customer Exists"
+	case ESME_RCUSTNOTEXIST:
+		return "Customer does not exist"
+	case ESME_RADDDLFAIL:
+		return "Failed to Add DL"
+	case ESME_RMODDLFAIL:
+		return "Failed to modify DL"
+	case ESME_RDELDLFAIL:
+		return "Failed to Delete DL"
+	case ESME_RVIEWDLFAIL:
+		return "Failed to View DL"
+	case ESME_RLISTDLSFAIL:
+		return "Failed to list DLs"
+	case ESME_RPARAMRETFAIL:
+		return "Param Retrieve Failed"
+	case ESME_RINVPARAM:
+		return "Invalid Param"
+	case ESME_RINVNUMDESTS:
+		return "Invalid number of destinations"
+	case ESME_RINVDLNAME:
+		return "Invalid Distribution List name"
+	case ESME_RINVDLMEMBDESC:
+		return "Invalid DL Member Description"
+	case ESME_RINVDLMEMBTYP:
+		return "Invalid DL Member Type"
+	case ESME_RINVDLMODOPT:
+		return "Invalid DL Modify Option"
+	case ESME_RINVDESTFLAG:
+		return "Destination flag is invalid (submit_multi)"
+	case ESME_RINVSUBREP:
+		return "Invalid ‘submit with replace’ request (i.e. submit_sm with replace_if_present_flag set)"
+	case ESME_RINVESMCLASS:
+		return "Invalid esm_class field data"
+	case ESME_RCNTSUBDL:
+		return "Cannot Submit to Distribution List"
+	case ESME_RSUBMITFAIL:
+		return "submit_sm or submit_multi failed"
+	case ESME_RINVSRCTON:
+		return "Invalid Source address TON"
+	case ESME_RINVSRCNPI:
+		return "Invalid Source address NPI"
+	case ESME_RINVDSTTON:
+		return "Invalid Destination address TON"
+	case ESME_RINVDSTNPI:
+		return "Invalid Destination address NPI"
+	case ESME_RINVSYSTYP:
+		return "Invalid system_type field"
+	case ESME_RINVREPFLAG:
+		return "Invalid replace_if_present flag"
+	case ESME_RINVNUMMSGS:
+		return "Invalid number of messages"
+	case ESME_RTHROTTLED:
+		return "Throttling error (ESME has exceeded allowed message limits)"
+	case ESME_RPROVNOTALLWD:
+		return "Provisioning Not Allowed"
+	case ESME_RINVSCHED:
+		return "Invalid Scheduled Delivery Time"
+	case ESME_RINVEXPIRY:
+		return "Invalid message validity period (Expiry time)"
+	case ESME_RINVDFTMSGID:
+		return "Predefined Message Invalid or Not Found"
+	case ESME_RX_T_APPN:
+		return "ESME Receiver Temporary App Error Code"
+	case ESME_RX_P_APPN:
+		return "ESME Receiver Permanent App Error Code"
+	case ESME_RX_R_APPN:
+		return "ESME Receiver Reject Message Error Code"
+	case ESME_RQUERYFAIL:
+		return "query_sm request failed"
+	case ESME_RINVPGCUSTID:
+		return "Paging Customer ID Invalid No such subscriber"
+	case ESME_RINVPGCUSTIDLEN:
+		return "Paging Customer ID length Invalid"
+	case ESME_RINVCITYLEN:
+		return "City Length Invalid"
+	case ESME_RINVSTATELEN:
+		return "State Length Invalid"
+	case ESME_RINVZIPPREFIXLEN:
+		return "Zip Prefix Length Invalid"
+	case ESME_RINVZIPPOSTFIXLEN:
+		return "Zip Postfix Length Invalid"
+	case ESME_RINVMINLEN:
+		return "MIN Length Invalid"
+	case ESME_RINVMIN:
+		return "MIN Invalid (i.e. No such MIN)"
+	case ESME_RINVPINLEN:
+		return "PIN Length Invalid"
+	case ESME_RINVTERMCODELEN:
+		return "Terminal Code Length Invalid"
+	case ESME_RINVCHANNELLEN:
+		return "Channel Length Invalid"
+	case ESME_RINVCOVREGIONLEN:
+		return "Coverage Region Length Invalid"
+	case ESME_RINVCAPCODELEN:
+		return "Cap Code Length Invalid"
+	case ESME_RINVMDTLEN:
+		return "Message delivery time Length Invalid"
+	case ESME_RINVPRIORMSGLEN:
+		return "Priority Message Length Invalid"
+	case ESME_RINVPERMSGLEN:
+		return "Periodic Messages Length Invalid"
+	case ESME_RINVPGALERTLEN:
+		return "Paging Alerts Length Invalid"
+	case ESME_RINVSMUSERLEN:
+		return "int16 Message User Group Length Invalid"
+	case ESME_RINVRTDBLEN:
+		return "Real Time Data broadcasts Length Invalid"
+	case ESME_RINVREGDELLEN:
+		return "Registered Delivery Length Invalid"
+	case ESME_RINVMSGDISTLEN:
+		return "Message Distribution Length Invalid"
+	case ESME_RINVPRIORMSG:
+		return "Priority Message Length Invalid"
+	case ESME_RINVMDT:
+		return "Message delivery time Invalid"
+	case ESME_RINVPERMSG:
+		return "Periodic Messages Invalid"
+	case ESME_RINVMSGDIST:
+		return "Message Distribution Invalid"
+	case ESME_RINVPGALERT:
+		return "Paging Alerts Invalid"
+	case ESME_RINVSMUSER:
+		return "int16 Message User Group Invalid"
+	case ESME_RINVRTDB:
+		return "Real Time Data broadcasts Invalid"
+	case ESME_RINVREGDEL:
+		return "Registered Delivery Invalid"
+	case ESME_RINVOPTPARLEN:
+		return "Invalid Optional Parameter Length"
+	case ESME_RINVOPTPARSTREAM:
+		return "Error in the optional part of the PDU Body."
+	case ESME_ROPTPARNOTALLWD:
+		return "Optional Parameter not allowed"
+	case ESME_RINVPARLEN:
+		return "Invalid Parameter Length."
+	case ESME_RMISSINGOPTPARAM:
+		return "Expected Optional Parameter missing"
+	case ESME_RINVOPTPARAMVAL:
+		return "Invalid Optional Parameter Value"
+	case ESME_RDELIVERYFAILURE:
+		return "Delivery Failure (used for data_sm_resp)"
+	case ESME_RUNKNOWNERR:
+		return "Unknown Error"
+	case ESME_LAST_ERROR:
+		return "The value of the last error code"
+	}
+	return i.String()
+}
+
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
