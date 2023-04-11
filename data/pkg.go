@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 )
 
-//nolint
+// nolint
 const (
 	SM_CONNID_LEN        = 16
 	SM_MSG_LEN           = 254
@@ -24,8 +24,12 @@ const (
 	SM_PARAM_VALUE_LEN   = 10
 	SM_MAX_CNT_DEST_ADDR = 254
 
-	// GSM specific, short message must be no larger than 140 octets
-	SM_GSM_MSG_LEN = 140
+	// GSM specific, short message must be no larger than 140/160 octets
+	SM_GSM_MSG_LEN      = 140 //@TODO not used
+	SM_GSM_MSG_LEN_7BIT = 160
+	MSG_OFFSET_7BIT     = 7
+	SM_GSM_MSG_LEN_UCS2 = 140
+	MSG_OFFSET_UCS2     = 6
 
 	CONNECTION_CLOSED = 0
 	CONNECTION_OPENED = 1

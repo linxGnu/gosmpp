@@ -138,17 +138,25 @@ func (c *ShortMessage) split() (multiSM []*ShortMessage, err error) {
 		encoding = c.enc
 	}
 
+	msgLen := data.SM_GSM_MSG_LEN_7BIT
+	msgOffset := data.MSG_OFFSET_7BIT
+
+	if c.enc != data.GSM7BIT {
+		msgLen = data.SM_GSM_MSG_LEN_UCS2
+		msgOffset = data.MSG_OFFSET_UCS2
+	}
+
 	// check if encoding implements data.Splitter
 	splitter, ok := encoding.(data.Splitter)
 	// check if encoding implements data.Splitter or split is necessary
-	if !ok || !splitter.ShouldSplit(c.message, data.SM_GSM_MSG_LEN) {
+	if !ok || !splitter.ShouldSplit(c.message, uint(msgLen)) {
 		err = c.SetMessageWithEncoding(c.message, c.enc)
 		multiSM = []*ShortMessage{c}
 		return
 	}
 
 	// reserve 6 bytes for concat message UDH
-	segments, err := splitter.EncodeSplit(c.message, data.SM_GSM_MSG_LEN-6)
+	segments, err := splitter.EncodeSplit(c.message, uint(msgLen-msgOffset))
 	if err != nil {
 		return nil, err
 	}
