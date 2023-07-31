@@ -29,6 +29,15 @@ func NewDeliverSMRespFromReq(req *DeliverSM) PDU {
 	return c
 }
 
+func NewDeliverSMRespFromReqWithStatus(req *DeliverSM, status data.CommandStatusType) PDU {
+	c := NewDeliverSMResp().(*DeliverSMResp)
+	if req != nil {
+		c.SequenceNumber = req.SequenceNumber
+	}
+	c.CommandStatus = status
+	return c
+}
+
 // CanResponse implements PDU interface.
 func (c *DeliverSMResp) CanResponse() bool {
 	return false

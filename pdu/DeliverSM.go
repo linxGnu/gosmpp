@@ -52,6 +52,10 @@ func (c *DeliverSM) GetResponse() PDU {
 	return NewDeliverSMRespFromReq(c)
 }
 
+func (c *DeliverSM) GetResponseWithStatus(status data.CommandStatusType) PDU {
+	return NewDeliverSMRespFromReqWithStatus(c, status)
+}
+
 // Marshal implements PDU interface.
 func (c *DeliverSM) Marshal(b *ByteBuffer) {
 	c.base.marshal(b, func(b *ByteBuffer) {

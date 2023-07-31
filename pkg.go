@@ -64,5 +64,9 @@ type Settings struct {
 	// OnClosed notifies `closed` event due to State.
 	OnClosed ClosedCallback
 
+	// DisablePDUAutoResponse disables all PDU autoResponses except EnquireLink and Unbind request
+	// By activating this setting, it's the users responsibility to respond to PDU
+	DisablePDUAutoResponse bool
+
 	response func(pdu.PDU)
 }

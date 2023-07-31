@@ -21,6 +21,8 @@ type PDU interface {
 	// GetResponse PDU.
 	GetResponse() PDU
 
+	GetSettedResponse() *PDU
+
 	// RegisterOptionalParam assigns an optional param.
 	RegisterOptionalParam(Field)
 
@@ -49,6 +51,7 @@ type PDU interface {
 type base struct {
 	Header
 	OptionalParameters map[Tag]Field
+	response           *PDU
 }
 
 func newBase() (v base) {
@@ -152,6 +155,14 @@ func (c *base) IsOk() bool {
 // IsGNack is generic n-ack.
 func (c *base) IsGNack() bool {
 	return c.CommandID == data.GENERIC_NACK
+}
+
+func (c *base) SetResponse(pdu *PDU) {
+	c.response = pdu
+}
+
+func (c *base) GetSettedResponse() *PDU {
+	return c.response
 }
 
 // Parse PDU from reader.
