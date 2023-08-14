@@ -133,7 +133,7 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 
 			if t.settings.OnPDU != nil {
 				t.settings.OnPDU(p, responded)
-				if p.CanResponse() && responded == false {
+				if p.CanResponse() && !responded {
 					response := p.GetCustomResponse()
 					if response != nil {
 						t.settings.response(*response)
