@@ -21,7 +21,7 @@ type PDU interface {
 	// GetResponse PDU.
 	GetResponse() PDU
 
-	GetSettedResponse() *PDU
+	GetCustomResponse() *PDU
 
 	// RegisterOptionalParam assigns an optional param.
 	RegisterOptionalParam(Field)
@@ -157,11 +157,11 @@ func (c *base) IsGNack() bool {
 	return c.CommandID == data.GENERIC_NACK
 }
 
-func (c *base) SetResponse(pdu *PDU) {
+func (c *base) SetCustomResponse(pdu *PDU) {
 	c.response = pdu
 }
 
-func (c *base) GetSettedResponse() *PDU {
+func (c *base) GetCustomResponse() *PDU {
 	return c.response
 }
 
