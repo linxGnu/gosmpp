@@ -60,7 +60,7 @@ func TestGSM7Bit(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
-	require.EqualValues(t, 00, GSM7BITPACKED.DataCoding())
+	require.EqualValues(t, 0o0, GSM7BITPACKED.DataCoding())
 
 	t.Run("testShouldSplitGSM7", func(t *testing.T) {
 		octetLim := uint(140)
