@@ -50,6 +50,8 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 
 		OnPDU: settings.OnPDU,
 
+		OnAllPDU: settings.OnAllPDU,
+
 		OnReceivingError: settings.OnReceivingError,
 
 		OnClosed: func(state State) {
@@ -67,8 +69,8 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 			}
 		},
 
-		response: func(p pdu.PDU) {
-			_ = t.Submit(p)
+		response: func(p pdu.PDU) (err error) {
+			return t.Submit(p)
 		},
 	})
 
@@ -103,5 +105,9 @@ func (t *transceivable) Close() (err error) {
 
 // Submit a PDU.
 func (t *transceivable) Submit(p pdu.PDU) error {
+	return t.out.Submit(p)
+}
+
+func (t *transceivable) Respond(p pdu.PDU) error {
 	return t.out.Submit(p)
 }

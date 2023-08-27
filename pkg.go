@@ -11,6 +11,7 @@ import (
 type Transceiver interface {
 	io.Closer
 	Submit(pdu.PDU) error
+	Respond(pdu.PDU) error
 	SystemID() string
 }
 
@@ -24,6 +25,7 @@ type Transmitter interface {
 // Receiver interface.
 type Receiver interface {
 	io.Closer
+	Respond(pdu.PDU) error
 	SystemID() string
 }
 
@@ -49,6 +51,8 @@ type Settings struct {
 	//
 	// `Responded` flag indicates this pdu is responded automatically,
 	// no manual respond needed.
+	//
+	// Will be ignored if OnAllPDU is set
 	OnPDU PDUCallback
 
 	// OnReceivingError notifies happened error while reading PDU
@@ -64,5 +68,11 @@ type Settings struct {
 	// OnClosed notifies `closed` event due to State.
 	OnClosed ClosedCallback
 
-	response func(pdu.PDU)
+	// OnAllPDU handles all received PDU from SMSC.
+	//
+	// This pdu is NOT responded to automatically,
+	// manual response/handling is needed
+	OnAllPDU func(pdu pdu.PDU)
+
+	response func(pdu.PDU) error
 }

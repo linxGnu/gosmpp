@@ -107,6 +107,10 @@ func (t *receivable) loop() {
 
 func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 	if p != nil {
+		if t.settings.OnAllPDU != nil {
+			t.settings.OnAllPDU(p)
+			return
+		}
 		switch pp := p.(type) {
 		case *pdu.EnquireLink:
 			if t.settings.response != nil {
@@ -137,4 +141,10 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 		}
 	}
 	return
+}
+
+// Submit a PDU.
+func (t *receivable) Respond(p pdu.PDU) error {
+	t.settings.response(p)
+	return nil
 }
