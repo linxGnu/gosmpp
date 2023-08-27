@@ -114,12 +114,12 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 		switch pp := p.(type) {
 		case *pdu.EnquireLink:
 			if t.settings.response != nil {
-				t.settings.response(pp.GetResponse())
+				_ = t.settings.response(pp.GetResponse())
 			}
 
 		case *pdu.Unbind:
 			if t.settings.response != nil {
-				t.settings.response(pp.GetResponse())
+				_ = t.settings.response(pp.GetResponse())
 
 				// wait to send response before closing
 				time.Sleep(50 * time.Millisecond)
@@ -131,7 +131,7 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 		default:
 			var responded bool
 			if p.CanResponse() && t.settings.response != nil {
-				t.settings.response(p.GetResponse())
+				_ = t.settings.response(p.GetResponse())
 				responded = true
 			}
 
@@ -143,8 +143,7 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 	return
 }
 
-// Submit a PDU.
+// Respond a PDU.
 func (t *receivable) Respond(p pdu.PDU) error {
-	t.settings.response(p)
-	return nil
+	return t.settings.response(p)
 }

@@ -108,6 +108,7 @@ func (t *transceivable) Submit(p pdu.PDU) error {
 	return t.out.Submit(p)
 }
 
+// Respond a PDU.
 func (t *transceivable) Respond(p pdu.PDU) error {
 	return t.out.Submit(p)
 }
