@@ -101,7 +101,7 @@ func handlePDU(sendResponse chan pdu.PDU) func(pdu.PDU) {
 	return func(p pdu.PDU) {
 		switch pd := p.(type) {
 		case *pdu.Unbind:
-			fmt.Printf("Unbind:%+v\n", pd)
+			fmt.Println("Unbind Received")
 			sendResponse <- pd.GetResponse()
 
 		case *pdu.UnbindResp:
@@ -117,7 +117,8 @@ func handlePDU(sendResponse chan pdu.PDU) func(pdu.PDU) {
 			fmt.Println("EnquireLinkResp Received")
 
 		case *pdu.EnquireLink:
-			fmt.Println("EnquireLinkResp Received")
+			fmt.Println("EnquireLink Received")
+			sendResponse <- pd.GetResponse()
 
 		case *pdu.DataSM:
 			fmt.Println("DataSM receiver")
