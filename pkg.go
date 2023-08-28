@@ -11,7 +11,6 @@ import (
 type Transceiver interface {
 	io.Closer
 	Submit(pdu.PDU) error
-	Respond(pdu.PDU) error
 	SystemID() string
 }
 
@@ -25,7 +24,6 @@ type Transmitter interface {
 // Receiver interface.
 type Receiver interface {
 	io.Closer
-	Respond(pdu.PDU) error
 	SystemID() string
 }
 
@@ -72,7 +70,7 @@ type Settings struct {
 	//
 	// This pdu is NOT responded to automatically,
 	// manual response/handling is needed
-	OnAllPDU func(pdu pdu.PDU)
+	OnAllPDU func(pdu pdu.PDU) pdu.PDU
 
-	response func(pdu.PDU) error
+	response func(pdu.PDU)
 }

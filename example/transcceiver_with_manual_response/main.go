@@ -51,7 +51,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				fmt.Println("Rebinding but error:", err)
 			},
 
-			OnAllPDU: handlePDU(sendResponse),
+			OnAllPDU: handlePDU(),
 
 			OnClosed: func(state gosmpp.State) {
 				fmt.Println(state)
@@ -64,29 +64,6 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 		_ = trans.Close()
 	}()
 
-	go func() {
-		for p := range sendResponse {
-			if err = trans.Transceiver().Respond(p); err != nil {
-				fmt.Println(err)
-			} else {
-				switch p.(type) {
-				case *pdu.UnbindResp:
-					fmt.Println("UnbindResp Sent")
-					_ = trans.Transceiver().Close()
-
-				case *pdu.EnquireLinkResp:
-					fmt.Println("EnquireLinkResp Sent")
-
-				case *pdu.DataSMResp:
-					fmt.Println("DataSMResp Sent")
-
-				case *pdu.DeliverSMResp:
-					fmt.Println("DeliverSMResp Sent")
-				}
-			}
-		}
-	}()
-
 	// sending SMS(s)
 	for i := 0; i < 30; i++ {
 		if err = trans.Transceiver().Submit(newSubmitSM()); err != nil {
@@ -97,12 +74,12 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 
 }
 
-func handlePDU(sendResponse chan pdu.PDU) func(pdu.PDU) {
-	return func(p pdu.PDU) {
+func handlePDU() func(pdu.PDU) pdu.PDU {
+	return func(p pdu.PDU) pdu.PDU {
 		switch pd := p.(type) {
 		case *pdu.Unbind:
 			fmt.Println("Unbind Received")
-			sendResponse <- pd.GetResponse()
+			return pd.GetResponse()
 
 		case *pdu.UnbindResp:
 			fmt.Println("UnbindResp Received")
@@ -118,16 +95,17 @@ func handlePDU(sendResponse chan pdu.PDU) func(pdu.PDU) {
 
 		case *pdu.EnquireLink:
 			fmt.Println("EnquireLink Received")
-			sendResponse <- pd.GetResponse()
+			return pd.GetResponse()
 
 		case *pdu.DataSM:
 			fmt.Println("DataSM receiver")
-			sendResponse <- pd.GetResponse()
+			return pd.GetResponse()
 
 		case *pdu.DeliverSM:
 			fmt.Println("DeliverSM receiver")
-			sendResponse <- pd.GetResponse()
+			return pd.GetResponse()
 		}
+		return nil
 	}
 }
 
