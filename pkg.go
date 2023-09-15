@@ -49,6 +49,8 @@ type Settings struct {
 	//
 	// `Responded` flag indicates this pdu is responded automatically,
 	// no manual respond needed.
+	//
+	// Will be ignored if OnAllPDU is set
 	OnPDU PDUCallback
 
 	// OnReceivingError notifies happened error while reading PDU
@@ -63,6 +65,12 @@ type Settings struct {
 
 	// OnClosed notifies `closed` event due to State.
 	OnClosed ClosedCallback
+
+	// OnAllPDU handles all received PDU from SMSC.
+	//
+	// This pdu is NOT responded to automatically,
+	// manual response/handling is needed
+	OnAllPDU func(pdu pdu.PDU) pdu.PDU
 
 	response func(pdu.PDU)
 }

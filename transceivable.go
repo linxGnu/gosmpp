@@ -50,6 +50,8 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 
 		OnPDU: settings.OnPDU,
 
+		OnAllPDU: settings.OnAllPDU,
+
 		OnReceivingError: settings.OnReceivingError,
 
 		OnClosed: func(state State) {
