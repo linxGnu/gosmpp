@@ -51,9 +51,7 @@ func (c *SubmitSMResp) Marshal(b *ByteBuffer) {
 // Unmarshal implements PDU interface.
 func (c *SubmitSMResp) Unmarshal(b *ByteBuffer) error {
 	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
-		if c.CommandStatus == data.ESME_ROK {
-			c.MessageID, err = b.ReadCString()
-		}
+		c.MessageID, err = b.ReadCString()
 		return
 	})
 }
