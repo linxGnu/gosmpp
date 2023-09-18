@@ -114,6 +114,7 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 			}
 			return
 		}
+
 		switch pp := p.(type) {
 		case *pdu.EnquireLink:
 			if t.settings.response != nil {
