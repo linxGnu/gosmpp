@@ -15,6 +15,12 @@ func TestParsePDU(t *testing.T) {
 		require.Nil(t, err)
 	})
 
+	t.Run("submit_sm_resp with command_status != 0 ", func(t *testing.T) {
+		buf := NewBuffer(fromHex("00000010800000040000005800000001"))
+		_, err := Parse(buf)
+		require.Nil(t, err)
+	})
+
 	t.Run("eof", func(t *testing.T) {
 		buf := NewBuffer(nil)
 		_, err := Parse(buf)
