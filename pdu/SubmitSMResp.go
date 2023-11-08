@@ -1,7 +1,9 @@
 package pdu
 
 import (
+	"errors"
 	"github.com/linxGnu/gosmpp/data"
+	"io"
 )
 
 // SubmitSMResp PDU.
@@ -52,6 +54,9 @@ func (c *SubmitSMResp) Marshal(b *ByteBuffer) {
 func (c *SubmitSMResp) Unmarshal(b *ByteBuffer) error {
 	return c.base.unmarshal(b, func(b *ByteBuffer) (err error) {
 		c.MessageID, err = b.ReadCString()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
 		return
 	})
 }
