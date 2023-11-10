@@ -108,9 +108,12 @@ func (t *receivable) loop() {
 func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 	if p != nil {
 		if t.settings.OnAllPDU != nil {
-			r := t.settings.OnAllPDU(p)
-			if r != nil {
-				t.settings.response(r)
+			response, closeBind := t.settings.OnAllPDU(p)
+			t.settings.response(response)
+			if closeBind {
+				time.Sleep(50 * time.Millisecond)
+				closing = true
+				t.closing(UnbindClosing)
 			}
 			return
 		}

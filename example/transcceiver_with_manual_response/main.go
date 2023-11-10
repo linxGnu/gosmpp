@@ -74,12 +74,12 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 
 }
 
-func handlePDU() func(pdu.PDU) pdu.PDU {
-	return func(p pdu.PDU) pdu.PDU {
+func handlePDU() func(pdu.PDU) (pdu.PDU, bool) {
+	return func(p pdu.PDU) (pdu.PDU, bool) {
 		switch pd := p.(type) {
 		case *pdu.Unbind:
 			fmt.Println("Unbind Received")
-			return pd.GetResponse()
+			return pd.GetResponse(), true
 
 		case *pdu.UnbindResp:
 			fmt.Println("UnbindResp Received")
@@ -95,17 +95,17 @@ func handlePDU() func(pdu.PDU) pdu.PDU {
 
 		case *pdu.EnquireLink:
 			fmt.Println("EnquireLink Received")
-			return pd.GetResponse()
+			return pd.GetResponse(), false
 
 		case *pdu.DataSM:
 			fmt.Println("DataSM receiver")
-			return pd.GetResponse()
+			return pd.GetResponse(), false
 
 		case *pdu.DeliverSM:
 			fmt.Println("DeliverSM receiver")
-			return pd.GetResponse()
+			return pd.GetResponse(), false
 		}
-		return nil
+		return nil, false
 	}
 }
 
