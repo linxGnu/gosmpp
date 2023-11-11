@@ -13,3 +13,6 @@ type ErrorCallback func(error)
 
 // ClosedCallback notifies closed event due to State.
 type ClosedCallback func(State)
+
+// RebindCallback notifies rebind event due to State.
+type RebindCallback func()

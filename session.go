@@ -119,6 +119,9 @@ func (s *Session) rebind() {
 
 				// reset rebinding state
 				atomic.StoreInt32(&s.rebinding, 0)
+				if s.settings.OnRebind != nil {
+					s.settings.OnRebind()
+				}
 
 				return
 			}

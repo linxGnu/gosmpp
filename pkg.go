@@ -72,5 +72,8 @@ type Settings struct {
 	// manual response/handling is needed
 	OnAllPDU func(pdu pdu.PDU) pdu.PDU
 
+	// OnRebind notifies `rebind` event due to State.
+	OnRebind RebindCallback
+
 	response func(pdu.PDU)
 }
