@@ -30,8 +30,6 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 		SystemType: "",
 	}
 
-	sendResponse := make(chan pdu.PDU)
-	defer close(sendResponse)
 	trans, err := gosmpp.NewSession(
 		gosmpp.TRXConnector(gosmpp.NonTLSDialer, auth),
 		gosmpp.Settings{
