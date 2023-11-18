@@ -53,6 +53,14 @@ type Settings struct {
 	// Will be ignored if OnAllPDU is set
 	OnPDU PDUCallback
 
+	// OnAllPDU handles all received PDU from SMSC.
+	//
+	// This pdu is NOT responded to automatically,
+	// manual response/handling is needed
+	//
+	// User can also decide to close bind by retuning true, default is false
+	OnAllPDU AllPDUCallback
+
 	// OnReceivingError notifies happened error while reading PDU
 	// from SMSC.
 	OnReceivingError ErrorCallback
@@ -65,12 +73,6 @@ type Settings struct {
 
 	// OnClosed notifies `closed` event due to State.
 	OnClosed ClosedCallback
-
-	// OnAllPDU handles all received PDU from SMSC.
-	//
-	// This pdu is NOT responded to automatically,
-	// manual response/handling is needed
-	OnAllPDU func(pdu pdu.PDU) pdu.PDU
 
 	// OnRebind notifies `rebind` event due to State.
 	OnRebind RebindCallback
