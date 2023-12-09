@@ -61,7 +61,7 @@ go get -u github.com/linxGnu/gosmpp
   - In this example, you should run smsc first:
     - Build and run SMSC Simulator:
 	```bash
-	g++ example/smsc_simulator/smsc.cpp -o smsc
+	g++ -std=c++11 example/smsc_simulator/smsc.cpp -o smsc
 	./smsc &
 	```
     - Run smpp client in the example: https://github.com/linxGnu/gosmpp/blob/master/example/main.go
