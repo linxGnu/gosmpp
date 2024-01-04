@@ -74,5 +74,8 @@ type Settings struct {
 	// OnClosed notifies `closed` event due to State.
 	OnClosed ClosedCallback
 
+	// OnRebind notifies `rebind` event due to State.
+	OnRebind RebindCallback
+
 	response func(pdu.PDU)
 }
