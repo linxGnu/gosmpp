@@ -46,7 +46,13 @@ func NewSubmitSM() PDU {
 // ShouldSplit check if this the user data of submitSM PDU
 func (c *SubmitSM) ShouldSplit() bool {
 	// GSM standard mandates that User Data must be no longer than 140 octet
-	return len(c.Message.messageData) > 140
+	mDataLength := len(c.Message.messageData)
+	if c.Message.enc == data.GSM7BIT {
+		septetLim := data.SM_GSM_MSG_LEN * 8 / 7
+		return uint(mDataLength) > uint(septetLim)
+	}
+
+	return mDataLength > data.SM_GSM_MSG_LEN
 }
 
 // CanResponse implements PDU interface.
