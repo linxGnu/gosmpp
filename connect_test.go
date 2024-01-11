@@ -1,6 +1,7 @@
 package gosmpp
 
 import (
+	"github.com/linxGnu/gosmpp/pdu"
 	"sync/atomic"
 	"testing"
 
@@ -43,9 +44,22 @@ func TestBindingSMSC(t *testing.T) {
 	t.Run("RX", func(t *testing.T) {
 		checker(t, RXConnector(NonTLSDialer, nextAuth()))
 	})
+	t.Run("RX", func(t *testing.T) {
+		addrRange := pdu.AddressRange{}
+		err := addrRange.SetAddressRange("31218")
+		require.NoError(t, err)
+		checker(t, RXConnector(NonTLSDialer, nextAuth(), WithAddressRange(addrRange)))
+	})
 
 	t.Run("TRX", func(t *testing.T) {
 		checker(t, TRXConnector(NonTLSDialer, nextAuth()))
+	})
+
+	t.Run("TRX", func(t *testing.T) {
+		addrRange := pdu.AddressRange{}
+		err := addrRange.SetAddressRange("31218")
+		require.NoError(t, err)
+		checker(t, TRXConnector(NonTLSDialer, nextAuth(), WithAddressRange(addrRange)))
 	})
 }
 
