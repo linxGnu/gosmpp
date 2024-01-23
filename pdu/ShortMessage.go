@@ -7,9 +7,7 @@ import (
 	"github.com/linxGnu/gosmpp/errors"
 )
 
-var (
-	ref = uint32(0)
-)
+var ref = uint32(0)
 
 // ShortMessage message.
 type ShortMessage struct {
@@ -147,7 +145,15 @@ func (c *ShortMessage) split() (multiSM []*ShortMessage, err error) {
 		return
 	}
 
-	// reserve 6 bytes for concat message UDH
+	// Reserve 6 bytes for concat message UDH
+	//
+	// Good references:
+	// - https://help.goacoustic.com/hc/en-us/articles/360043843154--How-character-encoding-affects-SMS-message-length
+	// - https://www.twilio.com/docs/glossary/what-is-gsm-7-character-encoding
+	//
+	// Limitation is 160 GSM-7 characters and we also need 6 bytes for UDH
+	// -> 134 octets per segment
+	// -> this leaves 153 GSM-7 characters per segment.
 	segments, err := splitter.EncodeSplit(c.message, data.SM_GSM_MSG_LEN-6)
 	if err != nil {
 		return nil, err
