@@ -2,6 +2,7 @@ package gosmpp
 
 import (
 	"context"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -17,12 +18,14 @@ type receivable struct {
 	settings   Settings
 	conn       *Connection
 	aliveState int32
+	window     cmap.ConcurrentMap[string, pdu.Request]
 }
 
-func newReceivable(conn *Connection, settings Settings) *receivable {
+func newReceivable(conn *Connection, window cmap.ConcurrentMap[string, pdu.Request], settings Settings) *receivable {
 	r := &receivable{
 		settings: settings,
 		conn:     conn,
+		window:   window,
 	}
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 
@@ -112,11 +115,11 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 			switch pp := p.(type) {
 			case *pdu.CancelSMResp, *pdu.DataSMResp, *pdu.DeliverSMResp, *pdu.EnquireLinkResp, *pdu.QuerySMResp, *pdu.ReplaceSMResp, *pdu.SubmitMultiResp, *pdu.SubmitSMResp:
 				if t.settings.OnExpectedPduResponse != nil {
-					request, ok := t.conn.window.Get(strconv.Itoa(int(p.GetSequenceNumber())))
+					request, ok := t.window.Get(strconv.Itoa(int(p.GetSequenceNumber())))
 					//request, found := t.conn.window[p.GetSequenceNumber()]
 
 					if ok {
-						t.conn.window.Remove(strconv.Itoa(int(p.GetSequenceNumber())))
+						t.window.Remove(strconv.Itoa(int(p.GetSequenceNumber())))
 						response := pdu.Response{
 							PDU:             pp,
 							OriginalRequest: request,

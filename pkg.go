@@ -79,7 +79,7 @@ type Settings struct {
 	// OnRebind notifies `rebind` event due to State.
 	OnRebind RebindCallback
 
-	WindowSize int
+	MaxWindowSize int
 
 	response func(pdu.PDU)
 }

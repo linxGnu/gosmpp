@@ -3,6 +3,7 @@ package gosmpp
 import (
 	"errors"
 	"fmt"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"net"
 	"runtime"
 	"strconv"
@@ -28,15 +29,17 @@ type transmittable struct {
 
 	aliveState   int32
 	pendingWrite int32
+	window       cmap.ConcurrentMap[string, pdu.Request]
 }
 
-func newTransmittable(conn *Connection, settings Settings) *transmittable {
+func newTransmittable(conn *Connection, window cmap.ConcurrentMap[string, pdu.Request], settings Settings) *transmittable {
 	t := &transmittable{
 		settings:     settings,
 		conn:         conn,
 		input:        make(chan pdu.PDU, 1),
 		aliveState:   Alive,
 		pendingWrite: 0,
+		window:       window,
 	}
 
 	return t
@@ -190,18 +193,20 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 
 	if err == nil {
 		if t.settings.OnExpectedPduResponse != nil {
-			if t.conn.window.Count() < t.settings.WindowSize {
+			if t.window.Count() < t.settings.MaxWindowSize {
 				n, err = t.conn.WritePDU(p)
 				if err == nil {
 					request := pdu.Request{
 						PDU:      p,
 						TImeSent: time.Now(),
 					}
-					t.conn.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
+					t.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
 				}
 			} else {
 				return 0, errors.New("window full")
 			}
+		} else {
+			n, err = t.conn.WritePDU(p)
 		}
 	}
 
