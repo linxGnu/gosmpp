@@ -61,6 +61,8 @@ type Settings struct {
 	// User can also decide to close bind by retuning true, default is false
 	OnAllPDU AllPDUCallback
 
+	OnExpectedPduResponse func(response pdu.Response)
+
 	// OnReceivingError notifies happened error while reading PDU
 	// from SMSC.
 	OnReceivingError ErrorCallback
@@ -76,6 +78,8 @@ type Settings struct {
 
 	// OnRebind notifies `rebind` event due to State.
 	OnRebind RebindCallback
+
+	WindowSize int
 
 	response func(pdu.PDU)
 }

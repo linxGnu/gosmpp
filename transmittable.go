@@ -1,9 +1,11 @@
 package gosmpp
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -187,7 +189,20 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	}
 
 	if err == nil {
-		n, err = t.conn.WritePDU(p)
+		if t.settings.OnExpectedPduResponse != nil {
+			if t.conn.window.Count() < t.settings.WindowSize {
+				n, err = t.conn.WritePDU(p)
+				if err == nil {
+					request := pdu.Request{
+						PDU:      p,
+						TImeSent: time.Now(),
+					}
+					t.conn.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
+				}
+			} else {
+				return 0, errors.New("window full")
+			}
+		}
 	}
 
 	return

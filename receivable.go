@@ -2,6 +2,7 @@ package gosmpp
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -107,6 +108,25 @@ func (t *receivable) loop() {
 
 func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 	if p != nil {
+		if t.settings.OnExpectedPduResponse != nil {
+			switch pp := p.(type) {
+			case *pdu.CancelSMResp, *pdu.DataSMResp, *pdu.DeliverSMResp, *pdu.EnquireLinkResp, *pdu.QuerySMResp, *pdu.ReplaceSMResp, *pdu.SubmitMultiResp, *pdu.SubmitSMResp:
+				if t.settings.OnExpectedPduResponse != nil {
+					request, ok := t.conn.window.Get(strconv.Itoa(int(p.GetSequenceNumber())))
+					//request, found := t.conn.window[p.GetSequenceNumber()]
+
+					if ok {
+						t.conn.window.Remove(strconv.Itoa(int(p.GetSequenceNumber())))
+						response := pdu.Response{
+							PDU:             pp,
+							OriginalRequest: request,
+						}
+						t.settings.OnExpectedPduResponse(response)
+					}
+				}
+			}
+		}
+
 		if t.settings.OnAllPDU != nil {
 			r, closeBind := t.settings.OnAllPDU(p)
 			t.settings.response(r)

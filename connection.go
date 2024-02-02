@@ -3,16 +3,21 @@ package gosmpp
 import (
 	"bufio"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/linxGnu/gosmpp/pdu"
+	"github.com/orcaman/concurrent-map/v2"
 )
+
+var lock = sync.RWMutex{}
 
 // Connection wraps over net.Conn with buffered data reader.
 type Connection struct {
 	systemID string
 	conn     net.Conn
 	reader   *bufio.Reader
+	window   cmap.ConcurrentMap[string, pdu.Request]
 }
 
 // NewConnection returns a Connection.
@@ -20,6 +25,7 @@ func NewConnection(conn net.Conn) (c *Connection) {
 	c = &Connection{
 		conn:   conn,
 		reader: bufio.NewReaderSize(conn, 128<<10),
+		window: cmap.New[pdu.Request](),
 	}
 	return
 }
