@@ -1,10 +1,9 @@
 package gosmpp
 
 import (
+	"github.com/linxGnu/gosmpp/pdu"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"sync/atomic"
-
-	"github.com/linxGnu/gosmpp/pdu"
 )
 
 type transceivable struct {
@@ -47,6 +46,8 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 				}
 			}
 		},
+
+		MaxWindowSize: settings.MaxWindowSize,
 	})
 
 	t.in = newReceivable(conn, window, Settings{
@@ -72,6 +73,12 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 				}
 			}
 		},
+
+		OnExpectedPduResponse: settings.OnExpectedPduResponse,
+
+		OnExpiredPduRequest: settings.OnExpiredPduRequest,
+
+		PduExpireTimeOut: settings.PduExpireTimeOut,
 
 		response: func(p pdu.PDU) {
 			_ = t.Submit(p)
@@ -110,4 +117,8 @@ func (t *transceivable) Close() (err error) {
 // Submit a PDU.
 func (t *transceivable) Submit(p pdu.PDU) error {
 	return t.out.Submit(p)
+}
+
+func (t *transceivable) GetWindowSize() int {
+	return t.window.Count()
 }

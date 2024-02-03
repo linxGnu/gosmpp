@@ -64,10 +64,17 @@ func (t *receivable) closing(state State) {
 
 func (t *receivable) start() {
 	t.wg.Add(1)
-	go func() {
-		t.loop()
-		t.wg.Done()
-	}()
+	if t.settings.OnExpiredPduRequest != nil {
+		go func() {
+			t.loopWithVerifyExpiredPdu()
+			t.wg.Done()
+		}()
+	} else {
+		go func() {
+			t.loop()
+			t.wg.Done()
+		}()
+	}
 }
 
 // check error and do closing if need
@@ -90,6 +97,44 @@ func (t *receivable) loop() {
 		select {
 		case <-t.ctx.Done():
 			return
+		default:
+		}
+
+		// read pdu from conn
+		var p pdu.PDU
+		if err = t.conn.SetReadTimeout(t.settings.ReadTimeout); err == nil {
+			p, err = pdu.Parse(t.conn)
+		}
+
+		// check error
+		if closeOnError := t.check(err); closeOnError || t.handleOrClose(p) {
+			if closeOnError {
+				t.closing(InvalidStreaming)
+			}
+			return
+		}
+	}
+}
+
+func (t *receivable) loopWithVerifyExpiredPdu() {
+	ticker := time.NewTicker(10 * time.Second)
+	defer func() {
+		ticker.Stop()
+	}()
+	var err error
+	for {
+		select {
+		case <-t.ctx.Done():
+			return
+		case <-ticker.C:
+			for request := range t.window.IterBuffered() {
+				if time.Since(request.Val.TImeSent) > t.settings.PduExpireTimeOut {
+					t.window.Remove(request.Key)
+					if t.settings.OnExpiredPduRequest != nil {
+						t.settings.OnExpiredPduRequest(request.Val.PDU)
+					}
+				}
+			}
 		default:
 		}
 

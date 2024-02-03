@@ -12,6 +12,7 @@ type Transceiver interface {
 	io.Closer
 	Submit(pdu.PDU) error
 	SystemID() string
+	GetWindowSize() int
 }
 
 // Transmitter interface.
@@ -19,6 +20,7 @@ type Transmitter interface {
 	io.Closer
 	Submit(pdu.PDU) error
 	SystemID() string
+	GetWindowSize() int
 }
 
 // Receiver interface.
@@ -61,8 +63,6 @@ type Settings struct {
 	// User can also decide to close bind by retuning true, default is false
 	OnAllPDU AllPDUCallback
 
-	OnExpectedPduResponse func(response pdu.Response)
-
 	// OnReceivingError notifies happened error while reading PDU
 	// from SMSC.
 	OnReceivingError ErrorCallback
@@ -79,7 +79,12 @@ type Settings struct {
 	// OnRebind notifies `rebind` event due to State.
 	OnRebind RebindCallback
 
-	MaxWindowSize int
+	OnExpectedPduResponse func(response pdu.Response)
+
+	OnExpiredPduRequest func(pdu.PDU)
+
+	PduExpireTimeOut time.Duration
+	MaxWindowSize    int
 
 	response func(pdu.PDU)
 }

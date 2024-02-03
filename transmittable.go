@@ -17,6 +17,7 @@ import (
 var (
 	// ErrConnectionClosing indicates transmitter is closing. Can not send any PDU.
 	ErrConnectionClosing = fmt.Errorf("connection is closing, can not send PDU to SMSC")
+	ErrWindowsFull       = errors.New("window full")
 )
 
 type transmittable struct {
@@ -169,7 +170,9 @@ func (t *transmittable) check(p pdu.PDU, n int, err error) (closing bool) {
 	}
 
 	if n == 0 {
-		if nErr, ok := err.(net.Error); ok {
+		if errors.Is(err, ErrWindowsFull) {
+			closing = false
+		} else if nErr, ok := err.(net.Error); ok {
 			closing = nErr.Timeout()
 		} else {
 			closing = true
@@ -190,25 +193,30 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	if t.settings.WriteTimeout > 0 {
 		err = t.conn.SetWriteTimeout(t.settings.WriteTimeout)
 	}
+	if err != nil {
+		return
+	}
 
-	if err == nil {
-		if t.settings.OnExpectedPduResponse != nil {
-			if t.window.Count() < t.settings.MaxWindowSize {
-				n, err = t.conn.WritePDU(p)
-				if err == nil {
-					request := pdu.Request{
-						PDU:      p,
-						TImeSent: time.Now(),
-					}
-					t.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
+	if t.settings.MaxWindowSize > 0 {
+		if t.window.Count() < t.settings.MaxWindowSize {
+			n, err = t.conn.WritePDU(p)
+			if err == nil {
+				request := pdu.Request{
+					PDU:      p,
+					TImeSent: time.Now(),
 				}
-			} else {
-				return 0, errors.New("window full")
+				t.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
 			}
 		} else {
-			n, err = t.conn.WritePDU(p)
+			return 0, ErrWindowsFull
 		}
+	} else {
+		n, err = t.conn.WritePDU(p)
 	}
 
 	return
+}
+
+func (t *transmittable) GetWindowSize() int {
+	return t.window.Count()
 }
