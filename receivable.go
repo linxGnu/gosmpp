@@ -64,7 +64,7 @@ func (t *receivable) closing(state State) {
 
 func (t *receivable) start() {
 	t.wg.Add(1)
-	if t.settings.WindowPDUHandlerConfig != nil && t.settings.OnExpiredPduRequest != nil && t.settings.PduExpireTimeOut > 0 {
+	if t.settings.WindowPDUHandlerConfig != nil && t.settings.PduExpireTimeOut > 0 && t.settings.ExpireCheckTimer > 0 {
 		go func() {
 			t.loopWithVerifyExpiredPdu()
 			t.wg.Done()
@@ -117,7 +117,7 @@ func (t *receivable) loop() {
 }
 
 func (t *receivable) loopWithVerifyExpiredPdu() {
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(t.settings.ExpireCheckTimer)
 	defer func() {
 		ticker.Stop()
 	}()
@@ -167,10 +167,12 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 						if ok {
 							t.window.Remove(strconv.Itoa(int(p.GetSequenceNumber())))
 							response := pdu.Response{
-								PDU:             pp,
+								PDU:             p,
 								OriginalRequest: request,
 							}
 							t.settings.OnExpectedPduResponse(response)
+						} else if t.settings.OnUnexpectedPduResponse != nil {
+							t.settings.OnUnexpectedPduResponse(p)
 						}
 					}
 				case *pdu.EnquireLink:

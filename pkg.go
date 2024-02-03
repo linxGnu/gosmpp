@@ -77,21 +77,57 @@ type Settings struct {
 	// OnRebind notifies `rebind` event due to State.
 	OnRebind RebindCallback
 
+	// SMPP Bind Window tracking feature config
 	*WindowPDUHandlerConfig
 
 	response func(pdu.PDU)
 }
 
 type WindowPDUHandlerConfig struct {
+
+	// OnReceivedPduRequest handles received PDU request from SMSC.
 	OnReceivedPduRequest AllPDUCallback
 
-	OnExpectedPduResponse func(response pdu.Response)
+	// OnExpectedPduResponse handles expected PDU response from SMSC.
+	// Only triggered when the original request is found in the window cache
+	//
+	// Handle is optional
+	// If not set, response will be dropped
+	OnExpectedPduResponse func(pdu.Response)
 
+	// OnUnexpectedPduResponse handles expected PDU response from SMSC.
+	// Only triggered if the original request is not found in the window cache
+	//
+	// Handle is optional
+	// If not set, response will be dropped
+	OnUnexpectedPduResponse func(pdu.PDU)
+
+	// OnExpiredPduRequest handles expected PDU response from SMSC.
+	// If the original request is not found in the window cache
+	//
+	// Mandatory: the PduExpireTimeOut must be set
+	// Handle is optional
+	// If not set, expired PDU will be removed from cache
 	OnExpiredPduRequest func(pdu.PDU)
 
+	// Set the number of second to expire a request sent to the SMSC
+	//
+	// Zero duration disables pdu expire check and the cache may fill up over time with expired PDU request
+	// Recommneded: Less or equal to the value set in ReadTimeout
 	PduExpireTimeOut time.Duration
 
-	MaxWindowSize int
+	// The time period between each check of the expired PDU in the cache
+	//
+	// Zero duration disables pdu expire check and the cache may fill up over time with expired PDU request
+	// Recommended: Less or half the time set in for PduExpireTimeOut
+	// Don't be too aggressive, there is a performance hit if the check is done often
+	ExpireCheckTimer time.Duration
 
+	// The maximum number of pending request sent to the SMSC
+	//
+	// Maximum value is 255
+	MaxWindowSize uint8
+
+	// if enabled, EnquireLink and Unbind request will be responded to automatically
 	EnableAutoRespond bool
 }
