@@ -93,7 +93,7 @@ type WindowPDUHandlerConfig struct {
 	//
 	// Handle is optional
 	// If not set, response will be dropped
-	OnExpectedPduResponse func(pdu.Response)
+	OnExpectedPduResponse func(Response)
 
 	// OnUnexpectedPduResponse handles expected PDU response from SMSC.
 	// Only triggered if the original request is not found in the window cache

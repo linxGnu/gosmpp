@@ -107,8 +107,8 @@ func handleExpirePduRequest() func(pdu.PDU) {
 	}
 }
 
-func handleExpectedPduResponse() func(response pdu.Response) {
-	return func(response pdu.Response) {
+func handleExpectedPduResponse() func(response gosmpp.Response) {
+	return func(response gosmpp.Response) {
 
 		switch response.PDU.(type) {
 

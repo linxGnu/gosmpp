@@ -1,6 +1,9 @@
 package gosmpp
 
-import "github.com/linxGnu/gosmpp/pdu"
+import (
+	"github.com/linxGnu/gosmpp/pdu"
+	"time"
+)
 
 // PDUCallback handles received PDU.
 type PDUCallback func(pdu pdu.PDU, responded bool)
@@ -22,3 +25,13 @@ type ClosedCallback func(State)
 
 // RebindCallback notifies rebind event due to State.
 type RebindCallback func()
+
+type Request struct {
+	pdu.PDU
+	TImeSent time.Time
+}
+
+type Response struct {
+	pdu.PDU
+	OriginalRequest Request
+}

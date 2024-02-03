@@ -18,10 +18,10 @@ type receivable struct {
 	settings   Settings
 	conn       *Connection
 	aliveState int32
-	window     cmap.ConcurrentMap[string, pdu.Request]
+	window     cmap.ConcurrentMap[string, Request]
 }
 
-func newReceivable(conn *Connection, window cmap.ConcurrentMap[string, pdu.Request], settings Settings) *receivable {
+func newReceivable(conn *Connection, window cmap.ConcurrentMap[string, Request], settings Settings) *receivable {
 	r := &receivable{
 		settings: settings,
 		conn:     conn,
@@ -166,7 +166,7 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 
 						if ok {
 							t.window.Remove(strconv.Itoa(int(p.GetSequenceNumber())))
-							response := pdu.Response{
+							response := Response{
 								PDU:             p,
 								OriginalRequest: request,
 							}

@@ -30,10 +30,10 @@ type transmittable struct {
 
 	aliveState   int32
 	pendingWrite int32
-	window       cmap.ConcurrentMap[string, pdu.Request]
+	window       cmap.ConcurrentMap[string, Request]
 }
 
-func newTransmittable(conn *Connection, window cmap.ConcurrentMap[string, pdu.Request], settings Settings) *transmittable {
+func newTransmittable(conn *Connection, window cmap.ConcurrentMap[string, Request], settings Settings) *transmittable {
 	t := &transmittable{
 		settings:     settings,
 		conn:         conn,
@@ -198,10 +198,10 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	}
 
 	if t.settings.WindowPDUHandlerConfig != nil && t.settings.MaxWindowSize > 0 {
-		if t.window.Count() < t.settings.MaxWindowSize {
+		if t.window.Count() < int(t.settings.MaxWindowSize) {
 			n, err = t.conn.WritePDU(p)
 			if err == nil {
-				request := pdu.Request{
+				request := Request{
 					PDU:      p,
 					TImeSent: time.Now(),
 				}

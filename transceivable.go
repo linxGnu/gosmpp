@@ -14,11 +14,11 @@ type transceivable struct {
 	out  *transmittable
 
 	aliveState int32
-	window     cmap.ConcurrentMap[string, pdu.Request]
+	window     cmap.ConcurrentMap[string, Request]
 }
 
 func newTransceivable(conn *Connection, settings Settings) *transceivable {
-	window := cmap.New[pdu.Request]()
+	window := cmap.New[Request]()
 	t := &transceivable{
 		settings: settings,
 		conn:     conn,
