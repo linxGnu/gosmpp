@@ -87,6 +87,13 @@ func (s *Session) Transceiver() Transceiver {
 	return s.bound()
 }
 
+func (s *Session) GetWindowSize() int {
+	if s.c.GetBindType() == pdu.Transmitter || s.c.GetBindType() == pdu.Transceiver {
+		return s.bound().GetWindowSize()
+	}
+	return -1
+}
+
 // Close session.
 func (s *Session) Close() (err error) {
 	if atomic.CompareAndSwapInt32(&s.state, Alive, Closed) {

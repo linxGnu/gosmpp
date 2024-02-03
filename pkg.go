@@ -12,7 +12,6 @@ type Transceiver interface {
 	io.Closer
 	Submit(pdu.PDU) error
 	SystemID() string
-	GetWindowSize() int
 }
 
 // Transmitter interface.
@@ -20,7 +19,6 @@ type Transmitter interface {
 	io.Closer
 	Submit(pdu.PDU) error
 	SystemID() string
-	GetWindowSize() int
 }
 
 // Receiver interface.

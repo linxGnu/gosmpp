@@ -76,7 +76,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 
 	// sending SMS(s)
 	for i := 0; i < 60; i++ {
-		fmt.Println("Window size: ", trans.Transceiver().GetWindowSize())
+		fmt.Println("Window size: ", trans.GetWindowSize())
 		if err = trans.Transceiver().Submit(newSubmitSM()); err != nil {
 			fmt.Println(err)
 		}
