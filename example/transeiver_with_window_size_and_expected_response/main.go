@@ -128,41 +128,6 @@ func handleExpectedPdu() func(response pdu.Response) {
 	}
 }
 
-func handlePDU() func(pdu.PDU) (pdu.PDU, bool) {
-	return func(p pdu.PDU) (pdu.PDU, bool) {
-		switch pd := p.(type) {
-		case *pdu.Unbind:
-			fmt.Println("Unbind Received")
-			return pd.GetResponse(), true
-
-		case *pdu.UnbindResp:
-			fmt.Println("UnbindResp Received")
-
-		case *pdu.SubmitSMResp:
-			fmt.Println("SubmitSMResp Received")
-
-		case *pdu.GenericNack:
-			fmt.Println("GenericNack Received")
-
-		case *pdu.EnquireLinkResp:
-			fmt.Println("EnquireLinkResp Received")
-
-		case *pdu.EnquireLink:
-			fmt.Println("EnquireLink Received")
-			return pd.GetResponse(), false
-
-		case *pdu.DataSM:
-			fmt.Println("DataSM receiver")
-			return pd.GetResponse(), false
-
-		case *pdu.DeliverSM:
-			fmt.Println("DeliverSM receiver")
-			return pd.GetResponse(), false
-		}
-		return nil, false
-	}
-}
-
 func newSubmitSM() *pdu.SubmitSM {
 	// build up submitSM
 	srcAddr := pdu.NewAddress()
