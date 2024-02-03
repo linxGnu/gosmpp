@@ -59,13 +59,14 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				fmt.Println(state)
 			},
 
-			OnExpectedPduResponse: handleExpectedPdu(),
-
-			OnExpiredPduRequest: handleExpirePDU(),
-
-			PduExpireTimeOut: 5 * time.Second,
-
-			MaxWindowSize: 30,
+			WindowPDUHandlerConfig: &gosmpp.WindowPDUHandlerConfig{
+				OnReceivedPduRequest:  handleReceivedPduRequest(),
+				OnExpectedPduResponse: handleExpectedPduResponse(),
+				OnExpiredPduRequest:   handleExpirePduRequest(),
+				PduExpireTimeOut:      5 * time.Second,
+				MaxWindowSize:         30,
+				EnableAutoRespond:     false,
+			},
 		}, 5*time.Second)
 	if err != nil {
 		log.Fatal(err)
@@ -87,7 +88,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 
 }
 
-func handleExpirePDU() func(pdu.PDU) {
+func handleExpirePduRequest() func(pdu.PDU) {
 	return func(p pdu.PDU) {
 		switch p.(type) {
 		case *pdu.Unbind:
@@ -106,7 +107,7 @@ func handleExpirePDU() func(pdu.PDU) {
 	}
 }
 
-func handleExpectedPdu() func(response pdu.Response) {
+func handleExpectedPduResponse() func(response pdu.Response) {
 	return func(response pdu.Response) {
 
 		switch response.PDU.(type) {
@@ -125,6 +126,35 @@ func handleExpectedPdu() func(response pdu.Response) {
 			fmt.Printf("Original EnquireLink:%+v\n", response.OriginalRequest.PDU)
 
 		}
+	}
+}
+
+func handleReceivedPduRequest() func(pdu.PDU) (pdu.PDU, bool) {
+	return func(p pdu.PDU) (pdu.PDU, bool) {
+		switch pd := p.(type) {
+		case *pdu.Unbind:
+			fmt.Println("Unbind Received")
+			return pd.GetResponse(), true
+
+		case *pdu.GenericNack:
+			fmt.Println("GenericNack Received")
+
+		case *pdu.EnquireLinkResp:
+			fmt.Println("EnquireLinkResp Received")
+
+		case *pdu.EnquireLink:
+			fmt.Println("EnquireLink Received")
+			return pd.GetResponse(), false
+
+		case *pdu.DataSM:
+			fmt.Println("DataSM receiver")
+			return pd.GetResponse(), false
+
+		case *pdu.DeliverSM:
+			fmt.Println("DeliverSM receiver")
+			return pd.GetResponse(), false
+		}
+		return nil, false
 	}
 }
 

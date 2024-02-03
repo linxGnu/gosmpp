@@ -47,7 +47,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 			}
 		},
 
-		MaxWindowSize: settings.MaxWindowSize,
+		WindowPDUHandlerConfig: settings.WindowPDUHandlerConfig,
 	})
 
 	t.in = newReceivable(conn, window, Settings{
@@ -74,11 +74,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 			}
 		},
 
-		OnExpectedPduResponse: settings.OnExpectedPduResponse,
-
-		OnExpiredPduRequest: settings.OnExpiredPduRequest,
-
-		PduExpireTimeOut: settings.PduExpireTimeOut,
+		WindowPDUHandlerConfig: settings.WindowPDUHandlerConfig,
 
 		response: func(p pdu.PDU) {
 			_ = t.Submit(p)

@@ -2,6 +2,7 @@ package gosmpp
 
 import (
 	"fmt"
+	"github.com/linxGnu/gosmpp/pdu"
 	"sync/atomic"
 	"time"
 )

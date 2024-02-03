@@ -64,7 +64,7 @@ func (t *receivable) closing(state State) {
 
 func (t *receivable) start() {
 	t.wg.Add(1)
-	if t.settings.OnExpiredPduRequest != nil {
+	if t.settings.WindowPDUHandlerConfig != nil && t.settings.OnExpiredPduRequest != nil && t.settings.PduExpireTimeOut > 0 {
 		go func() {
 			t.loopWithVerifyExpiredPdu()
 			t.wg.Done()
@@ -156,25 +156,75 @@ func (t *receivable) loopWithVerifyExpiredPdu() {
 
 func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 	if p != nil {
-		if t.settings.OnExpectedPduResponse != nil {
-			switch pp := p.(type) {
-			case *pdu.CancelSMResp, *pdu.DataSMResp, *pdu.DeliverSMResp, *pdu.EnquireLinkResp, *pdu.QuerySMResp, *pdu.ReplaceSMResp, *pdu.SubmitMultiResp, *pdu.SubmitSMResp:
-				if t.settings.OnExpectedPduResponse != nil {
-					request, ok := t.window.Get(strconv.Itoa(int(p.GetSequenceNumber())))
-					//request, found := t.conn.window[p.GetSequenceNumber()]
+		if t.settings.WindowPDUHandlerConfig != nil {
+			if t.settings.OnExpectedPduResponse != nil {
+				switch pp := p.(type) {
+				case *pdu.CancelSMResp, *pdu.DataSMResp, *pdu.DeliverSMResp, *pdu.EnquireLinkResp, *pdu.QuerySMResp, *pdu.ReplaceSMResp, *pdu.SubmitMultiResp, *pdu.SubmitSMResp:
+					if t.settings.OnExpectedPduResponse != nil {
+						request, ok := t.window.Get(strconv.Itoa(int(p.GetSequenceNumber())))
+						//request, found := t.conn.window[p.GetSequenceNumber()]
 
-					if ok {
-						t.window.Remove(strconv.Itoa(int(p.GetSequenceNumber())))
-						response := pdu.Response{
-							PDU:             pp,
-							OriginalRequest: request,
+						if ok {
+							t.window.Remove(strconv.Itoa(int(p.GetSequenceNumber())))
+							response := pdu.Response{
+								PDU:             pp,
+								OriginalRequest: request,
+							}
+							t.settings.OnExpectedPduResponse(response)
 						}
-						t.settings.OnExpectedPduResponse(response)
+					}
+				case *pdu.EnquireLink:
+					if t.settings.EnableAutoRespond && t.settings.response != nil {
+						t.settings.response(pp.GetResponse())
+					} else {
+						if t.settings.OnReceivedPduRequest != nil {
+							r, closeBind := t.settings.OnReceivedPduRequest(p)
+							t.settings.response(r)
+							if closeBind {
+								time.Sleep(50 * time.Millisecond)
+								closing = true
+								t.closing(UnbindClosing)
+							}
+							return
+						}
+					}
+
+				case *pdu.Unbind:
+					if t.settings.EnableAutoRespond && t.settings.response != nil {
+						t.settings.response(pp.GetResponse())
+
+						// wait to send response before closing
+						time.Sleep(50 * time.Millisecond)
+					} else {
+						if t.settings.OnReceivedPduRequest != nil {
+							r, closeBind := t.settings.OnReceivedPduRequest(p)
+							t.settings.response(r)
+							if closeBind {
+								time.Sleep(50 * time.Millisecond)
+								closing = true
+								t.closing(UnbindClosing)
+							}
+							return
+						}
+					}
+
+					closing = true
+					t.closing(UnbindClosing)
+				default:
+					if t.settings.OnReceivedPduRequest != nil {
+						r, closeBind := t.settings.OnReceivedPduRequest(p)
+						t.settings.response(r)
+						if closeBind {
+							time.Sleep(50 * time.Millisecond)
+							closing = true
+							t.closing(UnbindClosing)
+						}
+						return
 					}
 				}
 			}
+			return
 		}
-
 		if t.settings.OnAllPDU != nil {
 			r, closeBind := t.settings.OnAllPDU(p)
 			t.settings.response(r)

@@ -197,7 +197,7 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 		return
 	}
 
-	if t.settings.MaxWindowSize > 0 {
+	if t.settings.WindowPDUHandlerConfig != nil && t.settings.MaxWindowSize > 0 {
 		if t.window.Count() < t.settings.MaxWindowSize {
 			n, err = t.conn.WritePDU(p)
 			if err == nil {

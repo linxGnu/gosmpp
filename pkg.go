@@ -77,12 +77,21 @@ type Settings struct {
 	// OnRebind notifies `rebind` event due to State.
 	OnRebind RebindCallback
 
+	*WindowPDUHandlerConfig
+
+	response func(pdu.PDU)
+}
+
+type WindowPDUHandlerConfig struct {
+	OnReceivedPduRequest AllPDUCallback
+
 	OnExpectedPduResponse func(response pdu.Response)
 
 	OnExpiredPduRequest func(pdu.PDU)
 
 	PduExpireTimeOut time.Duration
-	MaxWindowSize    int
 
-	response func(pdu.PDU)
+	MaxWindowSize int
+
+	EnableAutoRespond bool
 }
