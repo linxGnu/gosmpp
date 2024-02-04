@@ -145,7 +145,7 @@ func (t *receivable) loopWithVerifyExpiredPdu() {
 		}
 
 		// check error
-		if closeOnError := t.check(err); closeOnError || t.handleOrClose(p) {
+		if closeOnError := t.check(err); closeOnError || t.handleWindowPdu(p) || t.handleAllPdu(p) || t.handleOrClose(p) {
 			if closeOnError {
 				t.closing(InvalidStreaming)
 			}
@@ -154,73 +154,36 @@ func (t *receivable) loopWithVerifyExpiredPdu() {
 	}
 }
 
-func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
-	if p != nil {
-		if t.settings.WindowPDUHandlerConfig != nil && t.settings.OnExpectedPduResponse != nil {
-			// This case must match the same request item list in transmittable write func
-			switch pp := p.(type) {
-			case *pdu.CancelSMResp,
-				*pdu.DataSMResp,
-				*pdu.DeliverSMResp,
-				*pdu.EnquireLinkResp,
-				*pdu.QuerySMResp,
-				*pdu.ReplaceSMResp,
-				*pdu.SubmitMultiResp,
-				*pdu.SubmitSMResp:
-				if t.settings.OnExpectedPduResponse != nil {
-					sequence := strconv.Itoa(int(p.GetSequenceNumber()))
-					request, ok := t.window.Get(sequence)
-					//request, found := t.conn.window[p.GetSequenceNumber()]
-
-					if ok {
-						t.window.Remove(sequence)
-						response := Response{
-							PDU:             p,
-							OriginalRequest: request,
-						}
-						t.settings.OnExpectedPduResponse(response)
-					} else if t.settings.OnUnexpectedPduResponse != nil {
-						t.settings.OnUnexpectedPduResponse(p)
+func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
+	if t.settings.WindowPDUHandlerConfig != nil && t.settings.OnExpectedPduResponse != nil && p != nil {
+		// This case must match the same request item list in transmittable write func
+		switch pp := p.(type) {
+		case *pdu.CancelSMResp,
+			*pdu.DataSMResp,
+			*pdu.DeliverSMResp,
+			*pdu.EnquireLinkResp,
+			*pdu.QuerySMResp,
+			*pdu.ReplaceSMResp,
+			*pdu.SubmitMultiResp,
+			*pdu.SubmitSMResp:
+			if t.settings.OnExpectedPduResponse != nil {
+				sequence := strconv.Itoa(int(p.GetSequenceNumber()))
+				request, ok := t.window.Get(sequence)
+				if ok {
+					t.window.Remove(sequence)
+					response := Response{
+						PDU:             p,
+						OriginalRequest: request,
 					}
+					t.settings.OnExpectedPduResponse(response)
+				} else if t.settings.OnUnexpectedPduResponse != nil {
+					t.settings.OnUnexpectedPduResponse(p)
 				}
-			case *pdu.EnquireLink:
-				if t.settings.EnableAutoRespond && t.settings.response != nil {
-					t.settings.response(pp.GetResponse())
-				} else {
-					if t.settings.OnReceivedPduRequest != nil {
-						r, closeBind := t.settings.OnReceivedPduRequest(p)
-						t.settings.response(r)
-						if closeBind {
-							time.Sleep(50 * time.Millisecond)
-							closing = true
-							t.closing(UnbindClosing)
-						}
-						return
-					}
-				}
-
-			case *pdu.Unbind:
-				if t.settings.EnableAutoRespond && t.settings.response != nil {
-					t.settings.response(pp.GetResponse())
-
-					// wait to send response before closing
-					time.Sleep(50 * time.Millisecond)
-				} else {
-					if t.settings.OnReceivedPduRequest != nil {
-						r, closeBind := t.settings.OnReceivedPduRequest(p)
-						t.settings.response(r)
-						if closeBind {
-							time.Sleep(50 * time.Millisecond)
-							closing = true
-							t.closing(UnbindClosing)
-						}
-						return
-					}
-				}
-
-				closing = true
-				t.closing(UnbindClosing)
-			default:
+			}
+		case *pdu.EnquireLink:
+			if t.settings.EnableAutoRespond && t.settings.response != nil {
+				t.settings.response(pp.GetResponse())
+			} else {
 				if t.settings.OnReceivedPduRequest != nil {
 					r, closeBind := t.settings.OnReceivedPduRequest(p)
 					t.settings.response(r)
@@ -229,49 +192,86 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 						closing = true
 						t.closing(UnbindClosing)
 					}
-					return
 				}
 			}
-		} else if t.settings.OnAllPDU != nil {
-			r, closeBind := t.settings.OnAllPDU(p)
-			t.settings.response(r)
-			if closeBind {
+		case *pdu.Unbind:
+			if t.settings.EnableAutoRespond && t.settings.response != nil {
+				t.settings.response(pp.GetResponse())
+
+				// wait to send response before closing
 				time.Sleep(50 * time.Millisecond)
-				closing = true
-				t.closing(UnbindClosing)
+			} else {
+				if t.settings.OnReceivedPduRequest != nil {
+					r, closeBind := t.settings.OnReceivedPduRequest(p)
+					t.settings.response(r)
+					if closeBind {
+						time.Sleep(50 * time.Millisecond)
+						closing = true
+						t.closing(UnbindClosing)
+					}
+				}
 			}
-			return
-		} else {
-			switch pp := p.(type) {
-			case *pdu.EnquireLink:
-				if t.settings.response != nil {
-					t.settings.response(pp.GetResponse())
-				}
 
-			case *pdu.Unbind:
-				if t.settings.response != nil {
-					t.settings.response(pp.GetResponse())
-
-					// wait to send response before closing
+			closing = true
+			t.closing(UnbindClosing)
+		default:
+			if t.settings.OnReceivedPduRequest != nil {
+				r, closeBind := t.settings.OnReceivedPduRequest(p)
+				t.settings.response(r)
+				if closeBind {
 					time.Sleep(50 * time.Millisecond)
-				}
-
-				closing = true
-				t.closing(UnbindClosing)
-
-			default:
-				var responded bool
-				if p.CanResponse() && t.settings.response != nil {
-					t.settings.response(p.GetResponse())
-					responded = true
-				}
-
-				if t.settings.OnPDU != nil {
-					t.settings.OnPDU(p, responded)
+					closing = true
+					t.closing(UnbindClosing)
 				}
 			}
 		}
+	}
+	return
+}
 
+func (t *receivable) handleAllPdu(p pdu.PDU) (closing bool) {
+	if t.settings.OnAllPDU != nil && p != nil {
+		r, closeBind := t.settings.OnAllPDU(p)
+		t.settings.response(r)
+		if closeBind {
+			time.Sleep(50 * time.Millisecond)
+			closing = true
+			t.closing(UnbindClosing)
+		}
+	}
+	return
+}
+
+func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
+	if p != nil {
+		switch pp := p.(type) {
+		case *pdu.EnquireLink:
+			if t.settings.response != nil {
+				t.settings.response(pp.GetResponse())
+			}
+
+		case *pdu.Unbind:
+			if t.settings.response != nil {
+				t.settings.response(pp.GetResponse())
+
+				// wait to send response before closing
+				time.Sleep(50 * time.Millisecond)
+			}
+
+			closing = true
+			t.closing(UnbindClosing)
+
+		default:
+			var responded bool
+			if p.CanResponse() && t.settings.response != nil {
+				t.settings.response(p.GetResponse())
+				responded = true
+			}
+
+			if t.settings.OnPDU != nil {
+				t.settings.OnPDU(p, responded)
+			}
+		}
 	}
 	return
 }
