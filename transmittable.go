@@ -217,18 +217,19 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 					}
 					t.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
 				}
+				return
 			} else {
 				return 0, ErrWindowsFull
 			}
 
 		default:
 			n, err = t.conn.WritePDU(p)
+			return
 		}
 	} else {
 		n, err = t.conn.WritePDU(p)
+		return
 	}
-
-	return
 }
 
 func (t *transmittable) GetWindowSize() int {
