@@ -2,6 +2,7 @@ package gosmpp
 
 import (
 	"fmt"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -150,5 +151,127 @@ func receivableHandleAllPDU(t1 *testing.T) func(pdu.PDU) (pdu.PDU, bool) {
 			return pd.GetResponse(), false
 		}
 		return nil, false
+	}
+}
+
+func Test_receivable_handleOrClose(t1 *testing.T) {
+	type fields struct {
+		settings Settings
+	}
+	type args struct {
+		p pdu.PDU
+	}
+	tests := []struct {
+		name        string
+		fields      fields
+		args        args
+		wantClosing bool
+	}{
+		{
+			name:        "nil setting",
+			fields:      fields{},
+			args:        args{},
+			wantClosing: false,
+		},
+		{
+			name:        "nil pdu",
+			fields:      fields{},
+			args:        args{},
+			wantClosing: false,
+		},
+		{
+			name:   "EnquireLink pdu",
+			fields: fields{},
+			args: args{
+				p: pdu.NewEnquireLink(),
+			},
+			wantClosing: false,
+		},
+		/*{
+			name:   "Undind pdu", // run this as the last test case
+			fields: fields{},
+			args: args{
+				p: pdu.NewUnbind(),
+			},
+			wantClosing: true,
+		},*/
+	}
+	for _, tt := range tests {
+		t1.Run(tt.name, func(t1 *testing.T) {
+			t := &receivable{
+				settings: tt.fields.settings,
+			}
+			assert.Equalf(t1, tt.wantClosing, t.handleOrClose(tt.args.p), "handleOrClose(%v)", tt.args.p)
+		})
+	}
+}
+
+func Test_receivable_handleWindowPdu(t1 *testing.T) {
+	type fields struct {
+		settings Settings
+		window   cmap.ConcurrentMap[string, Request]
+	}
+	type args struct {
+		p pdu.PDU
+	}
+	tests := []struct {
+		name        string
+		fields      fields
+		args        args
+		wantClosing bool
+	}{
+		{
+			name:        "nil setting",
+			fields:      fields{},
+			args:        args{},
+			wantClosing: false,
+		},
+		{
+			name:        "nil pdu",
+			fields:      fields{},
+			args:        args{},
+			wantClosing: false,
+		},
+		{
+			name:   "EnquireLink pdu",
+			fields: fields{},
+			args: args{
+				p: pdu.NewEnquireLink(),
+			},
+			wantClosing: false,
+		},
+		{
+			name:   "EnquireLinkResp pdu",
+			fields: fields{},
+			args: args{
+				p: pdu.NewEnquireLink().GetResponse(),
+			},
+			wantClosing: false,
+		},
+		{
+			name:   "DeliverSM pdu",
+			fields: fields{},
+			args: args{
+				p: pdu.NewDeliverSM(),
+			},
+			wantClosing: false,
+		},
+		{
+			name:   "SubmitSMResp pdu",
+			fields: fields{},
+			args: args{
+				p: pdu.NewSubmitSM().GetResponse(),
+			},
+			wantClosing: false,
+		},
+	}
+	for _, tt := range tests {
+		t1.Run(tt.name, func(t1 *testing.T) {
+			t := &receivable{
+				settings: tt.fields.settings,
+				window:   cmap.New[Request](),
+			}
+			assert.Equalf(t1, tt.wantClosing, t.handleWindowPdu(tt.args.p), "handleWindowPdu(%v)", tt.args.p)
+		})
 	}
 }
