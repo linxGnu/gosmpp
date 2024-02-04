@@ -2,7 +2,6 @@ package gosmpp
 
 import (
 	"fmt"
-	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -209,7 +208,6 @@ func Test_receivable_handleOrClose(t1 *testing.T) {
 func Test_receivable_handleWindowPdu(t1 *testing.T) {
 	type fields struct {
 		settings Settings
-		window   cmap.ConcurrentMap[string, Request]
 	}
 	type args struct {
 		p pdu.PDU
@@ -269,7 +267,6 @@ func Test_receivable_handleWindowPdu(t1 *testing.T) {
 		t1.Run(tt.name, func(t1 *testing.T) {
 			t := &receivable{
 				settings: tt.fields.settings,
-				window:   cmap.New[Request](),
 			}
 			assert.Equalf(t1, tt.wantClosing, t.handleWindowPdu(tt.args.p), "handleWindowPdu(%v)", tt.args.p)
 		})
