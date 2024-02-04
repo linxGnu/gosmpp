@@ -158,14 +158,23 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 	if p != nil {
 		if t.settings.WindowPDUHandlerConfig != nil {
 			if t.settings.OnExpectedPduResponse != nil {
+				// This case must match the same request item list in transmittable write func
 				switch pp := p.(type) {
-				case *pdu.CancelSMResp, *pdu.DataSMResp, *pdu.DeliverSMResp, *pdu.EnquireLinkResp, *pdu.QuerySMResp, *pdu.ReplaceSMResp, *pdu.SubmitMultiResp, *pdu.SubmitSMResp:
+				case *pdu.CancelSMResp,
+					*pdu.DataSMResp,
+					*pdu.DeliverSMResp,
+					*pdu.EnquireLinkResp,
+					*pdu.QuerySMResp,
+					*pdu.ReplaceSMResp,
+					*pdu.SubmitMultiResp,
+					*pdu.SubmitSMResp:
 					if t.settings.OnExpectedPduResponse != nil {
-						request, ok := t.window.Get(strconv.Itoa(int(p.GetSequenceNumber())))
+						sequence := strconv.Itoa(int(p.GetSequenceNumber()))
+						request, ok := t.window.Get(sequence)
 						//request, found := t.conn.window[p.GetSequenceNumber()]
 
 						if ok {
-							t.window.Remove(strconv.Itoa(int(p.GetSequenceNumber())))
+							t.window.Remove(sequence)
 							response := Response{
 								PDU:             p,
 								OriginalRequest: request,

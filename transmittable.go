@@ -198,17 +198,31 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	}
 
 	if t.settings.WindowPDUHandlerConfig != nil && t.settings.MaxWindowSize > 0 {
-		if t.window.Count() < int(t.settings.MaxWindowSize) {
-			n, err = t.conn.WritePDU(p)
-			if err == nil {
-				request := Request{
-					PDU:      p,
-					TImeSent: time.Now(),
+		// This case must match the same resp item list in receivable.go handleOrClose func
+		switch p.(type) {
+		case *pdu.CancelSM,
+			*pdu.DataSM,
+			*pdu.DeliverSM,
+			*pdu.EnquireLink,
+			*pdu.QuerySM,
+			*pdu.ReplaceSM,
+			*pdu.SubmitMulti,
+			*pdu.SubmitSM:
+			if t.window.Count() < int(t.settings.MaxWindowSize) {
+				n, err = t.conn.WritePDU(p)
+				if err == nil {
+					request := Request{
+						PDU:      p,
+						TImeSent: time.Now(),
+					}
+					t.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
 				}
-				t.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
+			} else {
+				return 0, ErrWindowsFull
 			}
-		} else {
-			return 0, ErrWindowsFull
+
+		default:
+			n, err = t.conn.WritePDU(p)
 		}
 	} else {
 		n, err = t.conn.WritePDU(p)

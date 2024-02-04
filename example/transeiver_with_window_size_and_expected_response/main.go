@@ -116,7 +116,7 @@ func handleExpectedPduResponse() func(response gosmpp.Response) {
 
 		case *pdu.SubmitSMResp:
 			fmt.Printf("SubmitSMResp Received: %+v\n", response.PDU)
-			fmt.Printf("OriginalSM ExtendedSubmitSM:%+v\n", response.OriginalRequest.PDU)
+			fmt.Printf("OriginalSM SubmitSM:%+v\n", response.OriginalRequest.PDU)
 
 		case *pdu.EnquireLinkResp:
 			fmt.Println("EnquireLinkResp Received")

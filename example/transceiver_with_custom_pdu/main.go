@@ -118,6 +118,6 @@ func handleExpectedPduResponse() func(response gosmpp.Response) {
 func handleReceivedPduRequest() func(pdu.PDU) (pdu.PDU, bool) {
 	// for this example, we are ignoring all Received PDU
 	return func(p pdu.PDU) (pdu.PDU, bool) {
-		return nil, false
+		return p.GetResponse(), false
 	}
 }
