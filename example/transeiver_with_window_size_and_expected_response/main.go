@@ -63,7 +63,8 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				OnReceivedPduRequest:  handleReceivedPduRequest(),
 				OnExpectedPduResponse: handleExpectedPduResponse(),
 				OnExpiredPduRequest:   handleExpirePduRequest(),
-				PduExpireTimeOut:      5 * time.Second,
+				PduExpireTimeOut:      30 * time.Second,
+				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     false,
 			},
@@ -77,15 +78,13 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 
 	// sending SMS(s)
 	for i := 0; i < 60; i++ {
-		fmt.Println("Window size: ", trans.GetWindowSize())
+		fmt.Println("Current window size: ", trans.GetWindowSize())
 		if err = trans.Transceiver().Submit(newSubmitSM()); err != nil {
 			fmt.Println(err)
 		}
 		time.Sleep(time.Second)
-
 	}
-	time.Sleep(3 * time.Second)
-
+	time.Sleep(1 * time.Second)
 }
 
 func handleExpirePduRequest() func(pdu.PDU) {
@@ -111,15 +110,13 @@ func handleExpectedPduResponse() func(response gosmpp.Response) {
 	return func(response gosmpp.Response) {
 
 		switch response.PDU.(type) {
-
 		case *pdu.UnbindResp:
-
 			fmt.Println("UnbindResp Received")
-			fmt.Printf("OriginalSM:%+v\n", response.OriginalRequest.PDU)
+			fmt.Printf("OriginalSM id:%+v\n", response.OriginalRequest.PDU)
 
 		case *pdu.SubmitSMResp:
-			fmt.Println("SubmitSMResp Received")
-			fmt.Printf("Original SubmitSM:%+v\n", response.OriginalRequest.PDU)
+			fmt.Printf("SubmitSMResp Received: %+v\n", response.PDU)
+			fmt.Printf("OriginalSM ExtendedSubmitSM:%+v\n", response.OriginalRequest.PDU)
 
 		case *pdu.EnquireLinkResp:
 			fmt.Println("EnquireLinkResp Received")
@@ -147,11 +144,11 @@ func handleReceivedPduRequest() func(pdu.PDU) (pdu.PDU, bool) {
 			return pd.GetResponse(), false
 
 		case *pdu.DataSM:
-			fmt.Println("DataSM receiver")
+			fmt.Println("DataSM Received")
 			return pd.GetResponse(), false
 
 		case *pdu.DeliverSM:
-			fmt.Println("DeliverSM receiver")
+			fmt.Println("DeliverSM Received")
 			return pd.GetResponse(), false
 		}
 		return nil, false
