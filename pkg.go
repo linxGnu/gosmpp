@@ -117,7 +117,7 @@ type WindowPDUHandlerConfig struct {
 	// Set the number of second to expire a request sent to the SMSC
 	//
 	// Zero duration disables pdu expire check and the cache may fill up over time with expired PDU request
-	// Recommneded: Less or equal to the value set in ReadTimeout
+	// Recommended: Less or equal to the value set in ReadTimeout
 	PduExpireTimeOut time.Duration
 
 	// The time period between each check of the expired PDU in the cache

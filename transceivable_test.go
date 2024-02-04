@@ -47,6 +47,40 @@ func handlePDU(t *testing.T) func(pdu.PDU, bool) {
 	}
 }
 
+func transceivableHandleAllPDU(t *testing.T) func(pdu.PDU) (pdu.PDU, bool) {
+	return func(p pdu.PDU) (pdu.PDU, bool) {
+		switch pd := p.(type) {
+		case *pdu.SubmitSMResp:
+
+			require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
+			require.NotZero(t, len(pd.MessageID))
+			atomic.AddInt32(&countSubmitSMResp, 1)
+			return nil, false
+
+		case *pdu.GenericNack:
+			t.Fatal(pd)
+			return nil, false
+		case *pdu.DataSM:
+			t.Logf("%+v\n", pd)
+			return p.GetResponse(), false
+		case *pdu.Unbind:
+			t.Logf("%+v\n", pd)
+			return p.GetResponse(), true
+
+		case *pdu.DeliverSM:
+			require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
+
+			_mess, err := pd.Message.GetMessageWithEncoding(data.UCS2)
+			assert.Nil(t, err)
+			if mess == _mess {
+				atomic.AddInt32(&countDeliverSM, 1)
+			}
+			return p.GetResponse(), false
+		}
+		return nil, false
+	}
+}
+
 func TestTRXSubmitSM(t *testing.T) {
 	auth := nextAuth()
 	trans, err := NewSession(
@@ -71,6 +105,63 @@ func TestTRXSubmitSM(t *testing.T) {
 			},
 
 			OnPDU: handlePDU(t),
+
+			OnClosed: func(state State) {
+				t.Log(state)
+			},
+		}, 5*time.Second)
+	require.Nil(t, err)
+	require.NotNil(t, trans)
+	defer func() {
+		_ = trans.Close()
+	}()
+
+	require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
+
+	// sending 20 SMS
+	for i := 0; i < 20; i++ {
+		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
+		require.Nil(t, err)
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	// wait response received
+	require.True(t, atomic.LoadInt32(&countSubmitSMResp) >= 15)
+
+	// rebind and submit again
+	trans.rebind()
+	err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
+	require.Nil(t, err)
+	time.Sleep(time.Second)
+	require.True(t, atomic.LoadInt32(&countSubmitSMResp) >= 16)
+}
+
+func TestTRXSubmitSM_with_OnAllPDU(t *testing.T) {
+	auth := nextAuth()
+	trans, err := NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
+			ReadTimeout: 2 * time.Second,
+
+			WriteTimeout: 3 * time.Second,
+
+			EnquireLink: 200 * time.Millisecond,
+
+			OnSubmitError: func(_ pdu.PDU, err error) {
+				t.Fatal(err)
+			},
+
+			OnReceivingError: func(err error) {
+				t.Log(err)
+			},
+
+			OnRebindingError: func(err error) {
+				t.Log(err)
+			},
+
+			OnAllPDU: transceivableHandleAllPDU(t),
 
 			OnClosed: func(state State) {
 				t.Log(state)

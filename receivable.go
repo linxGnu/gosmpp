@@ -77,7 +77,7 @@ func (t *receivable) start() {
 	}
 }
 
-// check error and do closing if need
+// check error and do closing if needed
 func (t *receivable) check(err error) (closing bool) {
 	if err == nil {
 		return
@@ -186,7 +186,9 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 			} else {
 				if t.settings.OnReceivedPduRequest != nil {
 					r, closeBind := t.settings.OnReceivedPduRequest(p)
-					t.settings.response(r)
+					if t.settings.response != nil {
+						t.settings.response(r)
+					}
 					if closeBind {
 						time.Sleep(50 * time.Millisecond)
 						closing = true
@@ -200,10 +202,14 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 
 				// wait to send response before closing
 				time.Sleep(50 * time.Millisecond)
+				closing = true
+				t.closing(UnbindClosing)
 			} else {
 				if t.settings.OnReceivedPduRequest != nil {
 					r, closeBind := t.settings.OnReceivedPduRequest(p)
-					t.settings.response(r)
+					if t.settings.response != nil {
+						t.settings.response(r)
+					}
 					if closeBind {
 						time.Sleep(50 * time.Millisecond)
 						closing = true
@@ -211,13 +217,12 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 					}
 				}
 			}
-
-			closing = true
-			t.closing(UnbindClosing)
 		default:
 			if t.settings.OnReceivedPduRequest != nil {
 				r, closeBind := t.settings.OnReceivedPduRequest(p)
-				t.settings.response(r)
+				if t.settings.response != nil {
+					t.settings.response(r)
+				}
 				if closeBind {
 					time.Sleep(50 * time.Millisecond)
 					closing = true
@@ -232,7 +237,9 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 func (t *receivable) handleAllPdu(p pdu.PDU) (closing bool) {
 	if t.settings.OnAllPDU != nil && p != nil {
 		r, closeBind := t.settings.OnAllPDU(p)
-		t.settings.response(r)
+		if t.settings.response != nil {
+			t.settings.response(r)
+		}
 		if closeBind {
 			time.Sleep(50 * time.Millisecond)
 			closing = true
