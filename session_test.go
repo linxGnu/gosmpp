@@ -23,3 +23,47 @@ func TestInvalidSessionSettings(t *testing.T) {
 		}, 2*time.Second)
 	require.Error(t, err)
 }
+
+func TestGetWindowSize(t *testing.T) {
+
+	auth := nextAuth()
+
+	s, err := NewSession(
+		TXConnector(NonTLSDialer, auth),
+		Settings{
+			EnquireLink: 5 * time.Second,
+			ReadTimeout: 10 * time.Second,
+		}, 2*time.Second)
+	require.NoError(t, err)
+	require.Equal(t, s.GetWindowSize(), 0)
+	err = s.Close()
+	if err != nil {
+		t.Log(err)
+	}
+
+	s, err = NewSession(
+		RXConnector(NonTLSDialer, auth),
+		Settings{
+			EnquireLink: 5 * time.Second,
+			ReadTimeout: 10 * time.Second,
+		}, 2*time.Second)
+	require.NoError(t, err)
+	require.Equal(t, s.GetWindowSize(), -1)
+	err = s.Close()
+	if err != nil {
+		t.Log(err)
+	}
+
+	s, err = NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
+			EnquireLink: 5 * time.Second,
+			ReadTimeout: 10 * time.Second,
+		}, 2*time.Second)
+	require.NoError(t, err)
+	require.Equal(t, s.GetWindowSize(), 0)
+	err = s.Close()
+	if err != nil {
+		t.Log(err)
+	}
+}

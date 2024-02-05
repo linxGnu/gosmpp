@@ -219,6 +219,119 @@ func newSubmitSM(systemID string) *pdu.SubmitSM {
 	return submitSM
 }
 
+func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
+	auth := nextAuth()
+	trans, err := NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
+			ReadTimeout: 2 * time.Second,
+
+			WriteTimeout: 3 * time.Second,
+
+			EnquireLink: 200 * time.Millisecond,
+
+			OnSubmitError: func(_ pdu.PDU, err error) {
+				t.Fatal(err)
+			},
+
+			OnReceivingError: func(err error) {
+				t.Log(err)
+			},
+
+			OnRebindingError: func(err error) {
+				t.Log(err)
+			},
+
+			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+				OnReceivedPduRequest:  handleReceivedPduRequest(t),
+				OnExpectedPduResponse: handleExpectedPduResponse(t),
+				OnExpiredPduRequest:   nil,
+				PduExpireTimeOut:      30 * time.Second,
+				ExpireCheckTimer:      10 * time.Second,
+				MaxWindowSize:         30,
+				EnableAutoRespond:     false,
+			},
+
+			OnClosed: func(state State) {
+				t.Log(state)
+			},
+		}, 5*time.Second)
+	require.Nil(t, err)
+	require.NotNil(t, trans)
+	defer func() {
+		_ = trans.Close()
+	}()
+
+	require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
+
+	// sending 20 SMS
+	for i := 0; i < 20; i++ {
+		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
+		require.Nil(t, err)
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	// wait response received
+	require.True(t, atomic.LoadInt32(&countSubmitSMResp) >= 15)
+
+	// rebind and submit again
+	trans.rebind()
+	err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
+	require.Nil(t, err)
+	time.Sleep(time.Second)
+	require.True(t, atomic.LoadInt32(&countSubmitSMResp) >= 16)
+}
+
+func handleReceivedPduRequest(t *testing.T) func(pdu.PDU) (pdu.PDU, bool) {
+	return func(p pdu.PDU) (pdu.PDU, bool) {
+		switch pd := p.(type) {
+		case *pdu.Unbind:
+			return pd.GetResponse(), true
+
+		case *pdu.GenericNack:
+			t.Fatal(pd)
+
+		case *pdu.EnquireLink:
+			return pd.GetResponse(), false
+
+		case *pdu.DataSM:
+			t.Logf("%+v\n", pd)
+			return pd.GetResponse(), false
+
+		case *pdu.DeliverSM:
+			require.EqualValues(t, data.ESME_ROK, pd.CommandStatus)
+
+			_mess, err := pd.Message.GetMessageWithEncoding(data.UCS2)
+			assert.Nil(t, err)
+			if mess == _mess {
+				atomic.AddInt32(&countDeliverSM, 1)
+			}
+			return pd.GetResponse(), false
+		}
+		return nil, false
+	}
+}
+
+func handleExpectedPduResponse(t *testing.T) func(response Response) {
+	return func(response Response) {
+
+		switch pp := response.PDU.(type) {
+		case *pdu.UnbindResp:
+			t.Logf("%+v\n", pp)
+
+		case *pdu.SubmitSMResp:
+			require.NotZero(t, len(pp.MessageID))
+			atomic.AddInt32(&countSubmitSMResp, 1)
+			t.Logf("%+v\n", pp)
+
+		case *pdu.EnquireLinkResp:
+			t.Logf("%+v\n", pp)
+		}
+	}
+}
+
 func Test_newTransceivable(t *testing.T) {
 	t.Run("always receive a non nil response", func(t *testing.T) {
 		trans := newTransceivable(nil, Settings{})
