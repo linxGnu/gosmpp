@@ -18,14 +18,14 @@ type transceivable struct {
 }
 
 func newTransceivable(conn *Connection, settings Settings) *transceivable {
-	window := cmap.New[Request]()
+
 	t := &transceivable{
 		settings: settings,
 		conn:     conn,
-		window:   window,
+		window:   cmap.New[Request](),
 	}
 
-	t.out = newTransmittable(conn, window, Settings{
+	t.out = newTransmittable(conn, t.window, Settings{
 		WriteTimeout: settings.WriteTimeout,
 
 		EnquireLink: settings.EnquireLink,
@@ -49,7 +49,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 		WindowPDUHandlerConfig: settings.WindowPDUHandlerConfig,
 	})
 
-	t.in = newReceivable(conn, window, Settings{
+	t.in = newReceivable(conn, t.out.window, Settings{
 		ReadTimeout: settings.ReadTimeout,
 
 		OnPDU: settings.OnPDU,
@@ -115,5 +115,5 @@ func (t *transceivable) Submit(p pdu.PDU) error {
 }
 
 func (t *transceivable) GetWindowSize() int {
-	return t.window.Count()
+	return t.out.GetWindowSize()
 }

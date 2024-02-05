@@ -99,20 +99,22 @@ type WindowPDUHandlerConfig struct {
 	// If not set, response will be dropped
 	OnExpectedPduResponse func(Response)
 
-	// OnUnexpectedPduResponse handles expected PDU response from SMSC.
+	// OnUnexpectedPduResponse handles unexpected PDU response from SMSC.
 	// Only triggered if the original request is not found in the window cache
 	//
 	// Handle is optional
 	// If not set, response will be dropped
 	OnUnexpectedPduResponse func(pdu.PDU)
 
-	// OnExpiredPduRequest handles expected PDU response from SMSC.
-	// If the original request is not found in the window cache
+	// OnExpiredPduRequest handles expired PDU request with no response received
 	//
 	// Mandatory: the PduExpireTimeOut must be set
 	// Handle is optional
 	// If not set, expired PDU will be removed from cache
 	OnExpiredPduRequest func(pdu.PDU)
+
+	// OnClosePduRequest will return all PDU request found in the store when the bind closes
+	OnClosePduRequest func(pdu.PDU)
 
 	// Set the number of second to expire a request sent to the SMSC
 	//

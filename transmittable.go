@@ -70,6 +70,17 @@ func (t *transmittable) close(state State) (err error) {
 		if t.settings.OnClosed != nil {
 			t.settings.OnClosed(state)
 		}
+
+		// concurrent-map has no func to verify initialization
+		// we need to do the same check in
+		if !t.window.IsEmpty() {
+			for request := range t.window.IterBuffered() {
+				if t.settings.OnClosePduRequest != nil {
+					t.settings.OnClosePduRequest(request.Val.PDU)
+				}
+				t.window.Remove(request.Key)
+			}
+		}
 	}
 
 	return

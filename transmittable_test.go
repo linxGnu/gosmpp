@@ -2,6 +2,7 @@ package gosmpp
 
 import (
 	"fmt"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -74,6 +75,8 @@ func TestTransmit(t *testing.T) {
 
 		// fake settings
 		tr.conn = c
+
+		tr.window = cmap.New[Request]()
 
 		var count int32
 		tr.settings.OnClosed = func(State) {

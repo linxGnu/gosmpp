@@ -63,6 +63,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				OnReceivedPduRequest:  handleReceivedPduRequest(),
 				OnExpectedPduResponse: handleExpectedPduResponse(),
 				OnExpiredPduRequest:   handleExpirePduRequest(),
+				OnClosePduRequest:     handleOnClosePduRequest(),
 				PduExpireTimeOut:      30 * time.Second,
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
@@ -102,6 +103,24 @@ func handleExpirePduRequest() func(pdu.PDU) {
 
 		case *pdu.DataSM:
 			fmt.Printf("Expired DataSM:%+v\n", p)
+		}
+	}
+}
+
+func handleOnClosePduRequest() func(pdu.PDU) {
+	return func(p pdu.PDU) {
+		switch p.(type) {
+		case *pdu.Unbind:
+			fmt.Printf("OnClose Unbind:%+v\n", p)
+
+		case *pdu.SubmitSM:
+			fmt.Printf("OnClose SubmitSM:%+v\n", p)
+
+		case *pdu.EnquireLink:
+			fmt.Printf("OnClose EnquireLink:%+v\n", p)
+
+		case *pdu.DataSM:
+			fmt.Printf("OnClose DataSM:%+v\n", p)
 		}
 	}
 }
