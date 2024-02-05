@@ -85,7 +85,6 @@ func TestGetWindowSize(t *testing.T) {
 		}, 2*time.Second)
 	require.NoError(t, err)
 	require.Equal(t, 0, s.GetWindowSize())
-	time.Sleep(6)
 	err = s.Close()
 	require.Nil(t, err)
 }
