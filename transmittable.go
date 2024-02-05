@@ -209,16 +209,7 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	}
 
 	if t.settings.WindowPDUHandlerConfig != nil && t.settings.MaxWindowSize > 0 {
-		// This case must match the same resp item list in receivable.go handleOrClose func
-		switch p.(type) {
-		case *pdu.CancelSM,
-			*pdu.DataSM,
-			*pdu.DeliverSM,
-			*pdu.EnquireLink,
-			*pdu.QuerySM,
-			*pdu.ReplaceSM,
-			*pdu.SubmitMulti,
-			*pdu.SubmitSM:
+		if isAllowPDU(p) {
 			if t.window.Count() < int(t.settings.MaxWindowSize) {
 				n, err = t.conn.WritePDU(p)
 				if err == nil {
@@ -232,15 +223,21 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 			} else {
 				return 0, ErrWindowsFull
 			}
-
-		default:
-			n, err = t.conn.WritePDU(p)
-			return
 		}
-	} else {
-		n, err = t.conn.WritePDU(p)
-		return
 	}
+	n, err = t.conn.WritePDU(p)
+	return
+}
+
+func isAllowPDU(p pdu.PDU) bool {
+	if p.CanResponse() {
+		switch p.(type) {
+		case *pdu.BindRequest, *pdu.Unbind:
+			return false
+		}
+		return true
+	}
+	return false
 }
 
 func (t *transmittable) GetWindowSize() int {
