@@ -33,37 +33,59 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
+			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+				OnReceivedPduRequest: handleReceivedPduRequest(t),
+				MaxWindowSize:        10,
+			},
 		}, 2*time.Second)
-	require.NoError(t, err)
-	require.Equal(t, s.GetWindowSize(), 0)
+	require.Nil(t, err)
+	require.Equal(t, 0, s.GetWindowSize())
 	err = s.Close()
-	if err != nil {
-		t.Log(err)
-	}
+	require.Nil(t, err)
 
 	s, err = NewSession(
 		RXConnector(NonTLSDialer, auth),
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
+			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+				OnReceivedPduRequest: handleReceivedPduRequest(t),
+				MaxWindowSize:        10,
+			},
 		}, 2*time.Second)
-	require.NoError(t, err)
-	require.Equal(t, s.GetWindowSize(), -1)
+	require.Nil(t, err)
+	require.Equal(t, -1, s.GetWindowSize())
 	err = s.Close()
-	if err != nil {
-		t.Log(err)
-	}
+	require.Nil(t, err)
 
 	s, err = NewSession(
 		TRXConnector(NonTLSDialer, auth),
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
+			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+				MaxWindowSize: 10,
+			},
 		}, 2*time.Second)
 	require.NoError(t, err)
-	require.Equal(t, s.GetWindowSize(), 0)
+	require.Equal(t, 0, s.GetWindowSize())
 	err = s.Close()
-	if err != nil {
-		t.Log(err)
-	}
+	require.Nil(t, err)
+
+	s, err = NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
+			EnquireLink: 5 * time.Second,
+			ReadTimeout: 10 * time.Second,
+			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+				ExpireCheckTimer: 5,
+				PduExpireTimeOut: 10,
+				MaxWindowSize:    10,
+			},
+		}, 2*time.Second)
+	require.NoError(t, err)
+	require.Equal(t, 0, s.GetWindowSize())
+	time.Sleep(6)
+	err = s.Close()
+	require.Nil(t, err)
 }

@@ -98,9 +98,9 @@ func Test_receivable_handleAllPdu(t1 *testing.T) {
 		/*{
 			name: "Undind pdu", // run this as the last test case
 			fields: fields{
-				settings: Settings{
+				settings: newTransceivable(nil, Settings{
 					OnAllPDU: receivableHandleAllPDU(t1),
-				},
+				}).in.settings,
 			},
 			args: args{
 				p: pdu.NewUnbind(),
@@ -189,8 +189,10 @@ func Test_receivable_handleOrClose(t1 *testing.T) {
 			wantClosing: false,
 		},
 		/*{
-			name:   "Undind pdu", // run this as the last test case
-			fields: fields{},
+			name: "Undind pdu", // run this as the last test case
+			fields: fields{
+				settings: newTransceivable(nil, Settings{}).in.settings,
+			},
 			args: args{
 				p: pdu.NewUnbind(),
 			},
