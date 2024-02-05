@@ -218,3 +218,10 @@ func newSubmitSM(systemID string) *pdu.SubmitSM {
 
 	return submitSM
 }
+
+func Test_newTransceivable(t *testing.T) {
+	t.Run("always receive a non nil response", func(t *testing.T) {
+		trans := newTransceivable(nil, Settings{})
+		assert.NotNil(t, trans.in.settings.response)
+	})
+}

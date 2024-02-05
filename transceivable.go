@@ -34,9 +34,6 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 
 		OnClosed: func(state State) {
 			switch state {
-			case ExplicitClosing:
-				return
-
 			case ConnectionIssue:
 				// also close input
 				_ = t.in.close(ExplicitClosing)
@@ -44,6 +41,8 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 				if t.settings.OnClosed != nil {
 					t.settings.OnClosed(ConnectionIssue)
 				}
+			default:
+				return
 			}
 		},
 
@@ -61,9 +60,6 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 
 		OnClosed: func(state State) {
 			switch state {
-			case ExplicitClosing:
-				return
-
 			case InvalidStreaming, UnbindClosing:
 				// also close output
 				_ = t.out.close(ExplicitClosing)
@@ -71,6 +67,8 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 				if t.settings.OnClosed != nil {
 					t.settings.OnClosed(state)
 				}
+			default:
+				return
 			}
 		},
 
@@ -80,11 +78,12 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 			_ = t.Submit(p)
 		},
 	})
+	return t
+}
 
+func (t *transceivable) start() {
 	t.out.start()
 	t.in.start()
-
-	return t
 }
 
 // SystemID returns tagged SystemID which is attached with bind_resp from SMSC.

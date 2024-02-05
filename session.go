@@ -63,7 +63,9 @@ func NewSession(c Connector, settings Settings, rebindingInterval time.Duration)
 		}
 
 		// bind to session
-		session.trx.Store(newTransceivable(conn, session.settings))
+		trans := newTransceivable(conn, session.settings)
+		trans.start()
+		session.trx.Store(trans)
 	}
 	return
 }
@@ -123,7 +125,9 @@ func (s *Session) rebind() {
 				time.Sleep(s.rebindingInterval)
 			} else {
 				// bind to session
-				s.trx.Store(newTransceivable(conn, s.settings))
+				trans := newTransceivable(conn, s.settings)
+				trans.start()
+				s.trx.Store(trans)
 
 				// reset rebinding state
 				atomic.StoreInt32(&s.rebinding, 0)
