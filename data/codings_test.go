@@ -219,11 +219,11 @@ func TestSplit_GSM7BITPACKED(t *testing.T) {
 			134,
 			"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp€ppppppp",
 			[]string{
-				"e070381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c301",
+				"e070381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c31b",
 				"3665381c0e87c3e1",
 			},
 			[]string{
-				"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp@",
+				"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\r",
 				"€ppppppp",
 			})
 	})
@@ -241,11 +241,11 @@ func TestSplit_GSM7BITPACKED(t *testing.T) {
 			134,
 			"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp{{pppppppp",
 			[]string{
-				"e070381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0edfa000",
+				"e070381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0edfa01a",
 				"3628381c0e87c3e170",
 			},
 			[]string{
-				"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp{@",
+				"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp{\r",
 				"{pppppppp",
 			})
 	})
@@ -263,11 +263,11 @@ func TestSplit_GSM7BITPACKED(t *testing.T) {
 			134,
 			"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp€€pppppppp",
 			[]string{
-				"e070381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0edf9401",
+				"e070381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0e87c3e170381c0edf941b",
 				"3665381c0e87c3e170",
 			},
 			[]string{
-				"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp€@",
+				"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp€\r",
 				"€pppppppp",
 			})
 	})
@@ -307,11 +307,11 @@ func TestSplit_GSM7BITPACKED(t *testing.T) {
 			134,
 			"|{[€|^€[{|€{[|^{~[}€|}|^|^[^]€{[]~}€]{{^|^][€]|€~€^[~}^]{]~{^^€^[~|^]|€~|^€{]{~|}",
 			[]string{
-				"36c00d6ac3db9437c00d6553def036a80d7053dea036bc0d7043d9a036bd0d6f93da9437c04d6a03dc5036c00d65c3db5036be4d7983daf036be4d6f93da9437be0d6a83da5036c00d65e3dbf036e58d6f03dc9437bd4d7943d9f036bd4d6a43d9f836a88d6fd3dba036940d6553de5036bc4d6f03dc5036be0d7053def436c00d6553dea000",
+				"36c00d6ac3db9437c00d6553def036a80d7053dea036bc0d7043d9a036bd0d6f93da9437c04d6a03dc5036c00d65c3db5036be4d7983daf036be4d6f93da9437be0d6a83da5036c00d65e3dbf036e58d6f03dc9437bd4d7943d9f036bd4d6a43d9f836a88d6fd3dba036940d6553de5036bc4d6f03dc5036be0d7053def436c00d6553dea01a",
 				"36be0d6ad3db003729",
 			},
 			[]string{
-				"|{[€|^€[{|€{[|^{~[}€|}|^|^[^]€{[]~}€]{{^|^][€]|€~€^[~}^]{]~{^^€^[~|^]|€~|^€{@",
+				"|{[€|^€[{|€{[|^{~[}€|}|^|^[^]€{[]~}€]{{^|^][€]|€~€^[~}^]{]~{^^€^[~|^]|€~|^€{\r",
 				"]{~|}",
 			})
 	})

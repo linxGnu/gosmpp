@@ -199,7 +199,8 @@ func shiftBitsLeftOne(input []byte, includeLSB bool) []byte {
 	}
 
 	if includeLSB {
-		shifted = append(shifted, input[len(input)-1]>>7&0x01)
+		lastOctet := (input[len(input)-1] >> 7 & 0x01) | (0x0D << 1) /* https://en.wikipedia.org/wiki/GSM_03.38 Ref tekst: "..When there are 7 spare bits in the last octet of a message..."*/
+		shifted = append(shifted, lastOctet)
 	}
 
 	return shifted
