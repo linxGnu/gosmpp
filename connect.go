@@ -35,11 +35,12 @@ func (err BindError) Error() string {
 	return fmt.Sprintf("binding error (%s): %s", err.CommandStatus, err.CommandStatus.Desc())
 }
 
-func newBindRequest(s Auth, bindingType pdu.BindingType) (bindReq *pdu.BindRequest) {
+func newBindRequest(s Auth, bindingType pdu.BindingType, addressRange pdu.AddressRange) (bindReq *pdu.BindRequest) {
 	bindReq = pdu.NewBindRequest(bindingType)
 	bindReq.SystemID = s.SystemID
 	bindReq.Password = s.Password
 	bindReq.SystemType = s.SystemType
+	bindReq.AddressRange = addressRange
 	return
 }
 
@@ -49,13 +50,14 @@ type Connector interface {
 }
 
 type connector struct {
-	dialer      Dialer
-	auth        Auth
-	bindingType pdu.BindingType
+	dialer       Dialer
+	auth         Auth
+	bindingType  pdu.BindingType
+	addressRange pdu.AddressRange
 }
 
 func (c *connector) Connect() (conn *Connection, err error) {
-	conn, err = connect(c.dialer, c.auth.SMSC, newBindRequest(c.auth, c.bindingType))
+	conn, err = connect(c.dialer, c.auth.SMSC, newBindRequest(c.auth, c.bindingType, c.addressRange))
 	return
 }
 
@@ -113,19 +115,35 @@ func TXConnector(dialer Dialer, auth Auth) Connector {
 }
 
 // RXConnector returns a Receiver (RX) connector.
-func RXConnector(dialer Dialer, auth Auth) Connector {
-	return &connector{
+func RXConnector(dialer Dialer, auth Auth, opts ...connectorOption) Connector {
+	c := &connector{
 		dialer:      dialer,
 		auth:        auth,
 		bindingType: pdu.Receiver,
 	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
 }
 
 // TRXConnector returns a Transceiver (TRX) connector.
-func TRXConnector(dialer Dialer, auth Auth) Connector {
-	return &connector{
+func TRXConnector(dialer Dialer, auth Auth, opts ...connectorOption) Connector {
+	c := &connector{
 		dialer:      dialer,
 		auth:        auth,
 		bindingType: pdu.Transceiver,
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
+
+type connectorOption func(c *connector)
+
+func WithAddressRange(addressRange pdu.AddressRange) connectorOption {
+	return func(c *connector) {
+		c.addressRange = addressRange
 	}
 }
