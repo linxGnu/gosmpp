@@ -71,13 +71,18 @@ func (c *SubmitSM) Split() (multiSubSM []*SubmitSM, err error) {
 		return
 	}
 
+	esmClass := c.EsmClass // no need to "or" with SM_UDH_GSM when a message has a single part
+	if len(multiMsg) > 1 {
+		esmClass = c.EsmClass | data.SM_UDH_GSM // must set to indicate UDH
+	}
+
 	for _, msg := range multiMsg {
 		multiSubSM = append(multiSubSM, &SubmitSM{
 			base:                 c.base,
 			ServiceType:          c.ServiceType,
 			SourceAddr:           c.SourceAddr,
 			DestAddr:             c.DestAddr,
-			EsmClass:             c.EsmClass | data.SM_UDH_GSM, // must set to indicate UDH
+			EsmClass:             esmClass,
 			ProtocolID:           c.ProtocolID,
 			PriorityFlag:         c.PriorityFlag,
 			ScheduleDeliveryTime: c.ScheduleDeliveryTime,

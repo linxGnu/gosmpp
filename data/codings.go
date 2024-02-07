@@ -93,10 +93,28 @@ func (c *gsm7bit) Decode(data []byte) (string, error) {
 func (c *gsm7bit) DataCoding() byte { return GSM7BITCoding }
 
 func (c *gsm7bit) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+	runeSlice := []rune(text)
+	tLen := len(runeSlice)
+	escCharsLen := len(GetEscapeChars(runeSlice))
+	regCharsLen := tLen - escCharsLen
+	// Esacpe characters occupy 2 octets/septets
+	// https://en.wikipedia.org/wiki/GSM_03.38
+	// https://www.developershome.com/sms/gsmAlphabet.asp
 	if c.packed {
-		return uint((len(text)*7+7)/8) > octetLimit
+		return uint((regCharsLen*7+escCharsLen*2*7+7)/8) > octetLimit
 	} else {
-		return uint(len(text)) > octetLimit
+		return uint(regCharsLen+escCharsLen*2) > octetLimit
+	}
+}
+
+func (c *gsm7bit) GetSeptetCount(runeSlice []rune) int {
+	tLen := len(runeSlice)
+	if c.packed {
+		escCharsLen := len(GetEscapeChars(runeSlice))
+		regCharsLen := tLen - escCharsLen
+		return escCharsLen*2 + regCharsLen
+	} else {
+		return tLen
 	}
 }
 
@@ -117,15 +135,74 @@ func (c *gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, er
 		if to > len(runeSlice) {
 			to = len(runeSlice)
 		}
+
+		if c.packed {
+			to = determineTo(fr, to, lim, runeSlice)
+		}
+
 		seg, err := c.Encode(string(runeSlice[fr:to]))
 		if err != nil {
 			return nil, err
 		}
+
+		if c.packed {
+			includeLSB := false
+			nSeptet := c.GetSeptetCount(runeSlice[fr:to])
+			if nSeptet != lim && nSeptet%8 == 0 { // The last octet's LSB should be included during shift
+				includeLSB = true
+			}
+
+			seg = shiftBitsLeftOne(seg, includeLSB)
+		}
+
 		allSeg = append(allSeg, seg)
 		fr, to = to, to+lim
 	}
 
 	return
+}
+
+func determineTo(from int, to int, lim int, runeSlice []rune) int {
+	nSeptet := 0
+	for nSeptet < lim {
+		if IsEscapeChar(runeSlice[from]) { // esc chars counted as 2 septes
+			nSeptet += 2
+		} else {
+			nSeptet++
+		}
+		from++
+		if from == to {
+			break
+		}
+	}
+	to = from
+
+	if IsEscapeChar(runeSlice[to-1]) { // 9.2.3.24.1 Concatenated Short Messages  "A character represented by an escape-sequence shall not be split in the middle."
+		if nSeptet > lim {
+			to--
+		}
+	}
+	return to
+}
+
+// Shifts the given byte stream one position left, in order to put a padding bit in between UDH and the beginning of the septets of an actual message
+// Ref1: https://www.etsi.org/deliver/etsi_ts/123000_123099/123040/16.00.00_60/ts_123040v160000p.pdf Page 74
+// Ref2: https://help.goacoustic.com/hc/en-us/articles/360043843154--How-character-encoding-affects-SMS-message-length Pls. ref. to the note "..It is added as padding so that the actual 7-bit encoding data begins on a septet boundary—the 50th bit."
+// Ref3: https://en.wikipedia.org/wiki/Concatenated_SMS "..This means up to 6 bits of zeros need to be inserted at the start of the [message]."
+func shiftBitsLeftOne(input []byte, includeLSB bool) []byte {
+	shifted := make([]byte, len(input))
+	for i, b := range input {
+		shifted[i] = b << 1
+		if i > 0 {
+			shifted[i] |= input[i-1] >> 7
+		}
+	}
+
+	if includeLSB {
+		shifted = append(shifted, input[len(input)-1]>>7&0x01)
+	}
+
+	return shifted
 }
 
 type ascii struct{}
@@ -213,7 +290,8 @@ func (*ucs2) Decode(data []byte) (string, error) {
 }
 
 func (*ucs2) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
-	return uint(len(text)*2) > octetLimit
+	runeSlice := []rune(text)
+	return uint(len(runeSlice)*2) > octetLimit
 }
 
 func (c *ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {

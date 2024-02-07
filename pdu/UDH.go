@@ -184,7 +184,8 @@ func NewIEConcatMessage(totalParts, partNum, mref byte) InfoElement {
 
 // UnmarshalBinary unmarshal IE from binary in src, only read a single IE,
 // expect src at least of length 2 with correct IE format:
-//		[ ID_1, LENGTH_1, DATA_N ]
+//
+//	[ ID_1, LENGTH_1, DATA_N ]
 func (ie *InfoElement) UnmarshalBinary(src []byte) (int, error) {
 	if len(src) < 2 {
 		return 0, fmt.Errorf("decode error InfoElement underflow, len = %d", len(src))
