@@ -63,17 +63,38 @@ func (t *receivable) closing(state State) {
 }
 
 func (t *receivable) start() {
-	t.wg.Add(1)
 	if t.settings.WindowPDUHandlerConfig != nil && t.settings.PduExpireTimeOut > 0 && t.settings.ExpireCheckTimer > 0 {
+		t.wg.Add(1)
 		go func() {
-			t.loopWithVerifyExpiredPdu()
+			t.windowCleanup()
 			t.wg.Done()
 		}()
-	} else {
-		go func() {
-			t.loop()
-			t.wg.Done()
-		}()
+
+	}
+	t.wg.Add(1)
+	go func() {
+		t.loop()
+		t.wg.Done()
+	}()
+}
+
+func (t *receivable) windowCleanup() {
+	ticker := time.NewTicker(t.settings.ExpireCheckTimer)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-t.ctx.Done():
+			return
+		case <-ticker.C:
+			for request := range t.window.IterBuffered() {
+				if time.Since(request.Val.TImeSent) > t.settings.PduExpireTimeOut {
+					t.window.Remove(request.Key)
+					if t.settings.OnExpiredPduRequest != nil {
+						t.settings.OnExpiredPduRequest(request.Val.PDU)
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -97,44 +118,6 @@ func (t *receivable) loop() {
 		select {
 		case <-t.ctx.Done():
 			return
-		default:
-		}
-
-		// read pdu from conn
-		var p pdu.PDU
-		if err = t.conn.SetReadTimeout(t.settings.ReadTimeout); err == nil {
-			p, err = pdu.Parse(t.conn)
-		}
-
-		// check error
-		if closeOnError := t.check(err); closeOnError || t.handleOrClose(p) {
-			if closeOnError {
-				t.closing(InvalidStreaming)
-			}
-			return
-		}
-	}
-}
-
-func (t *receivable) loopWithVerifyExpiredPdu() {
-	ticker := time.NewTicker(t.settings.ExpireCheckTimer)
-	defer func() {
-		ticker.Stop()
-	}()
-	var err error
-	for {
-		select {
-		case <-t.ctx.Done():
-			return
-		case <-ticker.C:
-			for request := range t.window.IterBuffered() {
-				if time.Since(request.Val.TImeSent) > t.settings.PduExpireTimeOut {
-					t.window.Remove(request.Key)
-					if t.settings.OnExpiredPduRequest != nil {
-						t.settings.OnExpiredPduRequest(request.Val.PDU)
-					}
-				}
-			}
 		default:
 		}
 
