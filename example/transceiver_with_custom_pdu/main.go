@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/linxGnu/gosmpp/data"
 	"log"
 	"math/rand"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/linxGnu/gosmpp"
+	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/pdu"
 )
 
