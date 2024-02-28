@@ -409,36 +409,36 @@ func Test_newTransceivable(t *testing.T) {
 	})
 }
 
-type DefaultWindow struct {
+type TestWindowStore struct {
 	store map[string]Request
 }
 
-func (w DefaultWindow) Set(ctx context.Context, request Request) {
+func (w TestWindowStore) Set(_ context.Context, request Request) {
 	w.store[strconv.Itoa(int(request.PDU.GetSequenceNumber()))] = request
 }
 
-func (w DefaultWindow) Get(ctx context.Context, sequenceNumber int32) (Request, bool) {
+func (w TestWindowStore) Get(_ context.Context, sequenceNumber int32) (Request, bool) {
 	return w.store[strconv.Itoa(int(sequenceNumber))], true
 }
 
-func (w DefaultWindow) List(ctx context.Context) []Request {
+func (w TestWindowStore) List(_ context.Context) []Request {
 	return maps.Values(w.store)
 }
 
-func (w DefaultWindow) Delete(ctx context.Context, sequenceNumber int32) {
+func (w TestWindowStore) Delete(_ context.Context, sequenceNumber int32) {
 	delete(w.store, strconv.Itoa(int(sequenceNumber)))
 }
 
-func (w DefaultWindow) Clear(ctx context.Context) {
-	w.store = make(map[string]Request)
+func (w TestWindowStore) Clear(_ context.Context) {
+	maps.Clear(w.store)
 }
 
-func (w DefaultWindow) Length(ctx context.Context) int {
+func (w TestWindowStore) Length(_ context.Context) int {
 	return len(w.store)
 }
 
 func NewTestWindow() RequestWindowStore {
-	return &DefaultWindow{
+	return &TestWindowStore{
 		store: make(map[string]Request),
 	}
 }

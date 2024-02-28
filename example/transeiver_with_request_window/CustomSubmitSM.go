@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/linxGnu/gosmpp/pdu"
 	"math/rand"
 	"strconv"
+
+	"github.com/linxGnu/gosmpp/pdu"
 )
 
 // CustomSubmitSM by embedding the PDU interface

@@ -82,9 +82,9 @@ func (t *receivable) windowCleanup() {
 		case <-t.ctx.Done():
 			return
 		case <-ticker.C:
-			for _, request := range t.settings.RequestWindowStore.List(nil) {
+			for _, request := range t.settings.RequestWindowStore.List(context.TODO()) {
 				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
-					t.settings.RequestWindowStore.Delete(nil, request.GetSequenceNumber())
+					t.settings.RequestWindowStore.Delete(context.TODO(), request.GetSequenceNumber())
 					if t.settings.OnExpiredPduRequest != nil {
 						t.settings.OnExpiredPduRequest(request.PDU)
 					}
@@ -158,9 +158,9 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 			*pdu.SubmitMultiResp,
 			*pdu.SubmitSMResp:
 			if t.settings.OnExpectedPduResponse != nil {
-				request, ok := t.settings.RequestWindowStore.Get(nil, p.GetSequenceNumber())
+				request, ok := t.settings.RequestWindowStore.Get(context.TODO(), p.GetSequenceNumber())
 				if ok {
-					t.settings.RequestWindowStore.Delete(nil, p.GetSequenceNumber())
+					t.settings.RequestWindowStore.Delete(context.TODO(), p.GetSequenceNumber())
 					response := Response{
 						PDU:             p,
 						OriginalRequest: request,
@@ -173,15 +173,13 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 		case *pdu.EnquireLink:
 			if t.settings.EnableAutoRespond {
 				t.settings.response(pp.GetResponse())
-			} else {
-				if t.settings.OnReceivedPduRequest != nil {
-					r, closeBind := t.settings.OnReceivedPduRequest(p)
-					t.settings.response(r)
-					if closeBind {
-						time.Sleep(50 * time.Millisecond)
-						closing = true
-						t.closing(UnbindClosing)
-					}
+			} else if t.settings.OnReceivedPduRequest != nil {
+				r, closeBind := t.settings.OnReceivedPduRequest(p)
+				t.settings.response(r)
+				if closeBind {
+					time.Sleep(50 * time.Millisecond)
+					closing = true
+					t.closing(UnbindClosing)
 				}
 			}
 		case *pdu.Unbind:
@@ -192,15 +190,14 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 				time.Sleep(50 * time.Millisecond)
 				closing = true
 				t.closing(UnbindClosing)
-			} else {
-				if t.settings.OnReceivedPduRequest != nil {
-					r, closeBind := t.settings.OnReceivedPduRequest(p)
-					t.settings.response(r)
-					if closeBind {
-						time.Sleep(50 * time.Millisecond)
-						closing = true
-						t.closing(UnbindClosing)
-					}
+			} else if t.settings.OnReceivedPduRequest != nil {
+				r, closeBind := t.settings.OnReceivedPduRequest(p)
+				t.settings.response(r)
+				if closeBind {
+					time.Sleep(50 * time.Millisecond)
+					closing = true
+					t.closing(UnbindClosing)
+
 				}
 			}
 		default:

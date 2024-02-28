@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/linxGnu/gosmpp"
-	"golang.org/x/exp/maps"
+	"fmt"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"strconv"
 
-	"github.com/orcaman/concurrent-map/v2"
+	"github.com/linxGnu/gosmpp"
+	"golang.org/x/exp/maps"
 )
 
 type CustomWindow struct {
@@ -14,28 +15,71 @@ type CustomWindow struct {
 }
 
 func (w CustomWindow) Set(ctx context.Context, request gosmpp.Request) {
-	w.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), request)
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Task cancelled")
+			return
+		default:
+			w.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), request)
+		}
+	}
 }
 
 func (w CustomWindow) Get(ctx context.Context, sequenceNumber int32) (gosmpp.Request, bool) {
-	return w.store.Get(strconv.Itoa(int(sequenceNumber)))
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Task cancelled")
+			return gosmpp.Request{}, false
+		default:
+			return w.store.Get(strconv.Itoa(int(sequenceNumber)))
+		}
+	}
 }
 
 func (w CustomWindow) List(ctx context.Context) []gosmpp.Request {
-	return maps.Values(w.store.Items())
-	//return maps.Values(w.store)
+	for {
+		select {
+		case <-ctx.Done():
+			return []gosmpp.Request{}
+		default:
+			return maps.Values(w.store.Items())
+		}
+	}
 }
 
 func (w CustomWindow) Delete(ctx context.Context, sequenceNumber int32) {
-	w.store.Remove(strconv.Itoa(int(sequenceNumber)))
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			w.store.Remove(strconv.Itoa(int(sequenceNumber)))
+		}
+	}
 }
 
 func (w CustomWindow) Clear(ctx context.Context) {
-	w.store.Clear()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			w.store.Clear()
+		}
+	}
 }
 
 func (w CustomWindow) Length(ctx context.Context) int {
-	return w.store.Count()
+	for {
+		select {
+		case <-ctx.Done():
+			return -1
+		default:
+			return w.store.Count()
+		}
+	}
 }
 
 func NewCustomWindow() gosmpp.RequestWindowStore {
