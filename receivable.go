@@ -158,10 +158,9 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 			*pdu.SubmitMultiResp,
 			*pdu.SubmitSMResp:
 			if t.settings.OnExpectedPduResponse != nil {
-				sequence := strconv.Itoa(int(p.GetSequenceNumber()))
-				request, ok := t.window.Get(sequence)
+				request, ok := t.settings.RequestWindowStore.Get(nil, p.GetSequenceNumber())
 				if ok {
-					t.window.Remove(sequence)
+					t.settings.RequestWindowStore.Delete(nil, p.GetSequenceNumber())
 					response := Response{
 						PDU:             p,
 						OriginalRequest: request,
