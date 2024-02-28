@@ -59,7 +59,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				fmt.Println(state)
 			},
 
-			WindowPDUHandlerConfig: &gosmpp.WindowPDUHandlerConfig{
+			RequestWindowConfig: &gosmpp.RequestWindowConfig{
 				OnReceivedPduRequest:  handleReceivedPduRequest(),
 				OnExpectedPduResponse: handleExpectedPduResponse(),
 				OnExpiredPduRequest:   handleExpirePduRequest(),
@@ -68,6 +68,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     false,
+				RequestWindowStore:    NewCustomWindow(),
 			},
 		}, 5*time.Second)
 	if err != nil {
@@ -80,10 +81,12 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	// sending SMS(s)
 	for i := 0; i < 60; i++ {
 		fmt.Println("Current window size: ", trans.GetWindowSize())
-		if err = trans.Transceiver().Submit(newSubmitSM()); err != nil {
+		p := newCustomSubmitSM()
+		if err = trans.Transceiver().Submit(p); err != nil {
 			fmt.Println(err)
 		}
-		time.Sleep(time.Second)
+		fmt.Printf("Sent CustomSubmitSM with id: %+v\n", p.messageId)
+		time.Sleep(1 * time.Second)
 	}
 	time.Sleep(1 * time.Second)
 }

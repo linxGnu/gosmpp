@@ -33,9 +33,10 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
-			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+			RequestWindowConfig: &RequestWindowConfig{
 				OnReceivedPduRequest: handleReceivedPduRequest(t),
 				MaxWindowSize:        10,
+				RequestWindowStore:   NewTestWindow(),
 			},
 		}, 2*time.Second)
 	require.Nil(t, err)
@@ -48,9 +49,10 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
-			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+			RequestWindowConfig: &RequestWindowConfig{
 				OnReceivedPduRequest: handleReceivedPduRequest(t),
 				MaxWindowSize:        10,
+				RequestWindowStore:   NewTestWindow(),
 			},
 		}, 2*time.Second)
 	require.Nil(t, err)
@@ -63,8 +65,9 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
-			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
-				MaxWindowSize: 10,
+			RequestWindowConfig: &RequestWindowConfig{
+				MaxWindowSize:      10,
+				RequestWindowStore: NewTestWindow(),
 			},
 		}, 2*time.Second)
 	require.NoError(t, err)
@@ -77,10 +80,11 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
-			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
-				ExpireCheckTimer: 5,
-				PduExpireTimeOut: 10,
-				MaxWindowSize:    10,
+			RequestWindowConfig: &RequestWindowConfig{
+				ExpireCheckTimer:   5,
+				PduExpireTimeOut:   10,
+				MaxWindowSize:      10,
+				RequestWindowStore: NewTestWindow(),
 			},
 		}, 2*time.Second)
 	require.NoError(t, err)

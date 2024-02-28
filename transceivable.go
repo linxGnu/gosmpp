@@ -2,7 +2,6 @@ package gosmpp
 
 import (
 	"github.com/linxGnu/gosmpp/pdu"
-	cmap "github.com/orcaman/concurrent-map/v2"
 	"sync/atomic"
 )
 
@@ -14,7 +13,6 @@ type transceivable struct {
 	out  *transmittable
 
 	aliveState int32
-	window     cmap.ConcurrentMap[string, Request]
 }
 
 func newTransceivable(conn *Connection, settings Settings) *transceivable {
@@ -22,10 +20,9 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 	t := &transceivable{
 		settings: settings,
 		conn:     conn,
-		window:   cmap.New[Request](),
 	}
 
-	t.out = newTransmittable(conn, t.window, Settings{
+	t.out = newTransmittable(conn, Settings{
 		WriteTimeout: settings.WriteTimeout,
 
 		EnquireLink: settings.EnquireLink,
@@ -46,10 +43,10 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 			}
 		},
 
-		WindowPDUHandlerConfig: settings.WindowPDUHandlerConfig,
+		RequestWindowConfig: settings.RequestWindowConfig,
 	})
 
-	t.in = newReceivable(conn, t.out.window, Settings{
+	t.in = newReceivable(conn, Settings{
 		ReadTimeout: settings.ReadTimeout,
 
 		OnPDU: settings.OnPDU,
@@ -72,7 +69,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 			}
 		},
 
-		WindowPDUHandlerConfig: settings.WindowPDUHandlerConfig,
+		RequestWindowConfig: settings.RequestWindowConfig,
 
 		response: func(p pdu.PDU) {
 			_ = t.Submit(p)

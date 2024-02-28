@@ -1,6 +1,7 @@
 package gosmpp
 
 import (
+	"context"
 	"github.com/linxGnu/gosmpp/pdu"
 	"time"
 )
@@ -28,10 +29,19 @@ type RebindCallback func()
 
 type Request struct {
 	pdu.PDU
-	TImeSent time.Time
+	TimeSent time.Time
 }
 
 type Response struct {
 	pdu.PDU
 	OriginalRequest Request
+}
+
+type RequestWindowStore interface {
+	Set(ctx context.Context, request Request)
+	Get(ctx context.Context, sequenceNumber int32) (Request, bool)
+	List(ctx context.Context) []Request
+	Delete(ctx context.Context, sequenceNumber int32)
+	Clear(ctx context.Context)
+	Length(ctx context.Context) int
 }

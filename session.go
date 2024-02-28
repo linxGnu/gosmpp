@@ -1,10 +1,17 @@
 package gosmpp
 
 import (
+	"errors"
 	"fmt"
 	"github.com/linxGnu/gosmpp/pdu"
 	"sync/atomic"
 	"time"
+)
+
+var (
+	ErrRequestWindowIsNil     = errors.New("request window is nil")
+	ErrWindowSizeEqualZero    = errors.New("request window size cannot be 0")
+	ErrExpireCheckTimerNotSet = errors.New("ExpireCheckTimer cannot be 0 if PduExpireTimeOut is set")
 )
 
 // Session represents session for TX, RX, TRX.
@@ -33,6 +40,17 @@ type Session struct {
 func NewSession(c Connector, settings Settings, rebindingInterval time.Duration) (session *Session, err error) {
 	if settings.ReadTimeout <= 0 || settings.ReadTimeout <= settings.EnquireLink {
 		return nil, fmt.Errorf("invalid settings: ReadTimeout must greater than max(0, EnquireLink)")
+	}
+	if settings.RequestWindowConfig != nil {
+		if settings.RequestWindowStore == nil {
+			return nil, ErrRequestWindowIsNil
+		}
+		if settings.MaxWindowSize == 0 {
+			return nil, ErrWindowSizeEqualZero
+		}
+		if settings.PduExpireTimeOut > 0 && settings.ExpireCheckTimer == 0 {
+			return nil, ErrExpireCheckTimerNotSet
+		}
 	}
 
 	conn, err := c.Connect()

@@ -2,8 +2,6 @@ package gosmpp
 
 import (
 	"context"
-	cmap "github.com/orcaman/concurrent-map/v2"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,14 +16,12 @@ type receivable struct {
 	settings   Settings
 	conn       *Connection
 	aliveState int32
-	window     cmap.ConcurrentMap[string, Request]
 }
 
-func newReceivable(conn *Connection, window cmap.ConcurrentMap[string, Request], settings Settings) *receivable {
+func newReceivable(conn *Connection, settings Settings) *receivable {
 	r := &receivable{
 		settings: settings,
 		conn:     conn,
-		window:   window,
 	}
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 
@@ -63,7 +59,7 @@ func (t *receivable) closing(state State) {
 }
 
 func (t *receivable) start() {
-	if t.settings.WindowPDUHandlerConfig != nil && t.settings.PduExpireTimeOut > 0 && t.settings.ExpireCheckTimer > 0 {
+	if t.settings.RequestWindowConfig != nil && t.settings.ExpireCheckTimer > 0 {
 		t.wg.Add(1)
 		go func() {
 			t.windowCleanup()
@@ -86,11 +82,11 @@ func (t *receivable) windowCleanup() {
 		case <-t.ctx.Done():
 			return
 		case <-ticker.C:
-			for request := range t.window.IterBuffered() {
-				if time.Since(request.Val.TImeSent) > t.settings.PduExpireTimeOut {
-					t.window.Remove(request.Key)
+			for _, request := range t.settings.RequestWindowStore.List(nil) {
+				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
+					t.settings.RequestWindowStore.Delete(nil, request.GetSequenceNumber())
 					if t.settings.OnExpiredPduRequest != nil {
-						t.settings.OnExpiredPduRequest(request.Val.PDU)
+						t.settings.OnExpiredPduRequest(request.PDU)
 					}
 				}
 			}
@@ -126,19 +122,31 @@ func (t *receivable) loop() {
 		if err = t.conn.SetReadTimeout(t.settings.ReadTimeout); err == nil {
 			p, err = pdu.Parse(t.conn)
 		}
-
-		// check error
-		if closeOnError := t.check(err); closeOnError || t.handleWindowPdu(p) || t.handleAllPdu(p) || t.handleOrClose(p) {
-			if closeOnError {
-				t.closing(InvalidStreaming)
-			}
+		closeOnError := t.check(err)
+		if closeOnError {
+			t.closing(InvalidStreaming)
 			return
 		}
+
+		var closeOnUnbind bool
+		if p != nil {
+			if t.settings.RequestWindowConfig != nil && t.settings.OnExpectedPduResponse != nil {
+				closeOnUnbind = t.handleWindowPdu(p)
+			} else if t.settings.OnAllPDU != nil {
+				closeOnUnbind = t.handleAllPdu(p)
+			} else {
+				closeOnUnbind = t.handleOrClose(p)
+			}
+			if closeOnUnbind {
+				t.closing(UnbindClosing)
+			}
+		}
+
 	}
 }
 
 func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
-	if t.settings.WindowPDUHandlerConfig != nil && t.settings.OnExpectedPduResponse != nil && p != nil {
+	if t.settings.RequestWindowConfig != nil && t.settings.OnExpectedPduResponse != nil && p != nil {
 		// This case must match the same request item list in transmittable write func
 		switch pp := p.(type) {
 		case *pdu.CancelSMResp,

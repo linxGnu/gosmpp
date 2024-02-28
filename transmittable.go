@@ -1,12 +1,11 @@
 package gosmpp
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	cmap "github.com/orcaman/concurrent-map/v2"
 	"net"
 	"runtime"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,17 +29,15 @@ type transmittable struct {
 
 	aliveState   int32
 	pendingWrite int32
-	window       cmap.ConcurrentMap[string, Request]
 }
 
-func newTransmittable(conn *Connection, window cmap.ConcurrentMap[string, Request], settings Settings) *transmittable {
+func newTransmittable(conn *Connection, settings Settings) *transmittable {
 	t := &transmittable{
 		settings:     settings,
 		conn:         conn,
 		input:        make(chan pdu.PDU, 1),
 		aliveState:   Alive,
 		pendingWrite: 0,
-		window:       window,
 	}
 
 	return t
@@ -73,12 +70,12 @@ func (t *transmittable) close(state State) (err error) {
 
 		// concurrent-map has no func to verify initialization
 		// we need to do the same check in
-		if !t.window.IsEmpty() {
-			for request := range t.window.IterBuffered() {
+		if t.settings.RequestWindowConfig != nil && t.settings.RequestWindowStore.Length(nil) > 0 {
+			for _, request := range t.settings.RequestWindowStore.List(context.Background()) {
 				if t.settings.OnClosePduRequest != nil {
-					t.settings.OnClosePduRequest(request.Val.PDU)
+					t.settings.OnClosePduRequest(request.PDU)
 				}
-				t.window.Remove(request.Key)
+				t.settings.RequestWindowStore.Delete(nil, request.GetSequenceNumber())
 			}
 		}
 	}
@@ -208,24 +205,24 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 		return
 	}
 
-	if t.settings.WindowPDUHandlerConfig != nil && t.settings.MaxWindowSize > 0 {
-		if isAllowPDU(p) {
-			if t.window.Count() < int(t.settings.MaxWindowSize) {
-				n, err = t.conn.WritePDU(p)
-				if err == nil {
-					request := Request{
-						PDU:      p,
-						TImeSent: time.Now(),
-					}
-					t.window.Set(strconv.Itoa(int(p.GetSequenceNumber())), request)
-				}
-				return
-			} else {
-				return 0, ErrWindowsFull
+	if t.settings.RequestWindowConfig != nil && t.settings.MaxWindowSize > 0 && isAllowPDU(p) {
+		if t.settings.RequestWindowStore.Length(nil) < int(t.settings.MaxWindowSize) {
+			n, err = t.conn.WritePDU(p)
+			if err != nil {
+				return 0, err
 			}
+			request := Request{
+				PDU:      p,
+				TimeSent: time.Now(),
+			}
+			t.settings.RequestWindowStore.Set(nil, request)
+		} else {
+			return 0, ErrWindowsFull
 		}
+	} else {
+		n, err = t.conn.WritePDU(p)
 	}
-	n, err = t.conn.WritePDU(p)
+
 	return
 }
 
@@ -241,5 +238,5 @@ func isAllowPDU(p pdu.PDU) bool {
 }
 
 func (t *transmittable) GetWindowSize() int {
-	return t.window.Count()
+	return t.settings.RequestWindowStore.Length(nil)
 }

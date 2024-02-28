@@ -50,7 +50,7 @@ type Settings struct {
 	// `Responded` flag indicates this pdu is responded automatically,
 	// no manual respond needed.
 	//
-	// Will be ignored if OnAllPDU or WindowPDUHandlerConfig is set
+	// Will be ignored if OnAllPDU or RequestWindowConfig is set
 	OnPDU PDUCallback
 
 	// OnAllPDU handles all received PDU from SMSC.
@@ -60,7 +60,7 @@ type Settings struct {
 	//
 	// User can also decide to close bind by retuning true, default is false
 	//
-	// Will be ignored if WindowPDUHandlerConfig is set
+	// Will be ignored if RequestWindowConfig is set
 	OnAllPDU AllPDUCallback
 
 	// OnReceivingError notifies happened error while reading PDU
@@ -80,12 +80,13 @@ type Settings struct {
 	OnRebind RebindCallback
 
 	// SMPP Bind Window tracking feature config
-	*WindowPDUHandlerConfig
+	*RequestWindowConfig
 
 	response func(pdu.PDU)
 }
 
-type WindowPDUHandlerConfig struct {
+type RequestWindowConfig struct {
+	RequestWindowStore
 
 	// OnReceivedPduRequest handles received PDU request from SMSC.
 	//
@@ -119,7 +120,7 @@ type WindowPDUHandlerConfig struct {
 	// Set the number of second to expire a request sent to the SMSC
 	//
 	// Zero duration disables pdu expire check and the cache may fill up over time with expired PDU request
-	// Recommended: Less or equal to the value set in ReadTimeout
+	// Recommended: eual or less to the value set in ReadTimeout + EnquireLink
 	PduExpireTimeOut time.Duration
 
 	// The time period between each check of the expired PDU in the cache

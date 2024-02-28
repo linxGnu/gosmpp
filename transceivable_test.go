@@ -1,6 +1,9 @@
 package gosmpp
 
 import (
+	"context"
+	"golang.org/x/exp/maps"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -242,7 +245,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 				t.Log(err)
 			},
 
-			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+			RequestWindowConfig: &RequestWindowConfig{
 				OnReceivedPduRequest:  handleReceivedPduRequest(t),
 				OnExpectedPduResponse: handleExpectedPduResponse(t),
 				OnExpiredPduRequest:   nil,
@@ -250,6 +253,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     false,
+				RequestWindowStore:    NewTestWindow(),
 			},
 
 			OnClosed: func(state State) {
@@ -307,7 +311,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 				t.Log(err)
 			},
 
-			WindowPDUHandlerConfig: &WindowPDUHandlerConfig{
+			RequestWindowConfig: &RequestWindowConfig{
 				OnReceivedPduRequest:  handleReceivedPduRequest(t),
 				OnExpectedPduResponse: handleExpectedPduResponse(t),
 				OnExpiredPduRequest:   nil,
@@ -315,6 +319,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     true,
+				RequestWindowStore:    NewTestWindow(),
 			},
 
 			OnClosed: func(state State) {
@@ -402,4 +407,38 @@ func Test_newTransceivable(t *testing.T) {
 		trans := newTransceivable(nil, Settings{})
 		assert.NotNil(t, trans.in.settings.response)
 	})
+}
+
+type DefaultWindow struct {
+	store map[string]Request
+}
+
+func (w DefaultWindow) Set(ctx context.Context, request Request) {
+	w.store[strconv.Itoa(int(request.PDU.GetSequenceNumber()))] = request
+}
+
+func (w DefaultWindow) Get(ctx context.Context, sequenceNumber int32) (Request, bool) {
+	return w.store[strconv.Itoa(int(sequenceNumber))], true
+}
+
+func (w DefaultWindow) List(ctx context.Context) []Request {
+	return maps.Values(w.store)
+}
+
+func (w DefaultWindow) Delete(ctx context.Context, sequenceNumber int32) {
+	delete(w.store, strconv.Itoa(int(sequenceNumber)))
+}
+
+func (w DefaultWindow) Clear(ctx context.Context) {
+	w.store = make(map[string]Request)
+}
+
+func (w DefaultWindow) Length(ctx context.Context) int {
+	return len(w.store)
+}
+
+func NewTestWindow() RequestWindowStore {
+	return &DefaultWindow{
+		store: make(map[string]Request),
+	}
 }
