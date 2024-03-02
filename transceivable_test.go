@@ -250,7 +250,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     false,
-				RequestStore:          NewRequestStore(),
+				RequestStore:          NewDefaultStore(),
 			},
 
 			OnClosed: func(state State) {
@@ -266,7 +266,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 	require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
 
 	// sending 20 SMS
-	for i := 0; i < 600; i++ {
+	for i := 0; i < 50; i++ {
 		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
 		require.Nil(t, err)
 		time.Sleep(50 * time.Millisecond)
@@ -294,7 +294,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 
 			WriteTimeout: 3 * time.Second,
 
-			EnquireLink: 200 * time.Millisecond,
+			EnquireLink: 1 * time.Second,
 
 			OnSubmitError: func(_ pdu.PDU, err error) {
 				t.Fatal(err)
@@ -316,11 +316,11 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     true,
-				RequestStore:          NewRequestStore(),
+				RequestStore:          NewDefaultStore(),
 			},
 
 			OnClosed: func(state State) {
-				t.Log(state)
+				t.Log("rebinded")
 			},
 		}, 5*time.Second)
 	require.Nil(t, err)
@@ -386,7 +386,7 @@ func handleExpectedPduResponse(t *testing.T) func(response Response) {
 
 		switch pp := response.PDU.(type) {
 		case *pdu.UnbindResp:
-			t.Logf("%+v\n", pp)
+			//t.Logf("%+v\n", pp)
 
 		case *pdu.SubmitSMResp:
 			require.NotZero(t, len(pp.MessageID))

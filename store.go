@@ -1,16 +1,13 @@
 package gosmpp
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
-	"errors"
 	"fmt"
 	"github.com/linxGnu/gosmpp/pdu"
+	cmap "github.com/orcaman/concurrent-map/v2"
+	"golang.org/x/exp/maps"
 	"strconv"
 	"time"
-
-	"github.com/allegro/bigcache/v3"
 )
 
 type Request struct {
@@ -33,13 +30,12 @@ type RequestStore interface {
 }
 
 type DefaultStore struct {
-	store *bigcache.BigCache
+	store cmap.ConcurrentMap[string, Request]
 }
 
-func NewRequestStore() RequestStore {
-	cache, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(30*time.Second))
-	return &DefaultStore{
-		store: cache,
+func NewDefaultStore() DefaultStore {
+	return DefaultStore{
+		store: cmap.New[Request](),
 	}
 }
 
@@ -50,8 +46,7 @@ func (s DefaultStore) Set(ctx context.Context, request Request) {
 			fmt.Println("Task cancelled")
 			return
 		default:
-			b, _ := serialize(request)
-			_ = s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), b)
+			s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), request)
 			return
 		}
 	}
@@ -64,36 +59,18 @@ func (s DefaultStore) Get(ctx context.Context, sequenceNumber int32) (Request, b
 			fmt.Println("Task cancelled")
 			return Request{}, false
 		default:
-			bRequest, err := s.store.Get(strconv.Itoa(int(sequenceNumber)))
-			if err != nil {
-				return Request{}, false
-			}
-			request, err := deserialize(bRequest)
-			if err != nil {
-				return Request{}, false
-			}
-			return request, true
+			return s.store.Get(strconv.Itoa(int(sequenceNumber)))
 		}
 	}
 }
 
 func (s DefaultStore) List(ctx context.Context) []Request {
-	var requests []Request
 	for {
 		select {
 		case <-ctx.Done():
-			return requests
+			return []Request{}
 		default:
-			it := s.store.Iterator()
-			for it.SetNext() {
-				value, err := it.Value()
-				if err != nil {
-					return requests
-				}
-				request, _ := deserialize(value.Value())
-				requests = append(requests, request)
-			}
-			return requests
+			return maps.Values(s.store.Items())
 		}
 	}
 }
@@ -104,7 +81,7 @@ func (s DefaultStore) Delete(ctx context.Context, sequenceNumber int32) {
 		case <-ctx.Done():
 			return
 		default:
-			_ = s.store.Delete(strconv.Itoa(int(sequenceNumber)))
+			s.store.Remove(strconv.Itoa(int(sequenceNumber)))
 			return
 		}
 	}
@@ -116,7 +93,7 @@ func (s DefaultStore) Clear(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			_ = s.store.Reset()
+			s.store.Clear()
 			return
 		}
 	}
@@ -127,51 +104,8 @@ func (s DefaultStore) Length(ctx context.Context) int {
 		select {
 		case <-ctx.Done():
 			return -1
-
 		default:
-			return s.store.Len()
+			return s.store.Count()
 		}
 	}
-}
-
-func serialize(request Request) ([]byte, error) {
-	buf := pdu.NewBuffer(make([]byte, 0, 64))
-	request.PDU.Marshal(buf)
-	b := bytes.Buffer{}
-	e := gob.NewEncoder(&b)
-	err := e.Encode(requestGob{
-		Pdu:      buf.Bytes(),
-		TimeSent: time.Time{},
-	})
-	if err != nil {
-		return b.Bytes()[:], errors.New("serialization failed")
-	}
-	return b.Bytes(), nil
-}
-
-func deserialize(bRequest []byte) (request Request, err error) {
-	r := requestGob{}
-	b := bytes.Buffer{}
-	_, err = b.Write(bRequest)
-	if err != nil {
-		return request, errors.New("deserialization failed")
-	}
-	d := gob.NewDecoder(&b)
-	err = d.Decode(&r)
-	if err != nil {
-		return request, errors.New("deserialization failed")
-	}
-	p, err := pdu.Parse(bytes.NewReader(r.Pdu))
-	if err != nil {
-		return Request{}, err
-	}
-	return Request{
-		PDU:      p,
-		TimeSent: r.TimeSent,
-	}, nil
-}
-
-type requestGob struct {
-	Pdu      []byte
-	TimeSent time.Time
 }

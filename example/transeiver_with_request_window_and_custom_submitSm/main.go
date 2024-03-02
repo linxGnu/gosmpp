@@ -68,7 +68,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     false,
-				RequestStore:          NewCustomStore(),
+				RequestStore:          gosmpp.NewDefaultStore(),
 			},
 		}, 5*time.Second)
 	if err != nil {
