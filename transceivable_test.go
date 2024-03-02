@@ -294,7 +294,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 
 			WriteTimeout: 3 * time.Second,
 
-			EnquireLink: 1 * time.Second,
+			EnquireLink: 200 * time.Millisecond,
 
 			OnSubmitError: func(_ pdu.PDU, err error) {
 				t.Fatal(err)
@@ -335,7 +335,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
 		require.Nil(t, err)
-		time.Sleep(55 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	time.Sleep(5 * time.Second)
