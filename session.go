@@ -42,7 +42,7 @@ func NewSession(c Connector, settings Settings, rebindingInterval time.Duration)
 		return nil, fmt.Errorf("invalid settings: ReadTimeout must greater than max(0, EnquireLink)")
 	}
 	if settings.RequestWindowConfig != nil {
-		if settings.RequestWindowStore == nil {
+		if settings.RequestStore == nil {
 			return nil, ErrRequestWindowIsNil
 		}
 		if settings.MaxWindowSize == 0 {

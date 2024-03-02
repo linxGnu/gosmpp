@@ -1,9 +1,6 @@
 package gosmpp
 
 import (
-	"context"
-	"golang.org/x/exp/maps"
-	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -253,7 +250,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     false,
-				RequestWindowStore:    NewTestWindow(),
+				RequestStore:          NewRequestStore(),
 			},
 
 			OnClosed: func(state State) {
@@ -269,7 +266,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 	require.Equal(t, "MelroseLabsSMSC", trans.Transceiver().SystemID())
 
 	// sending 20 SMS
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 600; i++ {
 		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
 		require.Nil(t, err)
 		time.Sleep(50 * time.Millisecond)
@@ -319,7 +316,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     true,
-				RequestWindowStore:    NewTestWindow(),
+				RequestStore:          NewRequestStore(),
 			},
 
 			OnClosed: func(state State) {
@@ -394,7 +391,7 @@ func handleExpectedPduResponse(t *testing.T) func(response Response) {
 		case *pdu.SubmitSMResp:
 			require.NotZero(t, len(pp.MessageID))
 			atomic.AddInt32(&countSubmitSMResp, 1)
-			t.Logf("%+v\n", pp)
+			t.Logf("%+v with original %+v\n", pp, response.OriginalRequest.PDU)
 
 		case *pdu.EnquireLinkResp:
 			t.Logf("%+v\n", pp)
@@ -407,38 +404,4 @@ func Test_newTransceivable(t *testing.T) {
 		trans := newTransceivable(nil, Settings{})
 		assert.NotNil(t, trans.in.settings.response)
 	})
-}
-
-type TestWindowStore struct {
-	store map[string]Request
-}
-
-func (w TestWindowStore) Set(_ context.Context, request Request) {
-	w.store[strconv.Itoa(int(request.PDU.GetSequenceNumber()))] = request
-}
-
-func (w TestWindowStore) Get(_ context.Context, sequenceNumber int32) (Request, bool) {
-	return w.store[strconv.Itoa(int(sequenceNumber))], true
-}
-
-func (w TestWindowStore) List(_ context.Context) []Request {
-	return maps.Values(w.store)
-}
-
-func (w TestWindowStore) Delete(_ context.Context, sequenceNumber int32) {
-	delete(w.store, strconv.Itoa(int(sequenceNumber)))
-}
-
-func (w TestWindowStore) Clear(_ context.Context) {
-	maps.Clear(w.store)
-}
-
-func (w TestWindowStore) Length(_ context.Context) int {
-	return len(w.store)
-}
-
-func NewTestWindow() RequestWindowStore {
-	return &TestWindowStore{
-		store: make(map[string]Request),
-	}
 }

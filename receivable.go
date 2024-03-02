@@ -82,9 +82,9 @@ func (t *receivable) windowCleanup() {
 		case <-t.ctx.Done():
 			return
 		case <-ticker.C:
-			for _, request := range t.settings.RequestWindowStore.List(context.TODO()) {
+			for _, request := range t.settings.RequestStore.List(context.TODO()) {
 				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
-					t.settings.RequestWindowStore.Delete(context.TODO(), request.GetSequenceNumber())
+					t.settings.RequestStore.Delete(context.TODO(), request.GetSequenceNumber())
 					if t.settings.OnExpiredPduRequest != nil {
 						t.settings.OnExpiredPduRequest(request.PDU)
 					}
@@ -158,9 +158,9 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 			*pdu.SubmitMultiResp,
 			*pdu.SubmitSMResp:
 			if t.settings.OnExpectedPduResponse != nil {
-				request, ok := t.settings.RequestWindowStore.Get(context.TODO(), p.GetSequenceNumber())
+				request, ok := t.settings.RequestStore.Get(context.TODO(), p.GetSequenceNumber())
 				if ok {
-					t.settings.RequestWindowStore.Delete(context.TODO(), p.GetSequenceNumber())
+					t.settings.RequestStore.Delete(context.TODO(), p.GetSequenceNumber())
 					response := Response{
 						PDU:             p,
 						OriginalRequest: request,

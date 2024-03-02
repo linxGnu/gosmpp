@@ -86,7 +86,7 @@ type Settings struct {
 }
 
 type RequestWindowConfig struct {
-	RequestWindowStore
+	RequestStore
 
 	// OnReceivedPduRequest handles received PDU request from SMSC.
 	//
