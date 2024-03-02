@@ -335,7 +335,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		err = trans.Transceiver().Submit(newSubmitSM(auth.SystemID))
 		require.Nil(t, err)
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(55 * time.Millisecond)
 	}
 
 	time.Sleep(5 * time.Second)

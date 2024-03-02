@@ -3,7 +3,6 @@ package gosmpp
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"runtime"
 	"sync"
@@ -15,7 +14,7 @@ import (
 
 var (
 	// ErrConnectionClosing indicates transmitter is closing. Can not send any PDU.
-	ErrConnectionClosing = fmt.Errorf("connection is closing, can not send PDU to SMSC")
+	ErrConnectionClosing = errors.New("connection is closing, can not send PDU to SMSC")
 	ErrWindowsFull       = errors.New("window full")
 )
 
