@@ -28,6 +28,7 @@ func (s CustomStore) Set(ctx context.Context, request gosmpp.Request) {
 			return
 		default:
 			s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), request)
+			return
 		}
 	}
 }
@@ -62,6 +63,7 @@ func (s CustomStore) Delete(ctx context.Context, sequenceNumber int32) {
 			return
 		default:
 			s.store.Remove(strconv.Itoa(int(sequenceNumber)))
+			return
 		}
 	}
 }
@@ -73,6 +75,7 @@ func (s CustomStore) Clear(ctx context.Context) {
 			return
 		default:
 			s.store.Clear()
+			return
 		}
 	}
 }
