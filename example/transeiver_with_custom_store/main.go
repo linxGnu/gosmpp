@@ -91,22 +91,25 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	time.Sleep(1 * time.Second)
 }
 
-func handleExpirePduRequest() func(pdu.PDU) {
-	return func(p pdu.PDU) {
+func handleExpirePduRequest() func(pdu.PDU) bool {
+	return func(p pdu.PDU) bool {
 		switch p.(type) {
-		case *pdu.Unbind:
-			fmt.Printf("Expired Unbind:%+v\n", p)
-			fmt.Println("Unbind Expired")
 
 		case *pdu.SubmitSM:
-			fmt.Printf("Expired SubmitSM:%+v\n", p)
+			fmt.Printf("Expired SubmitSM: %+v\n", p)
 
 		case *pdu.EnquireLink:
-			fmt.Printf("Expired EnquireLink:%+v\n", p)
+			fmt.Printf("Expired EnquireLink: %+v\n", p)
+			return true // if the enquire_link expired, usually means the bind is stale
 
 		case *pdu.DataSM:
-			fmt.Printf("Expired DataSM:%+v\n", p)
+			fmt.Printf("Expired DataSM: %+v\n", p)
+
+		default:
+			fmt.Printf("Expired PDU: %+v\n", p)
 		}
+
+		return false
 	}
 }
 
@@ -114,16 +117,16 @@ func handleOnClosePduRequest() func(pdu.PDU) {
 	return func(p pdu.PDU) {
 		switch p.(type) {
 		case *pdu.Unbind:
-			fmt.Printf("OnClose Unbind:%+v\n", p)
+			fmt.Printf("OnClose Unbind: %+v\n", p)
 
 		case *pdu.SubmitSM:
-			fmt.Printf("OnClose SubmitSM:%+v\n", p)
+			fmt.Printf("OnClose SubmitSM: %+v\n", p)
 
 		case *pdu.EnquireLink:
-			fmt.Printf("OnClose EnquireLink:%+v\n", p)
+			fmt.Printf("OnClose EnquireLink: %+v\n", p)
 
 		case *pdu.DataSM:
-			fmt.Printf("OnClose DataSM:%+v\n", p)
+			fmt.Printf("OnClose DataSM: %+v\n", p)
 		}
 	}
 }

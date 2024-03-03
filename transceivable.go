@@ -1,16 +1,22 @@
 package gosmpp
 
 import (
+	"context"
 	"github.com/linxGnu/gosmpp/pdu"
+	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type transceivable struct {
 	settings Settings
 
-	conn *Connection
-	in   *receivable
-	out  *transmittable
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
+	conn   *Connection
+	in     *receivable
+	out    *transmittable
 
 	aliveState int32
 }
@@ -21,6 +27,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 		settings: settings,
 		conn:     conn,
 	}
+	t.ctx, t.cancel = context.WithCancel(context.Background())
 
 	t.out = newTransmittable(conn, Settings{
 		WriteTimeout: settings.WriteTimeout,
@@ -79,6 +86,14 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 }
 
 func (t *transceivable) start() {
+	if t.settings.RequestWindowConfig != nil && t.settings.ExpireCheckTimer > 0 {
+		t.wg.Add(1)
+		go func() {
+			t.windowCleanup()
+			t.wg.Done()
+		}()
+
+	}
 	t.out.start()
 	t.in.start()
 }
@@ -113,4 +128,27 @@ func (t *transceivable) Submit(p pdu.PDU) error {
 
 func (t *transceivable) GetWindowSize() int {
 	return t.out.GetWindowSize()
+}
+
+func (t *transceivable) windowCleanup() {
+	ticker := time.NewTicker(t.settings.ExpireCheckTimer)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-t.ctx.Done():
+			return
+		case <-ticker.C:
+			for _, request := range t.settings.RequestStore.List(context.TODO()) {
+				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
+					t.settings.RequestStore.Delete(context.TODO(), request.GetSequenceNumber())
+					if t.settings.OnExpiredPduRequest != nil {
+						bindClose := t.settings.OnExpiredPduRequest(request.PDU)
+						if bindClose {
+							_ = t.Close()
+						}
+					}
+				}
+			}
+		}
+	}
 }

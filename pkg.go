@@ -112,7 +112,8 @@ type RequestWindowConfig struct {
 	// Mandatory: the PduExpireTimeOut must be set
 	// Handle is optional
 	// If not set, expired PDU will be removed from cache
-	OnExpiredPduRequest func(pdu.PDU)
+	// the bind can be closed by retuning true on closeBind.
+	OnExpiredPduRequest func(pdu.PDU) (closeBind bool)
 
 	// OnClosePduRequest will return all PDU request found in the store when the bind closes
 	OnClosePduRequest func(pdu.PDU)

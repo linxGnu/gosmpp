@@ -59,39 +59,11 @@ func (t *receivable) closing(state State) {
 }
 
 func (t *receivable) start() {
-	if t.settings.RequestWindowConfig != nil && t.settings.ExpireCheckTimer > 0 {
-		t.wg.Add(1)
-		go func() {
-			t.windowCleanup()
-			t.wg.Done()
-		}()
-
-	}
 	t.wg.Add(1)
 	go func() {
 		t.loop()
 		t.wg.Done()
 	}()
-}
-
-func (t *receivable) windowCleanup() {
-	ticker := time.NewTicker(t.settings.ExpireCheckTimer)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-t.ctx.Done():
-			return
-		case <-ticker.C:
-			for _, request := range t.settings.RequestStore.List(context.TODO()) {
-				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
-					t.settings.RequestStore.Delete(context.TODO(), request.GetSequenceNumber())
-					if t.settings.OnExpiredPduRequest != nil {
-						t.settings.OnExpiredPduRequest(request.PDU)
-					}
-				}
-			}
-		}
-	}
 }
 
 // check error and do closing if needed
