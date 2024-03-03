@@ -91,8 +91,8 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 	time.Sleep(1 * time.Second)
 }
 
-func handleExpirePduRequest() func(pdu.PDU) {
-	return func(p pdu.PDU) {
+func handleExpirePduRequest() func(pdu.PDU) bool {
+	return func(p pdu.PDU) bool {
 		switch p.(type) {
 		case *pdu.Unbind:
 			fmt.Printf("Expired Unbind:%+v\n", p)
@@ -103,10 +103,12 @@ func handleExpirePduRequest() func(pdu.PDU) {
 
 		case *pdu.EnquireLink:
 			fmt.Printf("Expired EnquireLink:%+v\n", p)
+			return true // if the enquire_link expired, usually means the bind is stale
 
 		case *pdu.DataSM:
 			fmt.Printf("Expired DataSM:%+v\n", p)
 		}
+		return false
 	}
 }
 
