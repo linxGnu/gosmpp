@@ -47,6 +47,7 @@ func newBindRequest(s Auth, bindingType pdu.BindingType, addressRange pdu.Addres
 // Connector is connection factory interface.
 type Connector interface {
 	Connect() (conn *Connection, err error)
+	GetBindType() pdu.BindingType
 }
 
 type connector struct {
@@ -54,6 +55,10 @@ type connector struct {
 	auth         Auth
 	bindingType  pdu.BindingType
 	addressRange pdu.AddressRange
+}
+
+func (c *connector) GetBindType() pdu.BindingType {
+	return c.bindingType
 }
 
 func (c *connector) Connect() (conn *Connection, err error) {
