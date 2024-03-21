@@ -35,7 +35,7 @@ func NewBindRequest(t BindingType) (b *BindRequest) {
 		SystemID:         data.DFLT_SYSID,
 		Password:         data.DFLT_PASS,
 		SystemType:       data.DFLT_SYSTYPE,
-		AddressRange:     NewAddressRange(),
+		AddressRange:     AddressRange{},
 		InterfaceVersion: data.SMPP_V34,
 	}
 

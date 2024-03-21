@@ -46,8 +46,7 @@ func TestBindingSMSC(t *testing.T) {
 	})
 	t.Run("RX", func(t *testing.T) {
 		addrRange := pdu.AddressRange{}
-		err := addrRange.SetAddressRange("31218")
-		require.NoError(t, err)
+		addrRange.AddressRange = "31218"
 		checker(t, RXConnector(NonTLSDialer, nextAuth(), WithAddressRange(addrRange)))
 	})
 
@@ -57,8 +56,7 @@ func TestBindingSMSC(t *testing.T) {
 
 	t.Run("TRX", func(t *testing.T) {
 		addrRange := pdu.AddressRange{}
-		err := addrRange.SetAddressRange("31218")
-		require.NoError(t, err)
+		addrRange.AddressRange = "31218"
 		checker(t, TRXConnector(NonTLSDialer, nextAuth(), WithAddressRange(addrRange)))
 	})
 }
