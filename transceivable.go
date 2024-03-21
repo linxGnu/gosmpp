@@ -18,14 +18,17 @@ type transceivable struct {
 	in     *receivable
 	out    *transmittable
 
-	aliveState int32
+	aliveState   int32
+	requestStore RequestStore
 }
+type TransceivableOption func(session *Session)
 
-func newTransceivable(conn *Connection, settings Settings) *transceivable {
+func newTransceivable(conn *Connection, settings Settings, requestStore RequestStore) *transceivable {
 
 	t := &transceivable{
-		settings: settings,
-		conn:     conn,
+		settings:     settings,
+		conn:         conn,
+		requestStore: requestStore,
 	}
 	t.ctx, t.cancel = context.WithCancel(context.Background())
 
@@ -51,7 +54,7 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 		},
 
 		RequestWindowConfig: settings.RequestWindowConfig,
-	})
+	}, requestStore)
 
 	t.in = newReceivable(conn, Settings{
 		ReadTimeout: settings.ReadTimeout,
@@ -81,7 +84,9 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 		response: func(p pdu.PDU) {
 			_ = t.Submit(p)
 		},
-	})
+	},
+		requestStore,
+	)
 	return t
 }
 
@@ -127,7 +132,13 @@ func (t *transceivable) Submit(p pdu.PDU) error {
 }
 
 func (t *transceivable) GetWindowSize() int {
-	return t.out.GetWindowSize()
+	if t.settings.RequestWindowConfig != nil {
+		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+		defer cancelFunc()
+		return t.requestStore.Length(ctx)
+	}
+	return 0
+
 }
 
 func (t *transceivable) windowCleanup() {
@@ -138,9 +149,11 @@ func (t *transceivable) windowCleanup() {
 		case <-t.ctx.Done():
 			return
 		case <-ticker.C:
-			for _, request := range t.settings.RequestStore.List(context.TODO()) {
+			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+			defer cancelFunc()
+			for _, request := range t.requestStore.List(ctx) {
 				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
-					t.settings.RequestStore.Delete(context.TODO(), request.GetSequenceNumber())
+					t.requestStore.Delete(ctx, request.GetSequenceNumber())
 					if t.settings.OnExpiredPduRequest != nil {
 						bindClose := t.settings.OnExpiredPduRequest(request.PDU)
 						if bindClose {

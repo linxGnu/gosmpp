@@ -76,7 +76,7 @@ func Test_receivable_handleAllPdu(t1 *testing.T) {
 			fields: fields{
 				settings: newTransceivable(nil, Settings{
 					OnAllPDU: receivableHandleAllPDU(t1),
-				}).in.settings,
+				}, nil).in.settings,
 			},
 			args: args{
 				p: pdu.NewDeliverSM(),
@@ -88,7 +88,7 @@ func Test_receivable_handleAllPdu(t1 *testing.T) {
 			fields: fields{
 				settings: newTransceivable(nil, Settings{
 					OnAllPDU: receivableHandleAllPDU(t1),
-				}).in.settings,
+				}, nil).in.settings,
 			},
 			args: args{
 				p: pdu.NewEnquireLink(),
@@ -181,7 +181,7 @@ func Test_receivable_handleOrClose(t1 *testing.T) {
 		{
 			name: "EnquireLink pdu",
 			fields: fields{
-				settings: newTransceivable(nil, Settings{}).in.settings,
+				settings: newTransceivable(nil, Settings{}, nil).in.settings,
 			},
 			args: args{
 				p: pdu.NewEnquireLink(),

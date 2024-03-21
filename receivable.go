@@ -10,18 +10,20 @@ import (
 )
 
 type receivable struct {
-	ctx        context.Context
-	cancel     context.CancelFunc
-	wg         sync.WaitGroup
-	settings   Settings
-	conn       *Connection
-	aliveState int32
+	ctx          context.Context
+	cancel       context.CancelFunc
+	wg           sync.WaitGroup
+	settings     Settings
+	conn         *Connection
+	aliveState   int32
+	requestStore RequestStore
 }
 
-func newReceivable(conn *Connection, settings Settings) *receivable {
+func newReceivable(conn *Connection, settings Settings, requestStore RequestStore) *receivable {
 	r := &receivable{
-		settings: settings,
-		conn:     conn,
+		settings:     settings,
+		conn:         conn,
+		requestStore: requestStore,
 	}
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 
@@ -130,9 +132,11 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 			*pdu.SubmitMultiResp,
 			*pdu.SubmitSMResp:
 			if t.settings.OnExpectedPduResponse != nil {
-				request, ok := t.settings.RequestStore.Get(context.TODO(), p.GetSequenceNumber())
+				ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+				defer cancelFunc()
+				request, ok := t.requestStore.Get(ctx, p.GetSequenceNumber())
 				if ok {
-					t.settings.RequestStore.Delete(context.TODO(), p.GetSequenceNumber())
+					t.requestStore.Delete(ctx, p.GetSequenceNumber())
 					response := Response{
 						PDU:             p,
 						OriginalRequest: request,

@@ -28,15 +28,17 @@ type transmittable struct {
 
 	aliveState   int32
 	pendingWrite int32
+	requestStore RequestStore
 }
 
-func newTransmittable(conn *Connection, settings Settings) *transmittable {
+func newTransmittable(conn *Connection, settings Settings, requestStore RequestStore) *transmittable {
 	t := &transmittable{
 		settings:     settings,
 		conn:         conn,
 		input:        make(chan pdu.PDU, 1),
 		aliveState:   Alive,
 		pendingWrite: 0,
+		requestStore: requestStore,
 	}
 
 	return t
@@ -69,12 +71,16 @@ func (t *transmittable) close(state State) (err error) {
 
 		// concurrent-map has no func to verify initialization
 		// we need to do the same check in
-		if t.settings.RequestWindowConfig != nil && t.settings.RequestStore.Length(context.TODO()) > 0 {
-			for _, request := range t.settings.RequestStore.List(context.TODO()) {
-				if t.settings.OnClosePduRequest != nil {
-					t.settings.OnClosePduRequest(request.PDU)
+		if t.settings.RequestWindowConfig != nil {
+			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+			defer cancelFunc()
+			if t.requestStore.Length(ctx) > 0 {
+				for _, request := range t.requestStore.List(ctx) {
+					if t.settings.OnClosePduRequest != nil {
+						t.settings.OnClosePduRequest(request.PDU)
+					}
+					t.requestStore.Delete(ctx, request.GetSequenceNumber())
 				}
-				t.settings.RequestStore.Delete(context.TODO(), request.GetSequenceNumber())
 			}
 		}
 	}
@@ -205,7 +211,9 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	}
 
 	if t.settings.RequestWindowConfig != nil && t.settings.MaxWindowSize > 0 && isAllowPDU(p) {
-		if t.settings.RequestStore.Length(context.TODO()) < int(t.settings.MaxWindowSize) {
+		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+		defer cancelFunc()
+		if t.requestStore.Length(ctx) < int(t.settings.MaxWindowSize) {
 			n, err = t.conn.WritePDU(p)
 			if err != nil {
 				return 0, err
@@ -214,7 +222,7 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 				PDU:      p,
 				TimeSent: time.Now(),
 			}
-			t.settings.RequestStore.Set(context.TODO(), request)
+			t.requestStore.Set(ctx, request)
 		} else {
 			return 0, ErrWindowsFull
 		}
@@ -234,8 +242,4 @@ func isAllowPDU(p pdu.PDU) bool {
 		return true
 	}
 	return false
-}
-
-func (t *transmittable) GetWindowSize() int {
-	return t.settings.RequestStore.Length(context.TODO())
 }

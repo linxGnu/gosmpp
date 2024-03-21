@@ -250,7 +250,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     false,
-				RequestStore:          NewDefaultStore(),
+				StoreAccessTimeOut:    100,
 			},
 
 			OnClosed: func(state State) {
@@ -316,7 +316,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     true,
-				RequestStore:          NewDefaultStore(),
+				StoreAccessTimeOut:    100,
 			},
 
 			OnClosed: func(state State) {
@@ -401,7 +401,7 @@ func handleExpectedPduResponse(t *testing.T) func(response Response) {
 
 func Test_newTransceivable(t *testing.T) {
 	t.Run("always receive a non nil response", func(t *testing.T) {
-		trans := newTransceivable(nil, Settings{})
+		trans := newTransceivable(nil, Settings{}, nil)
 		assert.NotNil(t, trans.in.settings.response)
 	})
 }

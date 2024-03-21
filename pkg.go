@@ -86,7 +86,6 @@ type Settings struct {
 }
 
 type RequestWindowConfig struct {
-	RequestStore
 
 	// OnReceivedPduRequest handles received PDU request from SMSC.
 	//
@@ -138,4 +137,10 @@ type RequestWindowConfig struct {
 
 	// if enabled, EnquireLink and Unbind request will be responded to automatically
 	EnableAutoRespond bool
+
+	// Set the number of millisecond to expire a request to store or retrieve data from request store
+	//
+	// Value must be greater than 0
+	// 200 to 1000 is a good starting point
+	StoreAccessTimeOut time.Duration
 }
