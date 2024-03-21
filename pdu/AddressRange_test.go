@@ -8,14 +8,8 @@ import (
 
 func TestAddressRange(t *testing.T) {
 	t.Run("new", func(t *testing.T) {
-		a, err := NewAddressRangeWithAddr("abc")
-		require.NoError(t, err)
+		a := NewAddressRangeWithAddr("abc")
 		require.Equal(t, "abc", a.AddressRange)
-	})
-
-	t.Run("newWithAddr", func(t *testing.T) {
-		_, err := NewAddressRangeWithAddr("12345678901234567890121234567890123456789012")
-		require.NoError(t, err)
 	})
 
 	t.Run("newTonNpi", func(t *testing.T) {
@@ -27,8 +21,7 @@ func TestAddressRange(t *testing.T) {
 	})
 
 	t.Run("newTonNpiAddr", func(t *testing.T) {
-		a, err := NewAddressRangeWithTonNpiAddr(3, 7, "123456789")
-		require.NoError(t, err)
+		a := NewAddressRangeWithTonNpiAddr(3, 7, "123456789")
 		require.EqualValues(t, 3, a.Ton)
 		require.EqualValues(t, 7, a.Npi)
 		require.Equal(t, "123456789", a.AddressRange)
