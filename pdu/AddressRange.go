@@ -15,10 +15,10 @@ func NewAddressRange() AddressRange {
 }
 
 // NewAddressRangeWithAddr create new AddressRange.
-func NewAddressRangeWithAddr(addr string) (a AddressRange, err error) {
-	a = NewAddressRange()
-	a.AddressRange = addr
-	return
+func NewAddressRangeWithAddr(addr string) AddressRange {
+	ar := NewAddressRange()
+	ar.AddressRange = addr
+	return ar
 }
 
 // NewAddressRangeWithTonNpi create new AddressRange with ton, npi.
@@ -27,10 +27,10 @@ func NewAddressRangeWithTonNpi(ton, npi byte) AddressRange {
 }
 
 // NewAddressRangeWithTonNpiAddr returns new address with ton, npi, addr string.
-func NewAddressRangeWithTonNpiAddr(ton, npi byte, addr string) (a AddressRange, err error) {
-	a = NewAddressRangeWithTonNpi(ton, npi)
-	a.AddressRange = addr
-	return
+func NewAddressRangeWithTonNpiAddr(ton, npi byte, addr string) AddressRange {
+	ar := NewAddressRangeWithTonNpi(ton, npi)
+	ar.AddressRange = addr
+	return ar
 }
 
 // Unmarshal from buffer.
