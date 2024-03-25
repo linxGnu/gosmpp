@@ -106,6 +106,23 @@ func ValidateGSM7Buffer(buffer []byte) []byte {
 	return invalidBytes
 }
 
+// GetEscapeChars returns the escape characters in the given text, that doesn't exist in GSM 7-bit DEFAULT alphabet table
+func GetEscapeChars(runeText []rune) []rune {
+	eChars := make([]rune, 0, 4)
+	for _, r := range runeText {
+		if _, ok := forwardEscape[r]; ok {
+			eChars = append(eChars, r)
+		}
+	}
+	return eChars
+}
+
+// IsEscapeChar checks if the given rune is an escape char
+func IsEscapeChar(c rune) bool {
+	_, exists := forwardEscape[c]
+	return exists
+}
+
 // GSM7 returns a GSM 7-bit Bit Encoding.
 //
 // Set the packed flag to true if you wish to convert septets to octets,

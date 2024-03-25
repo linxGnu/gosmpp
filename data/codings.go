@@ -124,6 +124,118 @@ func (c *gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, er
 	return
 }
 
+type gsm7bitPacked struct {
+}
+
+func (c *gsm7bitPacked) Encode(str string) ([]byte, error) {
+	return encode(str, GSM7(true).NewEncoder())
+}
+
+func (c *gsm7bitPacked) Decode(data []byte) (string, error) {
+	return decode(data, GSM7(true).NewDecoder())
+}
+
+func (c *gsm7bitPacked) DataCoding() byte { return GSM7BITCoding }
+
+func (c *gsm7bitPacked) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+	runeSlice := []rune(text)
+	tLen := len(runeSlice)
+	escCharsLen := len(GetEscapeChars(runeSlice))
+	regCharsLen := tLen - escCharsLen
+	// Esacpe characters occupy 2 octets/septets
+	// https://en.wikipedia.org/wiki/GSM_03.38
+	// https://www.developershome.com/sms/gsmAlphabet.asp
+	return uint((regCharsLen*7+escCharsLen*2*7+7)/8) > octetLimit
+}
+
+func (c *gsm7bitPacked) GetSeptetCount(runeSlice []rune) int {
+	tLen := len(runeSlice)
+	escCharsLen := len(GetEscapeChars(runeSlice))
+	regCharsLen := tLen - escCharsLen
+	return escCharsLen*2 + regCharsLen
+}
+
+func (c *gsm7bitPacked) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
+	if octetLimit < 64 {
+		octetLimit = 134
+	}
+
+	allSeg = [][]byte{}
+	runeSlice := []rune(text)
+	lim := int(octetLimit * 8 / 7)
+
+	fr, to := 0, lim
+	for fr < len(runeSlice) {
+		if to > len(runeSlice) {
+			to = len(runeSlice)
+		}
+
+		to = determineTo(fr, to, lim, runeSlice)
+
+		seg, err := c.Encode(string(runeSlice[fr:to]))
+		if err != nil {
+			return nil, err
+		}
+
+		includeLSB := false
+		nSeptet := c.GetSeptetCount(runeSlice[fr:to])
+		if nSeptet != lim && nSeptet%8 == 0 { // The last octet's LSB should be included during shift
+			includeLSB = true
+		}
+
+		seg = shiftBitsLeftOne(seg, includeLSB)
+
+		allSeg = append(allSeg, seg)
+		fr, to = to, to+lim
+	}
+
+	return
+}
+
+func determineTo(from int, to int, lim int, runeSlice []rune) int {
+	nSeptet := 0
+	for nSeptet < lim {
+		if IsEscapeChar(runeSlice[from]) { // esc chars counted as 2 septes
+			nSeptet += 2
+		} else {
+			nSeptet++
+		}
+		from++
+		if from == to {
+			break
+		}
+	}
+	to = from
+
+	if IsEscapeChar(runeSlice[to-1]) { // 9.2.3.24.1 Concatenated Short Messages  "A character represented by an escape-sequence shall not be split in the middle."
+		if nSeptet > lim {
+			to--
+		}
+	}
+	return to
+}
+
+// Shifts the given byte stream one position left, in order to put a padding bit in between UDH and the beginning of the septets of an actual message
+// Ref1: https://www.etsi.org/deliver/etsi_ts/123000_123099/123040/16.00.00_60/ts_123040v160000p.pdf Page 74
+// Ref2: https://help.goacoustic.com/hc/en-us/articles/360043843154--How-character-encoding-affects-SMS-message-length Pls. ref. to the note "..It is added as padding so that the actual 7-bit encoding data begins on a septet boundary—the 50th bit."
+// Ref3: https://en.wikipedia.org/wiki/Concatenated_SMS "..This means up to 6 bits of zeros need to be inserted at the start of the [message]."
+func shiftBitsLeftOne(input []byte, includeLSB bool) []byte {
+	shifted := make([]byte, len(input))
+	for i, b := range input {
+		shifted[i] = b << 1
+		if i > 0 {
+			shifted[i] |= input[i-1] >> 7
+		}
+	}
+
+	if includeLSB {
+		lastOctet := (input[len(input)-1] >> 7 & 0x01) | (0x0D << 1) /* https://en.wikipedia.org/wiki/GSM_03.38 Ref tekst: "..When there are 7 spare bits in the last octet of a message..."*/
+		shifted = append(shifted, lastOctet)
+	}
+
+	return shifted
+}
+
 type ascii struct{}
 
 func (*ascii) Encode(str string) ([]byte, error) {
@@ -209,7 +321,8 @@ func (*ucs2) Decode(data []byte) (string, error) {
 }
 
 func (*ucs2) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
-	return uint(len(text)*2) > octetLimit
+	runeSlice := []rune(text)
+	return uint(len(runeSlice)*2) > octetLimit
 }
 
 func (c *ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
@@ -249,7 +362,7 @@ var (
 	// GSM7BITPACKED is packed gsm-7bit encoding.
 	// Most of SMSC(s) use unpack version.
 	// Should be tested before using.
-	GSM7BITPACKED Encoding = &gsm7bit{packed: true}
+	GSM7BITPACKED Encoding = &gsm7bitPacked{}
 
 	// ASCII is ascii encoding.
 	ASCII Encoding = &ascii{}
