@@ -93,28 +93,10 @@ func (c *gsm7bit) Decode(data []byte) (string, error) {
 func (c *gsm7bit) DataCoding() byte { return GSM7BITCoding }
 
 func (c *gsm7bit) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
-	runeSlice := []rune(text)
-	tLen := len(runeSlice)
-	escCharsLen := len(GetEscapeChars(runeSlice))
-	regCharsLen := tLen - escCharsLen
-	// Esacpe characters occupy 2 octets/septets
-	// https://en.wikipedia.org/wiki/GSM_03.38
-	// https://www.developershome.com/sms/gsmAlphabet.asp
 	if c.packed {
-		return uint((regCharsLen*7+escCharsLen*2*7+7)/8) > octetLimit
+		return uint((len(text)*7+7)/8) > octetLimit
 	} else {
-		return uint(regCharsLen+escCharsLen*2) > octetLimit
-	}
-}
-
-func (c *gsm7bit) GetSeptetCount(runeSlice []rune) int {
-	tLen := len(runeSlice)
-	if c.packed {
-		escCharsLen := len(GetEscapeChars(runeSlice))
-		regCharsLen := tLen - escCharsLen
-		return escCharsLen*2 + regCharsLen
-	} else {
-		return tLen
+		return uint(len(text)) > octetLimit
 	}
 }
 
@@ -125,10 +107,62 @@ func (c *gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, er
 
 	allSeg = [][]byte{}
 	runeSlice := []rune(text)
-	lim := int(octetLimit)
-	if c.packed {
-		lim = int(octetLimit * 8 / 7)
+
+	fr, to := 0, int(octetLimit)
+	for fr < len(runeSlice) {
+		if to > len(runeSlice) {
+			to = len(runeSlice)
+		}
+		seg, err := c.Encode(string(runeSlice[fr:to]))
+		if err != nil {
+			return nil, err
+		}
+		allSeg = append(allSeg, seg)
+		fr, to = to, to+int(octetLimit)
 	}
+
+	return
+}
+
+type gsm7bitPacked struct {
+}
+
+func (c *gsm7bitPacked) Encode(str string) ([]byte, error) {
+	return encode(str, GSM7(true).NewEncoder())
+}
+
+func (c *gsm7bitPacked) Decode(data []byte) (string, error) {
+	return decode(data, GSM7(true).NewDecoder())
+}
+
+func (c *gsm7bitPacked) DataCoding() byte { return GSM7BITCoding }
+
+func (c *gsm7bitPacked) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+	runeSlice := []rune(text)
+	tLen := len(runeSlice)
+	escCharsLen := len(GetEscapeChars(runeSlice))
+	regCharsLen := tLen - escCharsLen
+	// Esacpe characters occupy 2 octets/septets
+	// https://en.wikipedia.org/wiki/GSM_03.38
+	// https://www.developershome.com/sms/gsmAlphabet.asp
+	return uint((regCharsLen*7+escCharsLen*2*7+7)/8) > octetLimit
+}
+
+func (c *gsm7bitPacked) GetSeptetCount(runeSlice []rune) int {
+	tLen := len(runeSlice)
+	escCharsLen := len(GetEscapeChars(runeSlice))
+	regCharsLen := tLen - escCharsLen
+	return escCharsLen*2 + regCharsLen
+}
+
+func (c *gsm7bitPacked) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
+	if octetLimit < 64 {
+		octetLimit = 134
+	}
+
+	allSeg = [][]byte{}
+	runeSlice := []rune(text)
+	lim := int(octetLimit * 8 / 7)
 
 	fr, to := 0, lim
 	for fr < len(runeSlice) {
@@ -136,24 +170,20 @@ func (c *gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, er
 			to = len(runeSlice)
 		}
 
-		if c.packed {
-			to = determineTo(fr, to, lim, runeSlice)
-		}
+		to = determineTo(fr, to, lim, runeSlice)
 
 		seg, err := c.Encode(string(runeSlice[fr:to]))
 		if err != nil {
 			return nil, err
 		}
 
-		if c.packed {
-			includeLSB := false
-			nSeptet := c.GetSeptetCount(runeSlice[fr:to])
-			if nSeptet != lim && nSeptet%8 == 0 { // The last octet's LSB should be included during shift
-				includeLSB = true
-			}
-
-			seg = shiftBitsLeftOne(seg, includeLSB)
+		includeLSB := false
+		nSeptet := c.GetSeptetCount(runeSlice[fr:to])
+		if nSeptet != lim && nSeptet%8 == 0 { // The last octet's LSB should be included during shift
+			includeLSB = true
 		}
+
+		seg = shiftBitsLeftOne(seg, includeLSB)
 
 		allSeg = append(allSeg, seg)
 		fr, to = to, to+lim
@@ -332,7 +362,7 @@ var (
 	// GSM7BITPACKED is packed gsm-7bit encoding.
 	// Most of SMSC(s) use unpack version.
 	// Should be tested before using.
-	GSM7BITPACKED Encoding = &gsm7bit{packed: true}
+	GSM7BITPACKED Encoding = &gsm7bitPacked{}
 
 	// ASCII is ascii encoding.
 	ASCII Encoding = &ascii{}
