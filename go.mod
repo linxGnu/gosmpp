@@ -7,7 +7,8 @@ require (
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.16.0
+
 )
 
 require (

@@ -66,6 +66,17 @@ func (c *ShortMessage) SetMessageWithEncoding(message string, enc data.Encoding)
 			c.message = message
 			c.enc = enc
 		}
+
+		if c.enc == data.GSM7BITPACKED { // to prevent unwanted "@"
+			runeSlice := []rune(c.message)
+			tLen := len(runeSlice)
+			escCharsLen := len(data.GetEscapeChars(runeSlice))
+			regCharsLen := tLen - escCharsLen
+			nSeptet := escCharsLen*2 + regCharsLen
+			if (nSeptet+1)%8 == 0 {
+				c.messageData[len(c.messageData)-1] = (c.messageData[len(c.messageData)-1] & 0x01) | (0x0D << 1) /* https://en.wikipedia.org/wiki/GSM_03.38 Ref tekst: "..When there are 7 spare bits in the last octet of a message..."*/
+			}
+		}
 	}
 	return
 }
