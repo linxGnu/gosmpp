@@ -11,7 +11,7 @@ import (
 var (
 	ErrWindowSizeEqualZero         = errors.New("request window size cannot be 0")
 	ErrExpireCheckTimerNotSet      = errors.New("ExpireCheckTimer cannot be 0 if PduExpireTimeOut is set")
-	ErrStoreAccessTimeOutEqualZero = errors.New("toreAccessTimeOut window size cannot be 0")
+	ErrStoreAccessTimeOutEqualZero = errors.New("StoreAccessTimeOut window size cannot be 0")
 )
 
 // Session represents session for TX, RX, TRX.
