@@ -157,10 +157,7 @@ func (t *transceivable) windowCleanup() {
 			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
 			for _, request := range t.requestStore.List(ctx) {
 				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
-					err := t.requestStore.Delete(ctx, request.GetSequenceNumber())
-					if err != nil {
-
-					}
+					_ = t.requestStore.Delete(ctx, request.GetSequenceNumber())
 					if t.settings.OnExpiredPduRequest != nil {
 						bindClose := t.settings.OnExpiredPduRequest(request.PDU)
 						if bindClose {

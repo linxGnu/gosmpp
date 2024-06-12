@@ -136,7 +136,7 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 				defer cancelFunc()
 				request, ok := t.requestStore.Get(ctx, p.GetSequenceNumber())
 				if ok {
-					t.requestStore.Delete(ctx, p.GetSequenceNumber())
+					_ = t.requestStore.Delete(ctx, p.GetSequenceNumber())
 					response := Response{
 						PDU:             p,
 						OriginalRequest: request,
