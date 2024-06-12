@@ -50,7 +50,7 @@ type Settings struct {
 	// `Responded` flag indicates this pdu is responded automatically,
 	// no manual respond needed.
 	//
-	// Will be ignored if OnAllPDU or RequestWindowConfig is set
+	// Will be ignored if OnAllPDU or WindowedRequestTracking is set
 	OnPDU PDUCallback
 
 	// OnAllPDU handles all received PDU from SMSC.
@@ -60,7 +60,7 @@ type Settings struct {
 	//
 	// User can also decide to close bind by retuning true, default is false
 	//
-	// Will be ignored if RequestWindowConfig is set
+	// Will be ignored if WindowedRequestTracking is set
 	OnAllPDU AllPDUCallback
 
 	// OnReceivingError notifies happened error while reading PDU
@@ -80,12 +80,13 @@ type Settings struct {
 	OnRebind RebindCallback
 
 	// SMPP Bind Window tracking feature config
-	*RequestWindowConfig
+	*WindowedRequestTracking
 
 	response func(pdu.PDU)
 }
 
-type RequestWindowConfig struct {
+// WindowedRequestTracking settings for TX (transmitter) and TRX (transceiver) request store.
+type WindowedRequestTracking struct {
 
 	// OnReceivedPduRequest handles received PDU request from SMSC.
 	//

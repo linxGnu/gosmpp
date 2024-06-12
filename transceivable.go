@@ -53,7 +53,7 @@ func newTransceivable(conn *Connection, settings Settings, requestStore RequestS
 			}
 		},
 
-		RequestWindowConfig: settings.RequestWindowConfig,
+		WindowedRequestTracking: settings.WindowedRequestTracking,
 	}, requestStore)
 
 	t.in = newReceivable(conn, Settings{
@@ -79,7 +79,7 @@ func newTransceivable(conn *Connection, settings Settings, requestStore RequestS
 			}
 		},
 
-		RequestWindowConfig: settings.RequestWindowConfig,
+		WindowedRequestTracking: settings.WindowedRequestTracking,
 
 		response: func(p pdu.PDU) {
 			_ = t.Submit(p)
@@ -91,11 +91,11 @@ func newTransceivable(conn *Connection, settings Settings, requestStore RequestS
 }
 
 func (t *transceivable) start() {
-	if t.settings.RequestWindowConfig != nil && t.settings.ExpireCheckTimer > 0 {
+	if t.settings.WindowedRequestTracking != nil && t.settings.ExpireCheckTimer > 0 {
 		t.wg.Add(1)
 		go func() {
 			t.windowCleanup()
-			t.wg.Done()
+			defer t.wg.Done()
 		}()
 
 	}
@@ -132,7 +132,7 @@ func (t *transceivable) Submit(p pdu.PDU) error {
 }
 
 func (t *transceivable) GetWindowSize() int {
-	if t.settings.RequestWindowConfig != nil {
+	if t.settings.WindowedRequestTracking != nil {
 		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
 		defer cancelFunc()
 		return t.requestStore.Length(ctx)

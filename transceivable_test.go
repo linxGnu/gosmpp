@@ -242,7 +242,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 				t.Log(err)
 			},
 
-			RequestWindowConfig: &RequestWindowConfig{
+			WindowedRequestTracking: &WindowedRequestTracking{
 				OnReceivedPduRequest:  handleReceivedPduRequest(t),
 				OnExpectedPduResponse: handleExpectedPduResponse(t),
 				OnExpiredPduRequest:   nil,
@@ -308,7 +308,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 				t.Log(err)
 			},
 
-			RequestWindowConfig: &RequestWindowConfig{
+			WindowedRequestTracking: &WindowedRequestTracking{
 				OnReceivedPduRequest:  handleReceivedPduRequest(t),
 				OnExpectedPduResponse: handleExpectedPduResponse(t),
 				OnExpiredPduRequest:   nil,

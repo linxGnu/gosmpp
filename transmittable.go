@@ -71,7 +71,7 @@ func (t *transmittable) close(state State) (err error) {
 
 		// concurrent-map has no func to verify initialization
 		// we need to do the same check in
-		if t.settings.RequestWindowConfig != nil {
+		if t.settings.WindowedRequestTracking != nil {
 			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
 			defer cancelFunc()
 			if t.requestStore.Length(ctx) > 0 {
@@ -113,12 +113,12 @@ func (t *transmittable) start() {
 	if t.settings.EnquireLink > 0 {
 		go func() {
 			t.loopWithEnquireLink()
-			t.wg.Done()
+			defer t.wg.Done()
 		}()
 	} else {
 		go func() {
 			t.loop()
-			t.wg.Done()
+			defer t.wg.Done()
 		}()
 	}
 }
@@ -210,7 +210,7 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 		return
 	}
 
-	if t.settings.RequestWindowConfig != nil && t.settings.MaxWindowSize > 0 && isAllowPDU(p) {
+	if t.settings.WindowedRequestTracking != nil && t.settings.MaxWindowSize > 0 && isAllowPDU(p) {
 		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
 		defer cancelFunc()
 		if t.requestStore.Length(ctx) < int(t.settings.MaxWindowSize) {

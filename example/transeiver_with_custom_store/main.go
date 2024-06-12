@@ -59,7 +59,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				fmt.Println(state)
 			},
 
-			RequestWindowConfig: &gosmpp.RequestWindowConfig{
+			WindowedRequestTracking: &gosmpp.WindowedRequestTracking{
 				OnReceivedPduRequest:  handleReceivedPduRequest(),
 				OnExpectedPduResponse: handleExpectedPduResponse(),
 				OnExpiredPduRequest:   handleExpirePduRequest(),

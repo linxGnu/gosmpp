@@ -10,16 +10,19 @@ import (
 	"time"
 )
 
+// Request object used for RequestStore
 type Request struct {
 	pdu.PDU
 	TimeSent time.Time
 }
 
+// Response object used for RequestStore
 type Response struct {
 	pdu.PDU
 	OriginalRequest Request
 }
 
+// RequestStore interface used for WindowedRequestTracking
 type RequestStore interface {
 	Set(ctx context.Context, request Request)
 	Get(ctx context.Context, sequenceNumber int32) (Request, bool)
@@ -40,72 +43,60 @@ func NewDefaultStore() DefaultStore {
 }
 
 func (s DefaultStore) Set(ctx context.Context, request Request) {
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Task cancelled")
-			return
-		default:
-			s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), request)
-			return
-		}
+	select {
+	case <-ctx.Done():
+		fmt.Println("Task cancelled")
+		return
+	default:
+		s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), request)
+		return
 	}
 }
 
 func (s DefaultStore) Get(ctx context.Context, sequenceNumber int32) (Request, bool) {
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Task cancelled")
-			return Request{}, false
-		default:
-			return s.store.Get(strconv.Itoa(int(sequenceNumber)))
-		}
+	select {
+	case <-ctx.Done():
+		fmt.Println("Task cancelled")
+		return Request{}, false
+	default:
+		return s.store.Get(strconv.Itoa(int(sequenceNumber)))
 	}
 }
 
 func (s DefaultStore) List(ctx context.Context) []Request {
-	for {
-		select {
-		case <-ctx.Done():
-			return []Request{}
-		default:
-			return maps.Values(s.store.Items())
-		}
+	select {
+	case <-ctx.Done():
+		return []Request{}
+	default:
+		return maps.Values(s.store.Items())
 	}
 }
 
 func (s DefaultStore) Delete(ctx context.Context, sequenceNumber int32) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			s.store.Remove(strconv.Itoa(int(sequenceNumber)))
-			return
-		}
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		s.store.Remove(strconv.Itoa(int(sequenceNumber)))
+		return
 	}
 }
 
 func (s DefaultStore) Clear(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			s.store.Clear()
-			return
-		}
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		s.store.Clear()
+		return
 	}
 }
 
 func (s DefaultStore) Length(ctx context.Context) int {
-	for {
-		select {
-		case <-ctx.Done():
-			return -1
-		default:
-			return s.store.Count()
-		}
+	select {
+	case <-ctx.Done():
+		return -1
+	default:
+		return s.store.Count()
 	}
 }

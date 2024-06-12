@@ -33,7 +33,7 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
-			RequestWindowConfig: &RequestWindowConfig{
+			WindowedRequestTracking: &WindowedRequestTracking{
 				OnReceivedPduRequest: handleReceivedPduRequest(t),
 				MaxWindowSize:        10,
 				StoreAccessTimeOut:   100,
@@ -49,7 +49,7 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
-			RequestWindowConfig: &RequestWindowConfig{
+			WindowedRequestTracking: &WindowedRequestTracking{
 				OnReceivedPduRequest: handleReceivedPduRequest(t),
 				MaxWindowSize:        10,
 				StoreAccessTimeOut:   100,
@@ -65,7 +65,7 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
-			RequestWindowConfig: &RequestWindowConfig{
+			WindowedRequestTracking: &WindowedRequestTracking{
 				MaxWindowSize:      10,
 				StoreAccessTimeOut: 100,
 			},
@@ -80,7 +80,7 @@ func TestGetWindowSize(t *testing.T) {
 		Settings{
 			EnquireLink: 5 * time.Second,
 			ReadTimeout: 10 * time.Second,
-			RequestWindowConfig: &RequestWindowConfig{
+			WindowedRequestTracking: &WindowedRequestTracking{
 				ExpireCheckTimer:   5,
 				PduExpireTimeOut:   10,
 				MaxWindowSize:      10,

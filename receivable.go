@@ -64,7 +64,7 @@ func (t *receivable) start() {
 	t.wg.Add(1)
 	go func() {
 		t.loop()
-		t.wg.Done()
+		defer t.wg.Done()
 	}()
 }
 
@@ -104,7 +104,7 @@ func (t *receivable) loop() {
 
 		var closeOnUnbind bool
 		if p != nil {
-			if t.settings.RequestWindowConfig != nil && t.settings.OnExpectedPduResponse != nil {
+			if t.settings.WindowedRequestTracking != nil && t.settings.OnExpectedPduResponse != nil {
 				closeOnUnbind = t.handleWindowPdu(p)
 			} else if t.settings.OnAllPDU != nil {
 				closeOnUnbind = t.handleAllPdu(p)
@@ -120,7 +120,7 @@ func (t *receivable) loop() {
 }
 
 func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
-	if t.settings.RequestWindowConfig != nil && t.settings.OnExpectedPduResponse != nil && p != nil {
+	if t.settings.WindowedRequestTracking != nil && t.settings.OnExpectedPduResponse != nil && p != nil {
 		// This case must match the same request item list in transmittable write func
 		switch pp := p.(type) {
 		case *pdu.CancelSMResp,
