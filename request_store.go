@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-// Request object used for RequestStore
+// Request represent a request tracked by the RequestStore
 type Request struct {
 	pdu.PDU
 	TimeSent time.Time
 }
 
-// Response object used for RequestStore
+// Response represents a response from a Request in the RequestStore
 type Response struct {
 	pdu.PDU
 	OriginalRequest Request
@@ -24,12 +24,12 @@ type Response struct {
 
 // RequestStore interface used for WindowedRequestTracking
 type RequestStore interface {
-	Set(ctx context.Context, request Request)
+	Set(ctx context.Context, request Request) error
 	Get(ctx context.Context, sequenceNumber int32) (Request, bool)
 	List(ctx context.Context) []Request
-	Delete(ctx context.Context, sequenceNumber int32)
-	Clear(ctx context.Context)
-	Length(ctx context.Context) int
+	Delete(ctx context.Context, sequenceNumber int32) error
+	Clear(ctx context.Context) error
+	Length(ctx context.Context) (int, error)
 }
 
 type DefaultStore struct {
@@ -42,14 +42,14 @@ func NewDefaultStore() DefaultStore {
 	}
 }
 
-func (s DefaultStore) Set(ctx context.Context, request Request) {
+func (s DefaultStore) Set(ctx context.Context, request Request) error {
 	select {
 	case <-ctx.Done():
 		fmt.Println("Task cancelled")
-		return
+		return ctx.Err()
 	default:
 		s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), request)
-		return
+		return nil
 	}
 }
 
@@ -72,31 +72,31 @@ func (s DefaultStore) List(ctx context.Context) []Request {
 	}
 }
 
-func (s DefaultStore) Delete(ctx context.Context, sequenceNumber int32) {
+func (s DefaultStore) Delete(ctx context.Context, sequenceNumber int32) error {
 	select {
 	case <-ctx.Done():
-		return
+		return ctx.Err()
 	default:
 		s.store.Remove(strconv.Itoa(int(sequenceNumber)))
-		return
+		return nil
 	}
 }
 
-func (s DefaultStore) Clear(ctx context.Context) {
+func (s DefaultStore) Clear(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return
+		return ctx.Err()
 	default:
 		s.store.Clear()
-		return
+		return nil
 	}
 }
 
-func (s DefaultStore) Length(ctx context.Context) int {
+func (s DefaultStore) Length(ctx context.Context) (int, error) {
 	select {
 	case <-ctx.Done():
-		return -1
+		return 0, ctx.Err()
 	default:
-		return s.store.Count()
+		return s.store.Count(), nil
 	}
 }

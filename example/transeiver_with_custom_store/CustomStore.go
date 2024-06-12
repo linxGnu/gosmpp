@@ -35,16 +35,19 @@ func NewCustomStore() CustomStore {
 	}
 }
 
-func (s CustomStore) Set(ctx context.Context, request gosmpp.Request) {
+func (s CustomStore) Set(ctx context.Context, request gosmpp.Request) error {
 	for {
 		select {
 		case <-ctx.Done():
 			fmt.Println("Task cancelled")
-			return
+			return ctx.Err()
 		default:
 			b, _ := serialize(request)
-			_ = s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), b)
-			return
+			err := s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), b)
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 	}
 }
@@ -90,38 +93,44 @@ func (s CustomStore) List(ctx context.Context) []gosmpp.Request {
 	}
 }
 
-func (s CustomStore) Delete(ctx context.Context, sequenceNumber int32) {
+func (s CustomStore) Delete(ctx context.Context, sequenceNumber int32) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return ctx.Err()
 		default:
-			_ = s.store.Delete(strconv.Itoa(int(sequenceNumber)))
-			return
+			err := s.store.Delete(strconv.Itoa(int(sequenceNumber)))
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 	}
 }
 
-func (s CustomStore) Clear(ctx context.Context) {
+func (s CustomStore) Clear(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return ctx.Err()
 		default:
-			_ = s.store.Reset()
-			return
+			err := s.store.Reset()
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 	}
 }
 
-func (s CustomStore) Length(ctx context.Context) int {
+func (s CustomStore) Length(ctx context.Context) (int, error) {
 	for {
 		select {
 		case <-ctx.Done():
-			return -1
+			return 0, ctx.Err()
 
 		default:
-			return s.store.Len()
+			return s.store.Len(), nil
 		}
 	}
 }

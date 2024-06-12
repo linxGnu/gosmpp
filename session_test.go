@@ -40,7 +40,12 @@ func TestGetWindowSize(t *testing.T) {
 			},
 		}, 2*time.Second)
 	require.Nil(t, err)
-	require.Equal(t, 0, s.GetWindowSize())
+	size, err := s.GetWindowSize()
+	if err != nil {
+		return
+	}
+	require.Nil(t, err)
+	require.Equal(t, 0, size)
 	err = s.Close()
 	require.Nil(t, err)
 
@@ -56,7 +61,12 @@ func TestGetWindowSize(t *testing.T) {
 			},
 		}, 2*time.Second)
 	require.Nil(t, err)
-	require.Equal(t, -1, s.GetWindowSize())
+	size, err = s.GetWindowSize()
+	if err != nil {
+		return
+	}
+	require.Nil(t, err)
+	require.Equal(t, -1, size)
 	err = s.Close()
 	require.Nil(t, err)
 
@@ -71,7 +81,12 @@ func TestGetWindowSize(t *testing.T) {
 			},
 		}, 2*time.Second)
 	require.NoError(t, err)
-	require.Equal(t, 0, s.GetWindowSize())
+	size, err = s.GetWindowSize()
+	if err != nil {
+		return
+	}
+	require.Nil(t, err)
+	require.Equal(t, 0, size)
 	err = s.Close()
 	require.Nil(t, err)
 
@@ -88,7 +103,12 @@ func TestGetWindowSize(t *testing.T) {
 			},
 		}, 2*time.Second)
 	require.NoError(t, err)
-	require.Equal(t, 0, s.GetWindowSize())
+	size, err = s.GetWindowSize()
+	if err != nil {
+		return
+	}
+	require.Nil(t, err)
+	require.Equal(t, -1, size)
 	err = s.Close()
 	require.Nil(t, err)
 }

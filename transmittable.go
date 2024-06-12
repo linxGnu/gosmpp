@@ -74,12 +74,20 @@ func (t *transmittable) close(state State) (err error) {
 		if t.settings.WindowedRequestTracking != nil {
 			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
 			defer cancelFunc()
-			if t.requestStore.Length(ctx) > 0 {
+			var size int
+			size, err = t.requestStore.Length(ctx)
+			if err != nil {
+				return err
+			}
+			if size > 0 {
 				for _, request := range t.requestStore.List(ctx) {
 					if t.settings.OnClosePduRequest != nil {
 						t.settings.OnClosePduRequest(request.PDU)
 					}
-					t.requestStore.Delete(ctx, request.GetSequenceNumber())
+					err = t.requestStore.Delete(ctx, request.GetSequenceNumber())
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -213,7 +221,12 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	if t.settings.WindowedRequestTracking != nil && t.settings.MaxWindowSize > 0 && isAllowPDU(p) {
 		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
 		defer cancelFunc()
-		if t.requestStore.Length(ctx) < int(t.settings.MaxWindowSize) {
+		var length int
+		length, err = t.requestStore.Length(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if length < int(t.settings.MaxWindowSize) {
 			n, err = t.conn.WritePDU(p)
 			if err != nil {
 				return 0, err
@@ -222,7 +235,10 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 				PDU:      p,
 				TimeSent: time.Now(),
 			}
-			t.requestStore.Set(ctx, request)
+			err = t.requestStore.Set(ctx, request)
+			if err != nil {
+				return 0, err
+			}
 		} else {
 			return 0, ErrWindowsFull
 		}

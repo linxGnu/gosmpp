@@ -2,10 +2,15 @@ package gosmpp
 
 import (
 	"context"
+	"errors"
 	"github.com/linxGnu/gosmpp/pdu"
 	"sync"
 	"sync/atomic"
 	"time"
+)
+
+var (
+	ErrWindowNotConfigured = errors.New("window settings not configured")
 )
 
 type transceivable struct {
@@ -131,13 +136,13 @@ func (t *transceivable) Submit(p pdu.PDU) error {
 	return t.out.Submit(p)
 }
 
-func (t *transceivable) GetWindowSize() int {
+func (t *transceivable) GetWindowSize() (int, error) {
 	if t.settings.WindowedRequestTracking != nil {
 		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
 		defer cancelFunc()
 		return t.requestStore.Length(ctx)
 	}
-	return 0
+	return 0, ErrWindowNotConfigured
 
 }
 
@@ -150,10 +155,12 @@ func (t *transceivable) windowCleanup() {
 			return
 		case <-ticker.C:
 			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
-			defer cancelFunc()
 			for _, request := range t.requestStore.List(ctx) {
 				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
-					t.requestStore.Delete(ctx, request.GetSequenceNumber())
+					err := t.requestStore.Delete(ctx, request.GetSequenceNumber())
+					if err != nil {
+
+					}
 					if t.settings.OnExpiredPduRequest != nil {
 						bindClose := t.settings.OnExpiredPduRequest(request.PDU)
 						if bindClose {
@@ -162,6 +169,7 @@ func (t *transceivable) windowCleanup() {
 					}
 				}
 			}
+			cancelFunc() //defer should not be used because we are inside loop
 		}
 	}
 }

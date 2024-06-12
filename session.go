@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	ErrWindowSizeEqualZero         = errors.New("request window size cannot be 0")
-	ErrExpireCheckTimerNotSet      = errors.New("ExpireCheckTimer cannot be 0 if PduExpireTimeOut is set")
-	ErrStoreAccessTimeOutEqualZero = errors.New("StoreAccessTimeOut window size cannot be 0")
+	ErrWindowSizeEqualZero                   = errors.New("request window size cannot be 0")
+	ErrExpireCheckTimerNotSet                = errors.New("ExpireCheckTimer cannot be 0 if PduExpireTimeOut is set")
+	ErrStoreAccessTimeOutEqualZero           = errors.New("StoreAccessTimeOut window size cannot be 0")
+	ErrWindowSizeNotAvailableOnReceiverBinds = errors.New("window size not available on receiver binds")
 )
 
 // Session represents session for TX, RX, TRX.
@@ -126,11 +127,15 @@ func (s *Session) Transceiver() Transceiver {
 	return s.bound()
 }
 
-func (s *Session) GetWindowSize() int {
+func (s *Session) GetWindowSize() (int, error) {
 	if s.c.GetBindType() == pdu.Transmitter || s.c.GetBindType() == pdu.Transceiver {
-		return s.bound().GetWindowSize()
+		size, err := s.bound().GetWindowSize()
+		if err != nil {
+			return 0, err
+		}
+		return size, nil
 	}
-	return -1
+	return 0, ErrWindowSizeNotAvailableOnReceiverBinds
 }
 
 // Close session.
