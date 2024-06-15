@@ -120,13 +120,13 @@ func (t *transmittable) start() {
 	t.wg.Add(1)
 	if t.settings.EnquireLink > 0 {
 		go func() {
-			t.loopWithEnquireLink()
 			defer t.wg.Done()
+			t.loopWithEnquireLink()
 		}()
 	} else {
 		go func() {
-			t.loop()
 			defer t.wg.Done()
+			t.loop()
 		}()
 	}
 }

@@ -63,8 +63,8 @@ func (t *receivable) closing(state State) {
 func (t *receivable) start() {
 	t.wg.Add(1)
 	go func() {
-		t.loop()
 		defer t.wg.Done()
+		t.loop()
 	}()
 }
 

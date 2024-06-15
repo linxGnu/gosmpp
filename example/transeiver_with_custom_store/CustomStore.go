@@ -36,102 +36,89 @@ func NewCustomStore() CustomStore {
 }
 
 func (s CustomStore) Set(ctx context.Context, request gosmpp.Request) error {
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Task cancelled")
-			return ctx.Err()
-		default:
-			b, _ := serialize(request)
-			err := s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), b)
-			if err != nil {
-				return err
-			}
-			return nil
+	select {
+	case <-ctx.Done():
+		fmt.Println("Task cancelled")
+		return ctx.Err()
+	default:
+		b, _ := serialize(request)
+		err := s.store.Set(strconv.Itoa(int(request.PDU.GetSequenceNumber())), b)
+		if err != nil {
+			return err
 		}
+		return nil
 	}
 }
 
 func (s CustomStore) Get(ctx context.Context, sequenceNumber int32) (gosmpp.Request, bool) {
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Task cancelled")
+	select {
+	case <-ctx.Done():
+		fmt.Println("Task cancelled")
+		return gosmpp.Request{}, false
+	default:
+		bRequest, err := s.store.Get(strconv.Itoa(int(sequenceNumber)))
+		if err != nil {
 			return gosmpp.Request{}, false
-		default:
-			bRequest, err := s.store.Get(strconv.Itoa(int(sequenceNumber)))
-			if err != nil {
-				return gosmpp.Request{}, false
-			}
-			request, err := deserialize(bRequest)
-			if err != nil {
-				return gosmpp.Request{}, false
-			}
-			return request, true
 		}
+		request, err := deserialize(bRequest)
+		if err != nil {
+			return gosmpp.Request{}, false
+		}
+		return request, true
 	}
 }
 
 func (s CustomStore) List(ctx context.Context) []gosmpp.Request {
 	var requests []gosmpp.Request
-	for {
-		select {
-		case <-ctx.Done():
-			return requests
-		default:
-			it := s.store.Iterator()
-			for it.SetNext() {
-				value, err := it.Value()
-				if err != nil {
-					return requests
-				}
-				request, _ := deserialize(value.Value())
-				requests = append(requests, request)
+	select {
+	case <-ctx.Done():
+		return requests
+	default:
+		it := s.store.Iterator()
+		for it.SetNext() {
+			value, err := it.Value()
+			if err != nil {
+				return requests
 			}
-			return requests
+			request, _ := deserialize(value.Value())
+			requests = append(requests, request)
 		}
+		return requests
 	}
 }
 
 func (s CustomStore) Delete(ctx context.Context, sequenceNumber int32) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			err := s.store.Delete(strconv.Itoa(int(sequenceNumber)))
-			if err != nil {
-				return err
-			}
-			return nil
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		err := s.store.Delete(strconv.Itoa(int(sequenceNumber)))
+		if err != nil {
+			return err
 		}
+		return nil
 	}
 }
 
 func (s CustomStore) Clear(ctx context.Context) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			err := s.store.Reset()
-			if err != nil {
-				return err
-			}
-			return nil
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		err := s.store.Reset()
+		if err != nil {
+			return err
 		}
+		return nil
 	}
 }
 
 func (s CustomStore) Length(ctx context.Context) (int, error) {
-	for {
-		select {
-		case <-ctx.Done():
-			return 0, ctx.Err()
-
-		default:
-			return s.store.Len(), nil
-		}
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	default:
+		return s.store.Len(), nil
 	}
 }
 

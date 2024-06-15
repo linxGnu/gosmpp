@@ -99,8 +99,8 @@ func (t *transceivable) start() {
 	if t.settings.WindowedRequestTracking != nil && t.settings.ExpireCheckTimer > 0 {
 		t.wg.Add(1)
 		go func() {
-			t.windowCleanup()
 			defer t.wg.Done()
+			t.windowCleanup()
 		}()
 
 	}
