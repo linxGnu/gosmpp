@@ -1,9 +1,18 @@
 package gosmpp
 
 import (
+	"errors"
 	"fmt"
+	"github.com/linxGnu/gosmpp/pdu"
 	"sync/atomic"
 	"time"
+)
+
+var (
+	ErrWindowSizeEqualZero                   = errors.New("request window size cannot be 0")
+	ErrExpireCheckTimerNotSet                = errors.New("ExpireCheckTimer cannot be 0 if PduExpireTimeOut is set")
+	ErrStoreAccessTimeOutEqualZero           = errors.New("StoreAccessTimeOut window size cannot be 0")
+	ErrWindowSizeNotAvailableOnReceiverBinds = errors.New("window size not available on receiver binds")
 )
 
 // Session represents session for TX, RX, TRX.
@@ -17,9 +26,12 @@ type Session struct {
 
 	trx atomic.Value // transceivable
 
-	state     int32
-	rebinding int32
+	state        int32
+	rebinding    int32
+	requestStore RequestStore
 }
+
+type SessionOption func(session *Session)
 
 // NewSession creates new session for TX, RX, TRX.
 //
@@ -29,9 +41,24 @@ type Session struct {
 // `rebindingInterval` indicates duration that Session has to wait before rebinding again.
 //
 // Setting `rebindingInterval <= 0` will disable `auto-rebind` functionality.
-func NewSession(c Connector, settings Settings, rebindingInterval time.Duration) (session *Session, err error) {
+func NewSession(c Connector, settings Settings, rebindingInterval time.Duration, opts ...SessionOption) (session *Session, err error) {
+	// Loop through each option
+
 	if settings.ReadTimeout <= 0 || settings.ReadTimeout <= settings.EnquireLink {
 		return nil, fmt.Errorf("invalid settings: ReadTimeout must greater than max(0, EnquireLink)")
+	}
+	var requestStore RequestStore = nil
+	if settings.WindowedRequestTracking != nil {
+		requestStore = NewDefaultStore()
+		if settings.MaxWindowSize == 0 {
+			return nil, ErrWindowSizeEqualZero
+		}
+		if settings.StoreAccessTimeOut == 0 {
+			return nil, ErrStoreAccessTimeOutEqualZero
+		}
+		if settings.PduExpireTimeOut > 0 && settings.ExpireCheckTimer == 0 {
+			return nil, ErrExpireCheckTimerNotSet
+		}
 	}
 
 	conn, err := c.Connect()
@@ -40,6 +67,11 @@ func NewSession(c Connector, settings Settings, rebindingInterval time.Duration)
 			c:                 c,
 			rebindingInterval: rebindingInterval,
 			originalOnClosed:  settings.OnClosed,
+			requestStore:      requestStore,
+		}
+
+		for _, opt := range opts {
+			opt(session)
 		}
 
 		if rebindingInterval > 0 {
@@ -62,9 +94,17 @@ func NewSession(c Connector, settings Settings, rebindingInterval time.Duration)
 		}
 
 		// bind to session
-		session.trx.Store(newTransceivable(conn, session.settings))
+		trans := newTransceivable(conn, session.settings, session.requestStore)
+		trans.start()
+		session.trx.Store(trans)
 	}
 	return
+}
+
+func WithRequestStore(store RequestStore) SessionOption {
+	return func(s *Session) {
+		s.requestStore = store
+	}
 }
 
 func (s *Session) bound() *transceivable {
@@ -85,6 +125,17 @@ func (s *Session) Receiver() Receiver {
 // Transceiver returns bound Transceiver.
 func (s *Session) Transceiver() Transceiver {
 	return s.bound()
+}
+
+func (s *Session) GetWindowSize() (int, error) {
+	if s.c.GetBindType() == pdu.Transmitter || s.c.GetBindType() == pdu.Transceiver {
+		size, err := s.bound().GetWindowSize()
+		if err != nil {
+			return 0, err
+		}
+		return size, nil
+	}
+	return 0, ErrWindowSizeNotAvailableOnReceiverBinds
 }
 
 // Close session.
@@ -115,7 +166,9 @@ func (s *Session) rebind() {
 				time.Sleep(s.rebindingInterval)
 			} else {
 				// bind to session
-				s.trx.Store(newTransceivable(conn, s.settings))
+				trans := newTransceivable(conn, s.settings, s.requestStore)
+				trans.start()
+				s.trx.Store(trans)
 
 				// reset rebinding state
 				atomic.StoreInt32(&s.rebinding, 0)

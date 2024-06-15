@@ -1,26 +1,41 @@
 package gosmpp
 
 import (
-	"sync/atomic"
-
+	"context"
+	"errors"
 	"github.com/linxGnu/gosmpp/pdu"
+	"sync"
+	"sync/atomic"
+	"time"
+)
+
+var (
+	ErrWindowNotConfigured = errors.New("window settings not configured")
 )
 
 type transceivable struct {
 	settings Settings
 
-	conn *Connection
-	in   *receivable
-	out  *transmittable
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
+	conn   *Connection
+	in     *receivable
+	out    *transmittable
 
-	aliveState int32
+	aliveState   int32
+	requestStore RequestStore
 }
+type TransceivableOption func(session *Session)
 
-func newTransceivable(conn *Connection, settings Settings) *transceivable {
+func newTransceivable(conn *Connection, settings Settings, requestStore RequestStore) *transceivable {
+
 	t := &transceivable{
-		settings: settings,
-		conn:     conn,
+		settings:     settings,
+		conn:         conn,
+		requestStore: requestStore,
 	}
+	t.ctx, t.cancel = context.WithCancel(context.Background())
 
 	t.out = newTransmittable(conn, Settings{
 		WriteTimeout: settings.WriteTimeout,
@@ -31,9 +46,6 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 
 		OnClosed: func(state State) {
 			switch state {
-			case ExplicitClosing:
-				return
-
 			case ConnectionIssue:
 				// also close input
 				_ = t.in.close(ExplicitClosing)
@@ -41,9 +53,13 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 				if t.settings.OnClosed != nil {
 					t.settings.OnClosed(ConnectionIssue)
 				}
+			default:
+				return
 			}
 		},
-	})
+
+		WindowedRequestTracking: settings.WindowedRequestTracking,
+	}, requestStore)
 
 	t.in = newReceivable(conn, Settings{
 		ReadTimeout: settings.ReadTimeout,
@@ -56,9 +72,6 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 
 		OnClosed: func(state State) {
 			switch state {
-			case ExplicitClosing:
-				return
-
 			case InvalidStreaming, UnbindClosing:
 				// also close output
 				_ = t.out.close(ExplicitClosing)
@@ -66,18 +79,33 @@ func newTransceivable(conn *Connection, settings Settings) *transceivable {
 				if t.settings.OnClosed != nil {
 					t.settings.OnClosed(state)
 				}
+			default:
+				return
 			}
 		},
+
+		WindowedRequestTracking: settings.WindowedRequestTracking,
 
 		response: func(p pdu.PDU) {
 			_ = t.Submit(p)
 		},
-	})
+	},
+		requestStore,
+	)
+	return t
+}
 
+func (t *transceivable) start() {
+	if t.settings.WindowedRequestTracking != nil && t.settings.ExpireCheckTimer > 0 {
+		t.wg.Add(1)
+		go func() {
+			defer t.wg.Done()
+			t.windowCleanup()
+		}()
+
+	}
 	t.out.start()
 	t.in.start()
-
-	return t
 }
 
 // SystemID returns tagged SystemID which is attached with bind_resp from SMSC.
@@ -106,4 +134,39 @@ func (t *transceivable) Close() (err error) {
 // Submit a PDU.
 func (t *transceivable) Submit(p pdu.PDU) error {
 	return t.out.Submit(p)
+}
+
+func (t *transceivable) GetWindowSize() (int, error) {
+	if t.settings.WindowedRequestTracking != nil {
+		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+		defer cancelFunc()
+		return t.requestStore.Length(ctx)
+	}
+	return 0, ErrWindowNotConfigured
+
+}
+
+func (t *transceivable) windowCleanup() {
+	ticker := time.NewTicker(t.settings.ExpireCheckTimer)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-t.ctx.Done():
+			return
+		case <-ticker.C:
+			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+			for _, request := range t.requestStore.List(ctx) {
+				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
+					_ = t.requestStore.Delete(ctx, request.GetSequenceNumber())
+					if t.settings.OnExpiredPduRequest != nil {
+						bindClose := t.settings.OnExpiredPduRequest(request.PDU)
+						if bindClose {
+							_ = t.Close()
+						}
+					}
+				}
+			}
+			cancelFunc() //defer should not be used because we are inside loop
+		}
+	}
 }

@@ -1,6 +1,8 @@
 package gosmpp
 
-import "github.com/linxGnu/gosmpp/pdu"
+import (
+	"github.com/linxGnu/gosmpp/pdu"
+)
 
 // PDUCallback handles received PDU.
 type PDUCallback func(pdu pdu.PDU, responded bool)

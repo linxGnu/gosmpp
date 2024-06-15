@@ -1,7 +1,8 @@
 package gosmpp
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"net"
 	"runtime"
 	"sync"
@@ -13,7 +14,8 @@ import (
 
 var (
 	// ErrConnectionClosing indicates transmitter is closing. Can not send any PDU.
-	ErrConnectionClosing = fmt.Errorf("connection is closing, can not send PDU to SMSC")
+	ErrConnectionClosing = errors.New("connection is closing, can not send PDU to SMSC")
+	ErrWindowsFull       = errors.New("window full")
 )
 
 type transmittable struct {
@@ -26,15 +28,17 @@ type transmittable struct {
 
 	aliveState   int32
 	pendingWrite int32
+	requestStore RequestStore
 }
 
-func newTransmittable(conn *Connection, settings Settings) *transmittable {
+func newTransmittable(conn *Connection, settings Settings, requestStore RequestStore) *transmittable {
 	t := &transmittable{
 		settings:     settings,
 		conn:         conn,
 		input:        make(chan pdu.PDU, 1),
 		aliveState:   Alive,
 		pendingWrite: 0,
+		requestStore: requestStore,
 	}
 
 	return t
@@ -63,6 +67,29 @@ func (t *transmittable) close(state State) (err error) {
 		// notify transmitter closed
 		if t.settings.OnClosed != nil {
 			t.settings.OnClosed(state)
+		}
+
+		// concurrent-map has no func to verify initialization
+		// we need to do the same check in
+		if t.settings.WindowedRequestTracking != nil {
+			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+			defer cancelFunc()
+			var size int
+			size, err = t.requestStore.Length(ctx)
+			if err != nil {
+				return err
+			}
+			if size > 0 {
+				for _, request := range t.requestStore.List(ctx) {
+					if t.settings.OnClosePduRequest != nil {
+						t.settings.OnClosePduRequest(request.PDU)
+					}
+					err = t.requestStore.Delete(ctx, request.GetSequenceNumber())
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
 	}
 
@@ -93,13 +120,13 @@ func (t *transmittable) start() {
 	t.wg.Add(1)
 	if t.settings.EnquireLink > 0 {
 		go func() {
+			defer t.wg.Done()
 			t.loopWithEnquireLink()
-			t.wg.Done()
 		}()
 	} else {
 		go func() {
+			defer t.wg.Done()
 			t.loop()
-			t.wg.Done()
 		}()
 	}
 }
@@ -164,7 +191,9 @@ func (t *transmittable) check(p pdu.PDU, n int, err error) (closing bool) {
 	}
 
 	if n == 0 {
-		if nErr, ok := err.(net.Error); ok {
+		if errors.Is(err, ErrWindowsFull) {
+			closing = false
+		} else if nErr, ok := err.(net.Error); ok {
 			closing = nErr.Timeout()
 		} else {
 			closing = true
@@ -185,10 +214,48 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 	if t.settings.WriteTimeout > 0 {
 		err = t.conn.SetWriteTimeout(t.settings.WriteTimeout)
 	}
+	if err != nil {
+		return
+	}
 
-	if err == nil {
+	if t.settings.WindowedRequestTracking != nil && t.settings.MaxWindowSize > 0 && isAllowPDU(p) {
+		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+		defer cancelFunc()
+		var length int
+		length, err = t.requestStore.Length(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if length < int(t.settings.MaxWindowSize) {
+			n, err = t.conn.WritePDU(p)
+			if err != nil {
+				return 0, err
+			}
+			request := Request{
+				PDU:      p,
+				TimeSent: time.Now(),
+			}
+			err = t.requestStore.Set(ctx, request)
+			if err != nil {
+				return 0, err
+			}
+		} else {
+			return 0, ErrWindowsFull
+		}
+	} else {
 		n, err = t.conn.WritePDU(p)
 	}
 
 	return
+}
+
+func isAllowPDU(p pdu.PDU) bool {
+	if p.CanResponse() {
+		switch p.(type) {
+		case *pdu.BindRequest, *pdu.Unbind:
+			return false
+		}
+		return true
+	}
+	return false
 }

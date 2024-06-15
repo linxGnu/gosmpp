@@ -23,3 +23,92 @@ func TestInvalidSessionSettings(t *testing.T) {
 		}, 2*time.Second)
 	require.Error(t, err)
 }
+
+func TestGetWindowSize(t *testing.T) {
+
+	auth := nextAuth()
+
+	s, err := NewSession(
+		TXConnector(NonTLSDialer, auth),
+		Settings{
+			EnquireLink: 5 * time.Second,
+			ReadTimeout: 10 * time.Second,
+			WindowedRequestTracking: &WindowedRequestTracking{
+				OnReceivedPduRequest: handleReceivedPduRequest(t),
+				MaxWindowSize:        10,
+				StoreAccessTimeOut:   100,
+			},
+		}, 2*time.Second)
+	require.Nil(t, err)
+	size, err := s.GetWindowSize()
+	if err != nil {
+		return
+	}
+	require.Nil(t, err)
+	require.Equal(t, 0, size)
+	err = s.Close()
+	require.Nil(t, err)
+
+	s, err = NewSession(
+		RXConnector(NonTLSDialer, auth),
+		Settings{
+			EnquireLink: 5 * time.Second,
+			ReadTimeout: 10 * time.Second,
+			WindowedRequestTracking: &WindowedRequestTracking{
+				OnReceivedPduRequest: handleReceivedPduRequest(t),
+				MaxWindowSize:        10,
+				StoreAccessTimeOut:   100,
+			},
+		}, 2*time.Second)
+	require.Nil(t, err)
+	size, err = s.GetWindowSize()
+	if err != nil {
+		return
+	}
+	require.Nil(t, err)
+	require.Equal(t, -1, size)
+	err = s.Close()
+	require.Nil(t, err)
+
+	s, err = NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
+			EnquireLink: 5 * time.Second,
+			ReadTimeout: 10 * time.Second,
+			WindowedRequestTracking: &WindowedRequestTracking{
+				MaxWindowSize:      10,
+				StoreAccessTimeOut: 100,
+			},
+		}, 2*time.Second)
+	require.NoError(t, err)
+	size, err = s.GetWindowSize()
+	if err != nil {
+		return
+	}
+	require.Nil(t, err)
+	require.Equal(t, 0, size)
+	err = s.Close()
+	require.Nil(t, err)
+
+	s, err = NewSession(
+		TRXConnector(NonTLSDialer, auth),
+		Settings{
+			EnquireLink: 5 * time.Second,
+			ReadTimeout: 10 * time.Second,
+			WindowedRequestTracking: &WindowedRequestTracking{
+				ExpireCheckTimer:   5,
+				PduExpireTimeOut:   10,
+				MaxWindowSize:      10,
+				StoreAccessTimeOut: 100,
+			},
+		}, 2*time.Second)
+	require.NoError(t, err)
+	size, err = s.GetWindowSize()
+	if err != nil {
+		return
+	}
+	require.Nil(t, err)
+	require.Equal(t, -1, size)
+	err = s.Close()
+	require.Nil(t, err)
+}
