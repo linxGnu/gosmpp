@@ -116,6 +116,8 @@ func (t *transceivable) SystemID() string {
 // Close transceiver and stop underlying daemons.
 func (t *transceivable) Close() (err error) {
 	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
+		t.cancel()
+
 		// closing input and output
 		_ = t.out.close(StoppingProcessOnly)
 		_ = t.in.close(StoppingProcessOnly)
@@ -127,6 +129,8 @@ func (t *transceivable) Close() (err error) {
 		if t.settings.OnClosed != nil {
 			t.settings.OnClosed(ExplicitClosing)
 		}
+
+		t.wg.Wait()
 	}
 	return
 }
@@ -161,7 +165,7 @@ func (t *transceivable) windowCleanup() {
 					if t.settings.OnExpiredPduRequest != nil {
 						bindClose := t.settings.OnExpiredPduRequest(request.PDU)
 						if bindClose {
-							_ = t.Close()
+							t.closing(ConnectionIssue)
 						}
 					}
 				}
@@ -169,4 +173,20 @@ func (t *transceivable) windowCleanup() {
 			cancelFunc() //defer should not be used because we are inside loop
 		}
 	}
+}
+
+func (t *transceivable) closing(state State) {
+	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
+		t.in.closing(StoppingProcessOnly)
+		t.out.closing(StoppingProcessOnly)
+
+		// close underlying conn
+		_ = t.conn.Close()
+
+		// notify transceiver closed
+		if t.settings.OnClosed != nil {
+			t.settings.OnClosed(state)
+		}
+	}
+	return
 }
