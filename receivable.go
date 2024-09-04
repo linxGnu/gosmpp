@@ -97,7 +97,7 @@ func (t *receivable) loop() {
 			p, err = pdu.Parse(t.conn)
 		}
 		closeOnError := t.check(err)
-		if closeOnError {
+		if closeOnError && atomic.LoadInt32(&t.aliveState) == Alive {
 			t.closing(InvalidStreaming)
 			return
 		}
