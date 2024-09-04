@@ -177,6 +177,8 @@ func (t *transceivable) windowCleanup() {
 
 func (t *transceivable) closing(state State) {
 	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
+		t.cancel()
+
 		t.in.closing(StoppingProcessOnly)
 		t.out.closing(StoppingProcessOnly)
 
@@ -187,6 +189,7 @@ func (t *transceivable) closing(state State) {
 		if t.settings.OnClosed != nil {
 			t.settings.OnClosed(state)
 		}
+		t.wg.Wait()
 	}
 	return
 }
