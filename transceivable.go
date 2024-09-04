@@ -191,5 +191,4 @@ func (t *transceivable) closing(state State) {
 		}
 		t.wg.Wait()
 	}
-	return
 }
