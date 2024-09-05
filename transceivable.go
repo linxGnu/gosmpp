@@ -164,7 +164,7 @@ func (t *transceivable) windowCleanup() {
 					_ = t.requestStore.Delete(ctx, request.GetSequenceNumber())
 					if t.settings.OnExpiredPduRequest != nil {
 						bindClose := t.settings.OnExpiredPduRequest(request.PDU)
-						if bindClose {
+						if bindClose && atomic.LoadInt32(&t.aliveState) == Alive {
 							t.closing(ConnectionIssue)
 						}
 					}

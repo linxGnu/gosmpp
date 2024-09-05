@@ -68,20 +68,6 @@ func (t *receivable) start() {
 	}()
 }
 
-// check error and do closing if needed
-func (t *receivable) check(err error) (closing bool) {
-	if err == nil {
-		return
-	}
-
-	if t.settings.OnReceivingError != nil {
-		t.settings.OnReceivingError(err)
-	}
-
-	closing = true
-	return
-}
-
 func (t *receivable) loop() {
 	var err error
 	for {
@@ -96,9 +82,13 @@ func (t *receivable) loop() {
 		if err = t.conn.SetReadTimeout(t.settings.ReadTimeout); err == nil {
 			p, err = pdu.Parse(t.conn)
 		}
-		closeOnError := t.check(err)
-		if closeOnError && atomic.LoadInt32(&t.aliveState) == Alive {
-			t.closing(InvalidStreaming)
+		if err != nil {
+			if atomic.LoadInt32(&t.aliveState) == Alive {
+				if t.settings.OnReceivingError != nil {
+					t.settings.OnReceivingError(err)
+				}
+				t.closing(InvalidStreaming)
+			}
 			return
 		}
 
@@ -150,13 +140,9 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 			if t.settings.EnableAutoRespond {
 				t.settings.response(pp.GetResponse())
 			} else if t.settings.OnReceivedPduRequest != nil {
-				r, closeBind := t.settings.OnReceivedPduRequest(p)
+				r, _ := t.settings.OnReceivedPduRequest(p)
 				t.settings.response(r)
-				if closeBind {
-					time.Sleep(50 * time.Millisecond)
-					closing = true
-					t.closing(UnbindClosing)
-				}
+
 			}
 		case *pdu.Unbind:
 			if t.settings.EnableAutoRespond {
@@ -165,15 +151,12 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 				// wait to send response before closing
 				time.Sleep(50 * time.Millisecond)
 				closing = true
-				t.closing(UnbindClosing)
 			} else if t.settings.OnReceivedPduRequest != nil {
 				r, closeBind := t.settings.OnReceivedPduRequest(p)
 				t.settings.response(r)
 				if closeBind {
 					time.Sleep(50 * time.Millisecond)
 					closing = true
-					t.closing(UnbindClosing)
-
 				}
 			}
 		default:
@@ -183,7 +166,6 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 				if closeBind {
 					time.Sleep(50 * time.Millisecond)
 					closing = true
-					t.closing(UnbindClosing)
 				}
 			}
 		}
@@ -198,7 +180,6 @@ func (t *receivable) handleAllPdu(p pdu.PDU) (closing bool) {
 		if closeBind {
 			time.Sleep(50 * time.Millisecond)
 			closing = true
-			t.closing(UnbindClosing)
 		}
 	}
 	return
@@ -216,7 +197,6 @@ func (t *receivable) handleOrClose(p pdu.PDU) (closing bool) {
 			time.Sleep(50 * time.Millisecond)
 
 			closing = true
-			t.closing(UnbindClosing)
 
 		default:
 			var responded bool
