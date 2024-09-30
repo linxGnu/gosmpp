@@ -115,24 +115,7 @@ func (t *transceivable) SystemID() string {
 
 // Close transceiver and stop underlying daemons.
 func (t *transceivable) Close() (err error) {
-	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
-		t.cancel()
-
-		// closing input and output
-		_ = t.out.close(StoppingProcessOnly)
-		_ = t.in.close(StoppingProcessOnly)
-
-		// close underlying conn
-		err = t.conn.Close()
-
-		// notify transceiver closed
-		if t.settings.OnClosed != nil {
-			t.settings.OnClosed(ExplicitClosing)
-		}
-
-		t.wg.Wait()
-	}
-	return
+	return t.closing(ExplicitClosing)
 }
 
 // Submit a PDU.
@@ -164,7 +147,7 @@ func (t *transceivable) windowCleanup() {
 					_ = t.requestStore.Delete(ctx, request.GetSequenceNumber())
 					if t.settings.OnExpiredPduRequest != nil {
 						if t.settings.OnExpiredPduRequest(request.PDU) {
-							t.closing(ConnectionIssue)
+							_ = t.closing(ConnectionIssue)
 						}
 					}
 				}
@@ -174,20 +157,23 @@ func (t *transceivable) windowCleanup() {
 	}
 }
 
-func (t *transceivable) closing(state State) {
+func (t *transceivable) closing(state State) (err error) {
 	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
 		t.cancel()
 
-		t.in.closing(StoppingProcessOnly)
-		t.out.closing(StoppingProcessOnly)
+		// closing input and output
+		_ = t.out.close(StoppingProcessOnly)
+		_ = t.in.close(StoppingProcessOnly)
 
 		// close underlying conn
-		_ = t.conn.Close()
+		err = t.conn.Close()
 
 		// notify transceiver closed
 		if t.settings.OnClosed != nil {
 			t.settings.OnClosed(state)
 		}
+
 		t.wg.Wait()
 	}
+	return
 }
