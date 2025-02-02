@@ -20,6 +20,7 @@ type SubmitSM struct {
 	RegisteredDelivery   byte
 	ReplaceIfPresentFlag byte // not used
 	Message              ShortMessage
+	DataCoding           byte
 }
 
 // NewSubmitSM returns SubmitSM PDU.
@@ -38,6 +39,7 @@ func NewSubmitSM() PDU {
 		RegisteredDelivery:   data.DFLT_REG_DELIVERY,
 		ReplaceIfPresentFlag: data.DFTL_REPLACE_IFP,
 		Message:              message,
+		DataCoding:           data.DFLT_DATA_CODING,
 	}
 	c.CommandID = data.SUBMIT_SM
 	return c
