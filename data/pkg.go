@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 )
 
-//nolint
+// nolint
 const (
 	SM_CONNID_LEN        = 16
 	SM_MSG_LEN           = 254
