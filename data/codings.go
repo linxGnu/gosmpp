@@ -320,9 +320,9 @@ func (*ucs2) Decode(data []byte) (string, error) {
 	return decode(data, tmp.NewDecoder())
 }
 
-func (*ucs2) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
-	runeSlice := []rune(text)
-	return uint(len(runeSlice)*2) > octetLimit
+func (c *ucs2) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+	totalBytes, _ := c.Encode(text)
+	return uint(len(totalBytes)) > octetLimit
 }
 
 func (c *ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
@@ -332,24 +332,26 @@ func (c *ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err e
 
 	allSeg = [][]byte{}
 	runeSlice := []rune(text)
-	hextetLim := int(octetLimit / 2) // round down
+	var runeBytes []byte
+	var seg []byte
 
-	// hextet = 16 bits, the correct terms should be hexadectet
-	fr, to := 0, hextetLim
-	for fr < len(runeSlice) {
-		if to > len(runeSlice) {
-			to = len(runeSlice)
-		}
-
-		seg, err := c.Encode(string(runeSlice[fr:to]))
+	for _, r := range runeSlice {
+		runeBytes, err = c.Encode(string(r))
 		if err != nil {
-			return nil, err
+			return
 		}
-		allSeg = append(allSeg, seg)
 
-		fr, to = to, to+hextetLim
+		if uint(len(seg)+len(runeBytes)) > octetLimit {
+			allSeg = append(allSeg, seg)
+			seg = runeBytes[:]
+		} else {
+			seg = append(seg, runeBytes...)
+		}
 	}
 
+	if len(seg) > 0 {
+		allSeg = append(allSeg, seg)
+	}
 	return
 }
 
