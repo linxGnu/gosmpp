@@ -32,7 +32,7 @@ type transmittable struct {
 }
 
 func newTransmittable(conn *Connection, settings Settings, requestStore RequestStore) *transmittable {
-	t := &transmittable{
+	tx := &transmittable{
 		settings:     settings,
 		conn:         conn,
 		input:        make(chan pdu.PDU, 1),
@@ -41,50 +41,50 @@ func newTransmittable(conn *Connection, settings Settings, requestStore RequestS
 		requestStore: requestStore,
 	}
 
-	return t
+	return tx
 }
 
-func (t *transmittable) close(state State) (err error) {
-	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
-		for atomic.LoadInt32(&t.pendingWrite) != 0 {
+func (tx *transmittable) close(state State) (err error) {
+	if atomic.CompareAndSwapInt32(&tx.aliveState, Alive, Closed) {
+		for atomic.LoadInt32(&tx.pendingWrite) != 0 {
 			runtime.Gosched()
 		}
 
 		// notify daemon
-		close(t.input)
+		close(tx.input)
 
 		// wait daemon
-		t.wg.Wait()
+		tx.wg.Wait()
 
 		// try to send unbind
-		_, _ = t.write(pdu.NewUnbind())
+		_, _ = tx.write(pdu.NewUnbind())
 
 		// close connection
 		if state != StoppingProcessOnly {
-			err = t.conn.Close()
+			err = tx.conn.Close()
 		}
 
 		// notify transmitter closed
-		if t.settings.OnClosed != nil {
-			t.settings.OnClosed(state)
+		if tx.settings.OnClosed != nil {
+			tx.settings.OnClosed(state)
 		}
 
 		// concurrent-map has no func to verify initialization
 		// we need to do the same check in
-		if t.settings.WindowedRequestTracking != nil {
-			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+		if tx.settings.WindowedRequestTracking != nil {
+			ctx, cancelFunc := context.WithTimeout(context.Background(), tx.settings.StoreAccessTimeOut*time.Millisecond)
 			defer cancelFunc()
 			var size int
-			size, err = t.requestStore.Length(ctx)
+			size, err = tx.requestStore.Length(ctx)
 			if err != nil {
 				return err
 			}
 			if size > 0 {
-				for _, request := range t.requestStore.List(ctx) {
-					if t.settings.OnClosePduRequest != nil {
-						t.settings.OnClosePduRequest(request.PDU)
+				for _, request := range tx.requestStore.List(ctx) {
+					if tx.settings.OnClosePduRequest != nil {
+						tx.settings.OnClosePduRequest(request.PDU)
 					}
-					err = t.requestStore.Delete(ctx, request.GetSequenceNumber())
+					err = tx.requestStore.Delete(ctx, request.GetSequenceNumber())
 					if err != nil {
 						return err
 					}
@@ -96,83 +96,83 @@ func (t *transmittable) close(state State) (err error) {
 	return
 }
 
-func (t *transmittable) closing(state State) {
+func (tx *transmittable) closing(state State) {
 	go func() {
-		_ = t.close(state)
+		_ = tx.close(state)
 	}()
 }
 
 // Submit a PDU.
-func (t *transmittable) Submit(p pdu.PDU) (err error) {
-	atomic.AddInt32(&t.pendingWrite, 1)
+func (tx *transmittable) Submit(p pdu.PDU) (err error) {
+	atomic.AddInt32(&tx.pendingWrite, 1)
 
-	if atomic.LoadInt32(&t.aliveState) == Alive {
-		t.input <- p
+	if atomic.LoadInt32(&tx.aliveState) == Alive {
+		tx.input <- p
 	} else {
 		err = ErrConnectionClosing
 	}
 
-	atomic.AddInt32(&t.pendingWrite, -1)
+	atomic.AddInt32(&tx.pendingWrite, -1)
 	return
 }
 
-func (t *transmittable) start() {
-	t.wg.Add(1)
-	if t.settings.EnquireLink > 0 {
+func (tx *transmittable) start() {
+	tx.wg.Add(1)
+	if tx.settings.EnquireLink > 0 {
 		go func() {
-			defer t.wg.Done()
-			t.loopWithEnquireLink()
+			defer tx.wg.Done()
+			tx.loopWithEnquireLink()
 		}()
 	} else {
 		go func() {
-			defer t.wg.Done()
-			t.loop()
+			defer tx.wg.Done()
+			tx.loop()
 		}()
 	}
 }
 
-func (t *transmittable) drain() {
-	for range t.input {
+func (tx *transmittable) drain() {
+	for range tx.input {
 	}
 }
 
-func (t *transmittable) loop() {
-	defer t.drain()
+func (tx *transmittable) loop() {
+	defer tx.drain()
 
-	for p := range t.input {
+	for p := range tx.input {
 		if p != nil {
-			n, err := t.write(p)
-			if t.check(p, n, err) {
+			n, err := tx.write(p)
+			if tx.check(p, n, err) {
 				return
 			}
 		}
 	}
 }
 
-func (t *transmittable) loopWithEnquireLink() {
-	ticker := time.NewTicker(t.settings.EnquireLink)
+func (tx *transmittable) loopWithEnquireLink() {
+	ticker := time.NewTicker(tx.settings.EnquireLink)
 	defer func() {
 		ticker.Stop()
-		t.drain()
+		tx.drain()
 	}()
 
 	for {
 		select {
 		case <-ticker.C:
 			eqp := pdu.NewEnquireLink()
-			n, err := t.write(eqp)
-			if t.check(eqp, n, err) {
+			n, err := tx.write(eqp)
+			if tx.check(eqp, n, err) {
 				return
 			}
 
-		case p, ok := <-t.input:
+		case p, ok := <-tx.input:
 			if !ok {
 				return
 			}
 
 			if p != nil {
-				n, err := t.write(p)
-				if t.check(p, n, err) {
+				n, err := tx.write(p)
+				if tx.check(p, n, err) {
 					return
 				}
 			}
@@ -181,13 +181,13 @@ func (t *transmittable) loopWithEnquireLink() {
 }
 
 // check error and do closing if need
-func (t *transmittable) check(p pdu.PDU, n int, err error) (closing bool) {
+func (tx *transmittable) check(p pdu.PDU, n int, err error) (closing bool) {
 	if err == nil {
 		return
 	}
 
-	if t.settings.OnSubmitError != nil {
-		t.settings.OnSubmitError(p, err)
+	if tx.settings.OnSubmitError != nil {
+		tx.settings.OnSubmitError(p, err)
 	}
 
 	if n == 0 {
@@ -203,31 +203,31 @@ func (t *transmittable) check(p pdu.PDU, n int, err error) (closing bool) {
 	}
 
 	if closing {
-		t.closing(ConnectionIssue) // start closing
+		tx.closing(ConnectionIssue) // start closing
 	}
 
 	return
 }
 
 // low level writing
-func (t *transmittable) write(p pdu.PDU) (n int, err error) {
-	if t.settings.WriteTimeout > 0 {
-		err = t.conn.SetWriteTimeout(t.settings.WriteTimeout)
+func (tx *transmittable) write(p pdu.PDU) (n int, err error) {
+	if tx.settings.WriteTimeout > 0 {
+		err = tx.conn.SetWriteTimeout(tx.settings.WriteTimeout)
 	}
 	if err != nil {
 		return
 	}
 
-	if t.settings.WindowedRequestTracking != nil && t.settings.MaxWindowSize > 0 && isAllowPDU(p) {
-		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+	if tx.settings.WindowedRequestTracking != nil && tx.settings.MaxWindowSize > 0 && isAllowPDU(p) {
+		ctx, cancelFunc := context.WithTimeout(context.Background(), tx.settings.StoreAccessTimeOut*time.Millisecond)
 		defer cancelFunc()
 		var length int
-		length, err = t.requestStore.Length(ctx)
+		length, err = tx.requestStore.Length(ctx)
 		if err != nil {
 			return 0, err
 		}
-		if length < int(t.settings.MaxWindowSize) {
-			n, err = t.conn.WritePDU(p)
+		if length < int(tx.settings.MaxWindowSize) {
+			n, err = tx.conn.WritePDU(p)
 			if err != nil {
 				return 0, err
 			}
@@ -235,7 +235,7 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 				PDU:      p,
 				TimeSent: time.Now(),
 			}
-			err = t.requestStore.Set(ctx, request)
+			err = tx.requestStore.Set(ctx, request)
 			if err != nil {
 				return 0, err
 			}
@@ -243,7 +243,7 @@ func (t *transmittable) write(p pdu.PDU) (n int, err error) {
 			return 0, ErrWindowsFull
 		}
 	} else {
-		n, err = t.conn.WritePDU(p)
+		n, err = tx.conn.WritePDU(p)
 	}
 
 	return
