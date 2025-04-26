@@ -30,7 +30,7 @@ func newReceivable(conn *Connection, settings Settings, requestStore RequestStor
 	return rx
 }
 
-func (rx *receivable) close(state State) (err error) {
+func (rx *receivable) close() {
 	if atomic.CompareAndSwapInt32(&rx.aliveState, Alive, Closed) {
 		// cancel to notify stop
 		rx.cancel()
@@ -40,23 +40,14 @@ func (rx *receivable) close(state State) (err error) {
 
 		// wait daemons
 		rx.wg.Wait()
-
-		// close connection to notify daemons to stop
-		if state != StoppingProcessOnly {
-			err = rx.conn.Close()
-		}
-
-		// notify receiver closed
-		if rx.settings.OnClosed != nil {
-			rx.settings.OnClosed(state)
-		}
 	}
 	return
 }
 
 func (rx *receivable) closing(state State) {
+	// notify transceiver of closing
 	go func() {
-		_ = rx.close(state)
+		rx.settings.OnClosed(state)
 	}()
 }
 

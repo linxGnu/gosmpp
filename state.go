@@ -11,6 +11,8 @@ type State byte
 const (
 	// ExplicitClosing indicates that Transmitter/Receiver/Transceiver is closed
 	// explicitly (from outside).
+	//
+	// This state will not call OnClosed function in the settings
 	ExplicitClosing State = iota
 
 	// StoppingProcessOnly stops daemons but does not close underlying net conn.
@@ -29,6 +31,9 @@ const (
 
 	// UnbindClosing indicates Receiver got unbind request from SMSC and closed due to this request.
 	UnbindClosing
+
+	// RequestExpired indicates the bind was closed because a request expired, usually means bind might be stale
+	RequestExpired
 )
 
 // String interface.
@@ -48,6 +53,9 @@ func (s *State) String() string {
 
 	case UnbindClosing:
 		return "UnbindClosing"
+
+	case RequestExpired:
+		return "RequestExpired"
 
 	default:
 		return ""

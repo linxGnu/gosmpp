@@ -44,7 +44,7 @@ func newTransmittable(conn *Connection, settings Settings, requestStore RequestS
 	return tx
 }
 
-func (tx *transmittable) close(state State) (err error) {
+func (tx *transmittable) close() {
 	if atomic.CompareAndSwapInt32(&tx.aliveState, Alive, Closed) {
 		for atomic.LoadInt32(&tx.pendingWrite) != 0 {
 			runtime.Gosched()
@@ -59,35 +59,22 @@ func (tx *transmittable) close(state State) (err error) {
 		// try to send unbind
 		_, _ = tx.write(pdu.NewUnbind())
 
-		// close connection
-		if state != StoppingProcessOnly {
-			err = tx.conn.Close()
-		}
-
-		// notify transmitter closed
-		if tx.settings.OnClosed != nil {
-			tx.settings.OnClosed(state)
-		}
-
 		// concurrent-map has no func to verify initialization
 		// we need to do the same check in
 		if tx.settings.WindowedRequestTracking != nil {
 			ctx, cancelFunc := context.WithTimeout(context.Background(), tx.settings.StoreAccessTimeOut*time.Millisecond)
 			defer cancelFunc()
 			var size int
-			size, err = tx.requestStore.Length(ctx)
+			size, err := tx.requestStore.Length(ctx)
 			if err != nil {
-				return err
+				return
 			}
 			if size > 0 {
 				for _, request := range tx.requestStore.List(ctx) {
 					if tx.settings.OnClosePduRequest != nil {
 						tx.settings.OnClosePduRequest(request.PDU)
 					}
-					err = tx.requestStore.Delete(ctx, request.GetSequenceNumber())
-					if err != nil {
-						return err
-					}
+					_ = tx.requestStore.Delete(ctx, request.GetSequenceNumber())
 				}
 			}
 		}
@@ -97,8 +84,9 @@ func (tx *transmittable) close(state State) (err error) {
 }
 
 func (tx *transmittable) closing(state State) {
+	// notify transceiver of closing
 	go func() {
-		_ = tx.close(state)
+		tx.settings.OnClosed(state)
 	}()
 }
 

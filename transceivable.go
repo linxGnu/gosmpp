@@ -45,17 +45,7 @@ func newTransceivable(conn *Connection, settings Settings, requestStore RequestS
 		OnSubmitError: settings.OnSubmitError,
 
 		OnClosed: func(state State) {
-			switch state {
-			case ConnectionIssue:
-				// also close input
-				_ = trx.in.close(ExplicitClosing)
-
-				if trx.settings.OnClosed != nil {
-					trx.settings.OnClosed(ConnectionIssue)
-				}
-			default:
-				return
-			}
+			_ = trx.closing(state)
 		},
 
 		WindowedRequestTracking: settings.WindowedRequestTracking,
@@ -71,17 +61,7 @@ func newTransceivable(conn *Connection, settings Settings, requestStore RequestS
 		OnReceivingError: settings.OnReceivingError,
 
 		OnClosed: func(state State) {
-			switch state {
-			case InvalidStreaming, UnbindClosing:
-				// also close output
-				_ = trx.out.close(ExplicitClosing)
-
-				if trx.settings.OnClosed != nil {
-					trx.settings.OnClosed(state)
-				}
-			default:
-				return
-			}
+			_ = trx.closing(state)
 		},
 
 		WindowedRequestTracking: settings.WindowedRequestTracking,
@@ -147,7 +127,7 @@ func (trx *transceivable) windowCleanup() {
 					_ = trx.requestStore.Delete(ctx, request.GetSequenceNumber())
 					if trx.settings.OnExpiredPduRequest != nil {
 						if trx.settings.OnExpiredPduRequest(request.PDU) {
-							_ = trx.closing(ConnectionIssue)
+							_ = trx.closing(RequestExpired)
 						}
 					}
 				}
@@ -162,13 +142,13 @@ func (trx *transceivable) closing(state State) (err error) {
 		trx.cancel()
 
 		// closing input and output
-		_ = trx.out.close(StoppingProcessOnly)
-		_ = trx.in.close(StoppingProcessOnly)
+		trx.out.close()
+		trx.in.close()
 
 		// close underlying conn
 		err = trx.conn.Close()
 
-		// notify transceiver closed
+		// notify user closed
 		if trx.settings.OnClosed != nil {
 			trx.settings.OnClosed(state)
 		}
