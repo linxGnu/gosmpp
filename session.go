@@ -152,7 +152,6 @@ func (s *Session) close() (err error) {
 
 func (s *Session) rebind() {
 	if atomic.CompareAndSwapInt32(&s.rebinding, 0, 1) {
-		_ = s.close()
 
 		for atomic.LoadInt32(&s.state) == Alive {
 			conn, err := s.c.Connect()
