@@ -250,7 +250,7 @@ func TestTRXSubmitSM_with_WindowConfig(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     false,
-				StoreAccessTimeOut:    100,
+				StoreAccessTimeOut:    100 * time.Millisecond,
 			},
 
 			OnClosed: func(state State) {
@@ -316,7 +316,7 @@ func TestTRXSubmitSM_with_WindowConfig_and_AutoRespond(t *testing.T) {
 				ExpireCheckTimer:      10 * time.Second,
 				MaxWindowSize:         30,
 				EnableAutoRespond:     true,
-				StoreAccessTimeOut:    100,
+				StoreAccessTimeOut:    100 * time.Millisecond,
 			},
 
 			OnClosed: func(state State) {

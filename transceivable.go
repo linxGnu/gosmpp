@@ -30,14 +30,14 @@ type TransceivableOption func(session *Session)
 
 func newTransceivable(conn *Connection, settings Settings, requestStore RequestStore) *transceivable {
 
-	t := &transceivable{
+	trx := &transceivable{
 		settings:     settings,
 		conn:         conn,
 		requestStore: requestStore,
 	}
-	t.ctx, t.cancel = context.WithCancel(context.Background())
+	trx.ctx, trx.cancel = context.WithCancel(context.Background())
 
-	t.out = newTransmittable(conn, Settings{
+	trx.out = newTransmittable(conn, Settings{
 		WriteTimeout: settings.WriteTimeout,
 
 		EnquireLink: settings.EnquireLink,
@@ -45,23 +45,13 @@ func newTransceivable(conn *Connection, settings Settings, requestStore RequestS
 		OnSubmitError: settings.OnSubmitError,
 
 		OnClosed: func(state State) {
-			switch state {
-			case ConnectionIssue:
-				// also close input
-				_ = t.in.close(ExplicitClosing)
-
-				if t.settings.OnClosed != nil {
-					t.settings.OnClosed(ConnectionIssue)
-				}
-			default:
-				return
-			}
+			_ = trx.closing(state)
 		},
 
 		WindowedRequestTracking: settings.WindowedRequestTracking,
 	}, requestStore)
 
-	t.in = newReceivable(conn, Settings{
+	trx.in = newReceivable(conn, Settings{
 		ReadTimeout: settings.ReadTimeout,
 
 		OnPDU: settings.OnPDU,
@@ -71,109 +61,106 @@ func newTransceivable(conn *Connection, settings Settings, requestStore RequestS
 		OnReceivingError: settings.OnReceivingError,
 
 		OnClosed: func(state State) {
-			switch state {
-			case InvalidStreaming, UnbindClosing:
-				// also close output
-				_ = t.out.close(ExplicitClosing)
-
-				if t.settings.OnClosed != nil {
-					t.settings.OnClosed(state)
-				}
-			default:
-				return
-			}
+			_ = trx.closing(state)
 		},
 
 		WindowedRequestTracking: settings.WindowedRequestTracking,
 
 		response: func(p pdu.PDU) {
-			_ = t.Submit(p)
+			_ = trx.Submit(p)
 		},
 	},
 		requestStore,
 	)
-	return t
+	return trx
 }
 
-func (t *transceivable) start() {
-	if t.settings.WindowedRequestTracking != nil && t.settings.ExpireCheckTimer > 0 {
-		t.wg.Add(1)
+func (trx *transceivable) start() {
+	if trx.settings.WindowedRequestTracking != nil && trx.settings.ExpireCheckTimer > 0 {
+		trx.wg.Add(1)
 		go func() {
-			defer t.wg.Done()
-			t.windowCleanup()
+			defer trx.wg.Done()
+			trx.windowCleanup()
 		}()
 
 	}
-	t.out.start()
-	t.in.start()
+	trx.out.start()
+	trx.in.start()
 }
 
 // SystemID returns tagged SystemID which is attached with bind_resp from SMSC.
-func (t *transceivable) SystemID() string {
-	return t.conn.systemID
+func (trx *transceivable) SystemID() string {
+	return trx.conn.systemID
 }
 
 // Close transceiver and stop underlying daemons.
-func (t *transceivable) Close() (err error) {
-	return t.closing(ExplicitClosing)
+func (trx *transceivable) Close() (err error) {
+	return trx.closing(ExplicitClosing)
 }
 
 // Submit a PDU.
-func (t *transceivable) Submit(p pdu.PDU) error {
-	return t.out.Submit(p)
+func (trx *transceivable) Submit(p pdu.PDU) error {
+	return trx.out.Submit(p)
 }
 
-func (t *transceivable) GetWindowSize() (int, error) {
-	if t.settings.WindowedRequestTracking != nil {
-		ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+func (trx *transceivable) GetWindowSize() (int, error) {
+	if trx.settings.WindowedRequestTracking != nil {
+		ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut)
 		defer cancelFunc()
-		return t.requestStore.Length(ctx)
+		return trx.requestStore.Length(ctx)
 	}
 	return 0, ErrWindowNotConfigured
 
 }
 
-func (t *transceivable) windowCleanup() {
-	ticker := time.NewTicker(t.settings.ExpireCheckTimer)
+func (trx *transceivable) windowCleanup() {
+	closed := false
+	ticker := time.NewTicker(trx.settings.ExpireCheckTimer)
 	defer ticker.Stop()
 	for {
 		select {
-		case <-t.ctx.Done():
+		case <-trx.ctx.Done():
 			return
 		case <-ticker.C:
-			ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
-			for _, request := range t.requestStore.List(ctx) {
-				if time.Since(request.TimeSent) > t.settings.PduExpireTimeOut {
-					_ = t.requestStore.Delete(ctx, request.GetSequenceNumber())
-					if t.settings.OnExpiredPduRequest != nil {
-						if t.settings.OnExpiredPduRequest(request.PDU) {
-							_ = t.closing(ConnectionIssue)
+			ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut)
+			for _, request := range trx.requestStore.List(ctx) {
+				if time.Since(request.TimeSent) > trx.settings.PduExpireTimeOut {
+					_ = trx.requestStore.Delete(ctx, request.GetSequenceNumber())
+					if trx.settings.OnExpiredPduRequest != nil {
+						if trx.settings.OnExpiredPduRequest(request.PDU) {
+							closed = true
 						}
 					}
 				}
 			}
 			cancelFunc() //defer should not be used because we are inside loop
+			if closed {
+				go func() {
+					_ = trx.closing(ExpiredRequestClosing)
+				}()
+				return
+			}
 		}
 	}
 }
 
-func (t *transceivable) closing(state State) (err error) {
-	if atomic.CompareAndSwapInt32(&t.aliveState, Alive, Closed) {
-		t.cancel()
+func (trx *transceivable) closing(state State) (err error) {
+	if atomic.CompareAndSwapInt32(&trx.aliveState, Alive, Closed) {
+		trx.cancel()
 
 		// closing input and output
-		_ = t.out.close(StoppingProcessOnly)
-		_ = t.in.close(StoppingProcessOnly)
+		trx.out.close()
+		trx.in.close()
 
 		// close underlying conn
-		err = t.conn.Close()
+		err = trx.conn.Close()
 
-		// notify transceiver closed
-		if t.settings.OnClosed != nil {
-			t.settings.OnClosed(state)
+		// notify user closed
+		if trx.settings.OnClosed != nil {
+			trx.settings.OnClosed(state)
 		}
 
-		t.wg.Wait()
+		trx.wg.Wait()
 	}
 	return
 }

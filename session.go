@@ -77,16 +77,13 @@ func NewSession(c Connector, settings Settings, rebindingInterval time.Duration,
 		if rebindingInterval > 0 {
 			newSettings := settings
 			newSettings.OnClosed = func(state State) {
-				switch state {
-				case ExplicitClosing:
+				if state == ExplicitClosing {
 					return
-
-				default:
-					if session.originalOnClosed != nil {
-						session.originalOnClosed(state)
-					}
-					session.rebind()
 				}
+				if session.originalOnClosed != nil {
+					session.originalOnClosed(state)
+				}
+				session.rebind()
 			}
 			session.settings = newSettings
 		} else {
@@ -155,7 +152,6 @@ func (s *Session) close() (err error) {
 
 func (s *Session) rebind() {
 	if atomic.CompareAndSwapInt32(&s.rebinding, 0, 1) {
-		_ = s.close()
 
 		for atomic.LoadInt32(&s.state) == Alive {
 			conn, err := s.c.Connect()
