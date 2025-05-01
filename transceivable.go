@@ -114,6 +114,7 @@ func (trx *transceivable) GetWindowSize() (int, error) {
 }
 
 func (trx *transceivable) windowCleanup() {
+	closed := false
 	ticker := time.NewTicker(trx.settings.ExpireCheckTimer)
 	defer ticker.Stop()
 	for {
@@ -127,12 +128,18 @@ func (trx *transceivable) windowCleanup() {
 					_ = trx.requestStore.Delete(ctx, request.GetSequenceNumber())
 					if trx.settings.OnExpiredPduRequest != nil {
 						if trx.settings.OnExpiredPduRequest(request.PDU) {
-							_ = trx.closing(RequestExpired)
+							closed = true
 						}
 					}
 				}
 			}
 			cancelFunc() //defer should not be used because we are inside loop
+			if closed {
+				go func() {
+					_ = trx.closing(ExplicitClosing)
+				}()
+				return
+			}
 		}
 	}
 }
