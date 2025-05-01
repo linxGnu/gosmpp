@@ -32,8 +32,8 @@ const (
 	// UnbindClosing indicates Receiver got unbind request from SMSC and closed due to this request.
 	UnbindClosing
 
-	// RequestExpired indicates the bind was closed because a request expired, usually means bind might be stale
-	RequestExpired
+	// ExpiredRequestClosing indicates the bind was closed because a request expired, usually means bind might be stale
+	ExpiredRequestClosing
 )
 
 // String interface.
@@ -54,8 +54,8 @@ func (s *State) String() string {
 	case UnbindClosing:
 		return "UnbindClosing"
 
-	case RequestExpired:
-		return "RequestExpired"
+	case ExpiredRequestClosing:
+		return "ExpiredRequestClosing"
 
 	default:
 		return ""

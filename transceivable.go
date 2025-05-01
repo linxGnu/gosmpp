@@ -136,7 +136,7 @@ func (trx *transceivable) windowCleanup() {
 			cancelFunc() //defer should not be used because we are inside loop
 			if closed {
 				go func() {
-					_ = trx.closing(ExplicitClosing)
+					_ = trx.closing(ExpiredRequestClosing)
 				}()
 				return
 			}
