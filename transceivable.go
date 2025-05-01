@@ -105,7 +105,7 @@ func (trx *transceivable) Submit(p pdu.PDU) error {
 
 func (trx *transceivable) GetWindowSize() (int, error) {
 	if trx.settings.WindowedRequestTracking != nil {
-		ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut*time.Millisecond)
+		ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut)
 		defer cancelFunc()
 		return trx.requestStore.Length(ctx)
 	}
@@ -122,7 +122,7 @@ func (trx *transceivable) windowCleanup() {
 		case <-trx.ctx.Done():
 			return
 		case <-ticker.C:
-			ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut*time.Millisecond)
+			ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut)
 			for _, request := range trx.requestStore.List(ctx) {
 				if time.Since(request.TimeSent) > trx.settings.PduExpireTimeOut {
 					_ = trx.requestStore.Delete(ctx, request.GetSequenceNumber())

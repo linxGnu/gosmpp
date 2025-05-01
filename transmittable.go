@@ -62,7 +62,7 @@ func (tx *transmittable) close() {
 		// concurrent-map has no func to verify initialization
 		// we need to do the same check in
 		if tx.settings.WindowedRequestTracking != nil {
-			ctx, cancelFunc := context.WithTimeout(context.Background(), tx.settings.StoreAccessTimeOut*time.Millisecond)
+			ctx, cancelFunc := context.WithTimeout(context.Background(), tx.settings.StoreAccessTimeOut)
 			defer cancelFunc()
 			var size int
 			size, err := tx.requestStore.Length(ctx)
@@ -207,7 +207,7 @@ func (tx *transmittable) write(p pdu.PDU) (n int, err error) {
 	}
 
 	if tx.settings.WindowedRequestTracking != nil && tx.settings.MaxWindowSize > 0 && isAllowPDU(p) {
-		ctx, cancelFunc := context.WithTimeout(context.Background(), tx.settings.StoreAccessTimeOut*time.Millisecond)
+		ctx, cancelFunc := context.WithTimeout(context.Background(), tx.settings.StoreAccessTimeOut)
 		defer cancelFunc()
 		var length int
 		length, err = tx.requestStore.Length(ctx)

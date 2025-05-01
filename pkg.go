@@ -118,10 +118,10 @@ type WindowedRequestTracking struct {
 	// OnClosePduRequest will return all PDU request found in the store when the bind closes
 	OnClosePduRequest func(pdu.PDU)
 
-	// Set the number of second to expire a request sent to the SMSC
+	// Set the time duration to expire a request sent to the SMSC
 	//
 	// Zero duration disables pdu expire check and the cache may fill up over time with expired PDU request
-	// Recommended: eual or less to the value set in ReadTimeout + EnquireLink
+	// Recommended: equal or less to the value set in ReadTimeout + EnquireLink
 	PduExpireTimeOut time.Duration
 
 	// The time period between each check of the expired PDU in the cache
@@ -139,9 +139,9 @@ type WindowedRequestTracking struct {
 	// if enabled, EnquireLink and Unbind request will be responded to automatically
 	EnableAutoRespond bool
 
-	// Set the number of millisecond to expire a request to store or retrieve data from request store
+	// Set the time period to expire a request to store or retrieve data from request store
 	//
 	// Value must be greater than 0
-	// 200 to 1000 is a good starting point
+	// 200 to 1000 milliseconds is a good starting point
 	StoreAccessTimeOut time.Duration
 }
