@@ -331,11 +331,10 @@ func (c *ucs2) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err e
 	}
 
 	allSeg = [][]byte{}
-	runeSlice := []rune(text)
 	var runeBytes []byte
 	var seg []byte
 
-	for _, r := range runeSlice {
+	for _, r := range text {
 		runeBytes, err = c.Encode(string(r))
 		if err != nil {
 			return
