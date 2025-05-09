@@ -254,6 +254,9 @@ func (c *ShortMessage) Unmarshal(b *ByteBuffer, udhi bool) (err error) {
 		return
 	}
 	c.enc = data.FromDataCoding(dataCoding)
+	if c.enc == nil { // if encoding is reserved (custom)
+		c.enc = data.NewCustomEncoding(dataCoding, data.GSM7BIT) // data.GSM7BIT is a temporary patch
+	}
 
 	// If short message length is non zero, short message contains User-Data Header
 	// Else UDH should be in TLV field MessagePayload
