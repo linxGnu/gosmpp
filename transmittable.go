@@ -79,8 +79,6 @@ func (tx *transmittable) close() {
 			}
 		}
 	}
-
-	return
 }
 
 func (tx *transmittable) closing(state State) {

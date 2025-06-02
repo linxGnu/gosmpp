@@ -41,7 +41,6 @@ func (rx *receivable) close() {
 		// wait daemons
 		rx.wg.Wait()
 	}
-	return
 }
 
 func (rx *receivable) closing(state State) {
