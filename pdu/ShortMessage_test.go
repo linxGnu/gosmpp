@@ -60,7 +60,7 @@ func TestShortMessage(t *testing.T) {
 		b := NewBuffer(nil)
 		senderSM.Marshal(b)
 
-		// From here the message is not know anymore to the receiver in terms of encoding methods, but he wants to know the encoding code while once received the packet
+		// From here the message is not know anymore to the receiver in terms of encoding methods, but the receiver wants to know the encoding code once receiving the packet
 		var receivedSM ShortMessage
 		err = receivedSM.Unmarshal(b, false)
 		require.NoError(t, err)
