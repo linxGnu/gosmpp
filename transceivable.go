@@ -122,7 +122,7 @@ func (trx *transceivable) windowCleanup() {
 		case <-trx.ctx.Done():
 			return
 		case <-ticker.C:
-			if trx.aliveState == Alive {
+			if atomic.LoadInt32(&trx.aliveState) == Alive {
 				ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut)
 				for _, request := range trx.requestStore.List(ctx) {
 					if time.Since(request.TimeSent) > trx.settings.PduExpireTimeOut {
