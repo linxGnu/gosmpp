@@ -93,7 +93,7 @@ func (trx *transceivable) SystemID() string {
 	return trx.conn.systemID
 }
 
-// Close transceiver and stop underlying daemons.
+// Close the transceiver and stop underlying daemons.
 func (trx *transceivable) Close() (err error) {
 	return trx.closing(ExplicitClosing)
 }
@@ -122,22 +122,25 @@ func (trx *transceivable) windowCleanup() {
 		case <-trx.ctx.Done():
 			return
 		case <-ticker.C:
-			ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut)
-			for _, request := range trx.requestStore.List(ctx) {
-				if time.Since(request.TimeSent) > trx.settings.PduExpireTimeOut {
-					_ = trx.requestStore.Delete(ctx, request.GetSequenceNumber())
-					if trx.settings.OnExpiredPduRequest != nil {
-						if trx.settings.OnExpiredPduRequest(request.PDU) {
-							closed = true
+			if trx.aliveState == Alive {
+				ctx, cancelFunc := context.WithTimeout(context.Background(), trx.settings.StoreAccessTimeOut)
+				for _, request := range trx.requestStore.List(ctx) {
+					if time.Since(request.TimeSent) > trx.settings.PduExpireTimeOut {
+						_ = trx.requestStore.Delete(ctx, request.GetSequenceNumber())
+						if trx.settings.OnExpiredPduRequest != nil {
+							if trx.settings.OnExpiredPduRequest(request.PDU) {
+								closed = true
+							}
 						}
 					}
 				}
-			}
-			cancelFunc() //defer should not be used because we are inside loop
-			if closed {
-				go func() {
+
+				cancelFunc() //defer should not be used because we are inside loop
+				if closed {
 					_ = trx.closing(ExpiredRequestClosing)
-				}()
+					return
+				}
+			} else {
 				return
 			}
 		}
