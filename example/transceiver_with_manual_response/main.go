@@ -69,7 +69,6 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 		}
 		time.Sleep(time.Second)
 	}
-
 }
 
 func handlePDU() func(pdu.PDU) (pdu.PDU, bool) {
