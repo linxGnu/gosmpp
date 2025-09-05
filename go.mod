@@ -1,12 +1,12 @@
 module github.com/linxGnu/gosmpp
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/exp v0.0.0-20240604190554-fc45aab8b7f8
+	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
 	golang.org/x/text v0.28.0
 )
 
