@@ -7,7 +7,8 @@ import (
 	"github.com/linxGnu/gosmpp/data"
 )
 
-// For now, this package only support message uses of UDH for message concatenation
+// This package supports message uses of UDH for message concatenation
+// Both 8-bit and 16-bit reference numbers are supported for concatenated messages
 // No plan for supporting other Enhanced Messaging Service
 // Credit to https://github.com/warthog618/sms
 
@@ -149,16 +150,28 @@ func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 }
 
 // GetConcatInfo return the FIRST concatenated message IE,
-func (u UDH) GetConcatInfo() (totalParts, partNum, mref byte, found bool) {
+// For 8-bit reference, mref will be a byte value (0-255)
+// For 16-bit reference, mref will be a uint16 value (0-65535) converted to uint
+func (u UDH) GetConcatInfo() (totalParts, partNum byte, mref uint, found bool) {
 	if len(u) == 0 {
 		found = false
 		return
 	}
 
+	// Check for 8-bit reference
 	if ie, ok := u.FindInfoElement(data.UDH_CONCAT_MSG_8_BIT_REF); ok && len(ie.Data) == 3 {
-		mref = ie.Data[0]
+		mref = uint(ie.Data[0])
 		totalParts = ie.Data[1]
 		partNum = ie.Data[2]
+		found = ok
+		return
+	}
+
+	// Check for 16-bit reference
+	if ie, ok := u.FindInfoElement(data.UDH_CONCAT_MSG_16_BIT_REF); ok && len(ie.Data) == 4 {
+		mref = uint(ie.Data[0])<<8 | uint(ie.Data[1])
+		totalParts = ie.Data[2]
+		partNum = ie.Data[3]
 		found = ok
 	}
 
@@ -173,12 +186,22 @@ type InfoElement struct {
 	Data []byte
 }
 
-// NewIEConcatMessage  turn a new IE element for concat message info
+// NewIEConcatMessage creates a new IE element for 8-bit concat message info
 // IE.Data is populated at time of object creation
 func NewIEConcatMessage(totalParts, partNum, mref byte) InfoElement {
 	return InfoElement{
 		ID:   data.UDH_CONCAT_MSG_8_BIT_REF,
 		Data: []byte{byte(mref), byte(totalParts), byte(partNum)},
+	}
+}
+
+// NewIEConcatMessage16Bit creates a new IE element for 16-bit concat message info
+// IE.Data is populated at time of object creation
+// mref is a uint16 value (0-65535)
+func NewIEConcatMessage16Bit(totalParts, partNum byte, mref uint16) InfoElement {
+	return InfoElement{
+		ID:   data.UDH_CONCAT_MSG_16_BIT_REF,
+		Data: []byte{byte(mref >> 8), byte(mref), byte(totalParts), byte(partNum)},
 	}
 }
 
