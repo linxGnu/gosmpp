@@ -154,6 +154,39 @@ func (c *base) IsGNack() bool {
 	return c.CommandID == data.GENERIC_NACK
 }
 
+// GetSARConcatInfo checks optional TLV params for SAR fields and returns concatenation info.
+func (c *base) GetSARConcatInfo() (totalParts, partNum byte, mref uint16, found bool) {
+	var foundRef, foundTot, foundSeq bool
+	// Iterate over all optional TLV fields attached to this PDU
+	for _, tlv := range c.OptionalParameters { // (Assume c.OptionalParams holds the list of TLV Field structs)
+		switch tlv.Tag {
+		case TagSarMsgRefNum: // SAR reference number (should be 2 bytes)
+			if len(tlv.Data) == 2 {
+				// Combine two bytes into a 16-bit reference (big-endian as per SMPP spec)
+				mref = uint16(tlv.Data[0])<<8 | uint16(tlv.Data[1])
+				foundRef = true
+			}
+		case TagSarTotalSegments: // Total number of segments (1 byte)
+			if len(tlv.Data) == 1 {
+				totalParts = tlv.Data[0]
+				foundTot = true
+			}
+		case TagSarSegmentSeqnum: // Segment sequence number (1 byte)
+			if len(tlv.Data) == 1 {
+				partNum = tlv.Data[0]
+				foundSeq = true
+			}
+		}
+	}
+	// All three must be found to consider the data complete
+	found = foundRef && foundTot && foundSeq
+	if !found {
+		// If any part is missing or lengths were incorrect, return with 'found' = false and zeros
+		totalParts, partNum, mref = 0, 0, 0
+	}
+	return
+}
+
 // Parse PDU from reader.
 func Parse(r io.Reader) (pdu PDU, err error) {
 	var headerBytes [16]byte
