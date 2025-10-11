@@ -152,7 +152,7 @@ func (u UDH) FindInfoElement(id byte) (ie *InfoElement, found bool) {
 // GetConcatInfo return the FIRST concatenated message IE,
 // For 8-bit reference, mref will be a byte value (0-255)
 // For 16-bit reference, mref will be a uint16 value (0-65535) converted to uint
-func (u UDH) GetConcatInfo() (totalParts, partNum byte, mref uint, found bool) {
+func (u UDH) GetConcatInfo() (totalParts, partNum byte, mref uint16, found bool) {
 	if len(u) == 0 {
 		found = false
 		return
@@ -160,7 +160,7 @@ func (u UDH) GetConcatInfo() (totalParts, partNum byte, mref uint, found bool) {
 
 	// Check for 8-bit reference
 	if ie, ok := u.FindInfoElement(data.UDH_CONCAT_MSG_8_BIT_REF); ok && len(ie.Data) == 3 {
-		mref = uint(ie.Data[0])
+		mref = uint16(ie.Data[0])
 		totalParts = ie.Data[1]
 		partNum = ie.Data[2]
 		found = ok
@@ -169,7 +169,7 @@ func (u UDH) GetConcatInfo() (totalParts, partNum byte, mref uint, found bool) {
 
 	// Check for 16-bit reference
 	if ie, ok := u.FindInfoElement(data.UDH_CONCAT_MSG_16_BIT_REF); ok && len(ie.Data) == 4 {
-		mref = uint(ie.Data[0])<<8 | uint(ie.Data[1])
+		mref = uint16(ie.Data[0])<<8 | uint16(ie.Data[1])
 		totalParts = ie.Data[2]
 		partNum = ie.Data[3]
 		found = ok
