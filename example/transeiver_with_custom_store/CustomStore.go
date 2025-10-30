@@ -6,10 +6,11 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/allegro/bigcache/v3"
-	"github.com/linxGnu/gosmpp/pdu"
 	"strconv"
 	"time"
+
+	"github.com/allegro/bigcache/v3"
+	"github.com/linxGnu/gosmpp/pdu"
 
 	"github.com/linxGnu/gosmpp"
 )
