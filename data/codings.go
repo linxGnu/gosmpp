@@ -93,10 +93,15 @@ func (c *gsm7bit) Decode(data []byte) (string, error) {
 func (c *gsm7bit) DataCoding() byte { return GSM7BITCoding }
 
 func (c *gsm7bit) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
+	runeSlice := []rune(text)
+	tLen := len(runeSlice)
+	escCharsLen := len(GetEscapeChars(runeSlice))
+	regCharsLen := tLen - escCharsLen
+	bytesLen := regCharsLen + escCharsLen*2
 	if c.packed {
-		return uint((len(text)*7+7)/8) > octetLimit
+		return uint((bytesLen*7+7)/8) > octetLimit
 	} else {
-		return uint(len(text)) > octetLimit
+		return uint(bytesLen) > octetLimit
 	}
 }
 
@@ -105,20 +110,33 @@ func (c *gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, er
 		octetLimit = 134
 	}
 
-	allSeg = [][]byte{}
-	runeSlice := []rune(text)
+	bytes, err := c.Encode(text)
+	if err != nil {
+		return nil, err
+	}
 
-	fr, to := 0, int(octetLimit)
-	for fr < len(runeSlice) {
-		if to > len(runeSlice) {
-			to = len(runeSlice)
+	fr := uint(0)
+	to := uint(0)
+	for {
+		for to < uint(len(bytes)) {
+			inc := uint(1)
+			if bytes[to] == escapeSequence {
+				inc = 2
+			}
+
+			if to-fr+inc > octetLimit {
+				break
+			}
+
+			to += inc
 		}
-		seg, err := c.Encode(string(runeSlice[fr:to]))
-		if err != nil {
-			return nil, err
+
+		if fr == to {
+			break
 		}
-		allSeg = append(allSeg, seg)
-		fr, to = to, to+int(octetLimit)
+
+		allSeg = append(allSeg, bytes[fr:to])
+		fr = to
 	}
 
 	return
