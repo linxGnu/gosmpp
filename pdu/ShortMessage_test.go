@@ -48,6 +48,26 @@ func TestShortMessage(t *testing.T) {
 		require.Equal(t, "abc", m)
 	})
 
+	t.Run("customCodingFromPeer", func(t *testing.T) {
+		var senderSM ShortMessage
+
+		// set custom data coding for test
+		customCoding := data.NewCustomEncoding(0x19, &customEncoder{})
+
+		err := senderSM.SetMessageDataWithEncoding([]byte{0x61, 0x62, 0x63}, customCoding) // "abc"
+		require.NoError(t, err)
+
+		b := NewBuffer(nil)
+		senderSM.Marshal(b)
+
+		// From here the message is not know anymore to the receiver in terms of encoding methods, but the receiver wants to know the encoding code once receiving the packet
+		var receivedSM ShortMessage
+		err = receivedSM.Unmarshal(b, false)
+		require.NoError(t, err)
+
+		require.NotNil(t, receivedSM.Encoding())
+	})
+
 	t.Run("invalidSize", func(t *testing.T) {
 		var s ShortMessage
 		require.Equal(t, errors.ErrShortMessageLengthTooLarge,

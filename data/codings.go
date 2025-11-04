@@ -400,7 +400,10 @@ var codingMap = map[byte]Encoding{
 
 // FromDataCoding returns encoding from DataCoding value.
 func FromDataCoding(code byte) (enc Encoding) {
-	enc = codingMap[code]
+	enc, ok := codingMap[code]
+	if !ok { // if encoding is reserved (custom)
+		enc = NewCustomEncoding(code, GSM7BIT) // GSM7BIT is a temporary patch to apply to Encode/Decode methods
+	}
 	return
 }
 

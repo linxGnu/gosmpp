@@ -44,7 +44,6 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 				} else {
 					log.Fatal("SubmitPDU error: ", err)
 				}
-
 			},
 
 			OnReceivingError: func(err error) {
@@ -138,7 +137,6 @@ func handleOnClosePduRequest() func(pdu.PDU) {
 
 func handleExpectedPduResponse() func(response gosmpp.Response) {
 	return func(response gosmpp.Response) {
-
 		switch response.PDU.(type) {
 		case *pdu.UnbindResp:
 			fmt.Println("UnbindResp Received")

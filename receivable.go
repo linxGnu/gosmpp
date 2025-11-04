@@ -122,7 +122,7 @@ func (t *receivable) handleWindowPdu(p pdu.PDU) (closing bool) {
 			*pdu.SubmitMultiResp,
 			*pdu.SubmitSMResp:
 			if t.settings.OnExpectedPduResponse != nil {
-				ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut*time.Millisecond)
+				ctx, cancelFunc := context.WithTimeout(context.Background(), t.settings.StoreAccessTimeOut)
 				defer cancelFunc()
 				request, ok := t.requestStore.Get(ctx, p.GetSequenceNumber())
 				if ok {
