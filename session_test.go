@@ -36,7 +36,7 @@ func TestGetWindowSize(t *testing.T) {
 			WindowedRequestTracking: &WindowedRequestTracking{
 				OnReceivedPduRequest: handleReceivedPduRequest(t),
 				MaxWindowSize:        10,
-				StoreAccessTimeOut:   100,
+				StoreAccessTimeOut:   100 * time.Millisecond,
 			},
 		}, 2*time.Second)
 	require.Nil(t, err)
@@ -57,7 +57,7 @@ func TestGetWindowSize(t *testing.T) {
 			WindowedRequestTracking: &WindowedRequestTracking{
 				OnReceivedPduRequest: handleReceivedPduRequest(t),
 				MaxWindowSize:        10,
-				StoreAccessTimeOut:   100,
+				StoreAccessTimeOut:   100 * time.Millisecond,
 			},
 		}, 2*time.Second)
 	require.Nil(t, err)
@@ -77,7 +77,7 @@ func TestGetWindowSize(t *testing.T) {
 			ReadTimeout: 10 * time.Second,
 			WindowedRequestTracking: &WindowedRequestTracking{
 				MaxWindowSize:      10,
-				StoreAccessTimeOut: 100,
+				StoreAccessTimeOut: 100 * time.Millisecond,
 			},
 		}, 2*time.Second)
 	require.NoError(t, err)
@@ -99,7 +99,7 @@ func TestGetWindowSize(t *testing.T) {
 				ExpireCheckTimer:   5,
 				PduExpireTimeOut:   10,
 				MaxWindowSize:      10,
-				StoreAccessTimeOut: 100,
+				StoreAccessTimeOut: 100 * time.Millisecond,
 			},
 		}, 2*time.Second)
 	require.NoError(t, err)
