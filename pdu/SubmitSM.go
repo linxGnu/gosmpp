@@ -76,7 +76,10 @@ func (c *SubmitSM) Split() (multiSubSM []*SubmitSM, err error) {
 		esmClass = c.EsmClass | data.SM_UDH_GSM // must set to indicate UDH
 	}
 
-	for _, msg := range multiMsg {
+	for i, msg := range multiMsg {
+		if i > 0 {
+			c.base.Header.AssignSequenceNumber()
+		}
 		multiSubSM = append(multiSubSM, &SubmitSM{
 			base:                 c.base,
 			ServiceType:          c.ServiceType,

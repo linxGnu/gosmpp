@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/linxGnu/gosmpp/data"
@@ -182,11 +183,30 @@ func TestShortMessage(t *testing.T) {
 	})
 
 	t.Run("shortMessageSplitGSM7_160chars", func(t *testing.T) {
-		// over gsm7 chars limit ( 160/160 ), split
+		// 160 GSM7 chars: (160*7+7)/8 = 140 octets, exactly at limit, no split
 		sm, err := NewLongMessageWithEncoding("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz1234", data.GSM7BIT)
 		require.NoError(t, err)
 
+		require.Equal(t, 1, len(sm))
+	})
+
+	t.Run("shortMessageSplitGSM7_161chars", func(t *testing.T) {
+		// 161 GSM7 chars: (161*7+7)/8 = 141 octets > 140, must split
+		sm, err := NewLongMessageWithEncoding(strings.Repeat("a", 161), data.GSM7BIT)
+		require.NoError(t, err)
+
 		require.Equal(t, 2, len(sm))
+	})
+
+	t.Run("shortMessageSplitGSM7_FrenchAccents_150chars", func(t *testing.T) {
+		// 150 chars with French accented characters (é is 2 bytes UTF-8, 1 septet GSM7)
+		// This verifies ShouldSplit counts GSM7 septets, not UTF-8 bytes
+		msg := strings.Repeat("é", 30) + strings.Repeat("a", 120) // 150 chars
+		require.Greater(t, len(msg), 140, "UTF-8 bytes must exceed 140 to validate fix")
+		sm, err := NewLongMessageWithEncoding(msg, data.GSM7BIT)
+		require.NoError(t, err)
+
+		require.Equal(t, 1, len(sm))
 	})
 
 	t.Run("shortMessageSplitUCS2_89chars", func(t *testing.T) {

@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/hex"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -81,18 +82,61 @@ func TestGSM7Bit(t *testing.T) {
 func TestShouldSplit(t *testing.T) {
 	t.Run("testShouldSplit_GSM7BIT", func(t *testing.T) {
 		octetLim := uint(140)
-		expect := map[string]bool{
-			"":  false,
-			"1": false,
-			"12312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311234121212":  false,
-			"123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112342212121": true,
-		}
 
 		splitter, _ := GSM7BIT.(Splitter)
-		for k, v := range expect {
-			ok := splitter.ShouldSplit(k, octetLim)
-			require.Equalf(t, ok, v, "Test case %s", k)
-		}
+
+		// empty string → false
+		require.False(t, splitter.ShouldSplit("", octetLim))
+
+		// 1 char → false
+		require.False(t, splitter.ShouldSplit("1", octetLim))
+
+		// 140 ASCII chars → (140*7+7)/8 = 123 octets → false
+		require.False(t, splitter.ShouldSplit(
+			"12312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311234121212", octetLim))
+
+		// 141 ASCII chars → (141*7+7)/8 = 124 octets → false (fits in single SMS)
+		require.False(t, splitter.ShouldSplit(
+			"123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112342212121", octetLim))
+
+		// 160 ASCII chars → (160*7+7)/8 = 140 octets → false (exactly at limit)
+		require.False(t, splitter.ShouldSplit(strings.Repeat("a", 160), octetLim))
+
+		// 161 ASCII chars → (161*7+7)/8 = 141 octets → true (exceeds limit)
+		require.True(t, splitter.ShouldSplit(strings.Repeat("a", 161), octetLim))
+	})
+
+	t.Run("testShouldSplit_GSM7BIT_FrenchAccents", func(t *testing.T) {
+		octetLim := uint(140)
+		splitter, _ := GSM7BIT.(Splitter)
+
+		// 150 chars with GSM7-valid French accents (é,è,ù,à are in GSM7 basic charset)
+		// These are 2 bytes each in UTF-8 but 1 septet each in GSM7
+		// Old buggy ShouldSplit used len(text) which counts UTF-8 bytes, causing false split
+		// Packed size: (150*7+7)/8 = 132 octets < 140 → false
+		msg := strings.Repeat("é", 20) + strings.Repeat("a", 130)
+		require.Equal(t, 150, len([]rune(msg)))
+		require.Greater(t, len(msg), 140, "UTF-8 byte count should exceed 140 to verify the bug is fixed")
+		require.False(t, splitter.ShouldSplit(msg, octetLim))
+	})
+
+	t.Run("testShouldSplit_GSM7BIT_EscapeChars", func(t *testing.T) {
+		octetLim := uint(140)
+		splitter, _ := GSM7BIT.(Splitter)
+
+		// 80 escape chars = 160 septets → (0*7+80*14+7)/8 = 140 octets → false (at limit)
+		require.False(t, splitter.ShouldSplit(strings.Repeat("€", 80), octetLim))
+
+		// 81 escape chars = 162 septets → (0*7+81*14+7)/8 = 142 octets → true
+		require.True(t, splitter.ShouldSplit(strings.Repeat("€", 81), octetLim))
+
+		// Mix: 150 regular + 5 escape = 160 septets → (150*7+5*14+7)/8 = 140 octets → false
+		msg := strings.Repeat("a", 150) + strings.Repeat("€", 5)
+		require.False(t, splitter.ShouldSplit(msg, octetLim))
+
+		// Mix: 150 regular + 6 escape = 162 septets → (150*7+6*14+7)/8 = 142 octets → true
+		msg = strings.Repeat("a", 150) + strings.Repeat("€", 6)
+		require.True(t, splitter.ShouldSplit(msg, octetLim))
 	})
 
 	t.Run("testShouldSplit_UCS2", func(t *testing.T) {
@@ -187,6 +231,42 @@ func TestSplit(t *testing.T) {
 				"biggest gift của Christmas là có nhiều big/challengin",
 				"g",
 			})
+	})
+
+	// GSM7BIT (unpacked) EncodeSplit: 161 chars should split into 153 + 8
+	t.Run("testSplit_GSM7BIT_161chars", func(t *testing.T) {
+		splitter, _ := GSM7BIT.(Splitter)
+		segments, err := splitter.EncodeSplit(strings.Repeat("a", 161), 134)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(segments))
+		// 153 chars per segment for unpacked GSM7 (134 * 8 / 7 = 153)
+		require.Equal(t, 153, len(segments[0]))
+		require.Equal(t, 8, len(segments[1]))
+	})
+
+	// GSM7BIT (unpacked) EncodeSplit: escape char at segment boundary should not be split
+	t.Run("testSplit_GSM7BIT_EscapeAtBoundary", func(t *testing.T) {
+		// 152 regular + € at position 153 + 8 regular = 162 chars, 163 septets
+		// determineTo should push € to next segment to avoid splitting escape sequence
+		msg := strings.Repeat("a", 152) + "€" + strings.Repeat("b", 8)
+		splitter, _ := GSM7BIT.(Splitter)
+		segments, err := splitter.EncodeSplit(msg, 134)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(segments))
+		// First segment: 152 regular chars (escape char pushed to next segment)
+		require.Equal(t, 152, len(segments[0]))
+		// Second segment: €(2 unpacked bytes: escape + char) + 8 b's = 10 bytes
+		require.Equal(t, 10, len(segments[1]))
+	})
+
+	// GSM7BIT (unpacked) EncodeSplit: 306 chars should split into 153 + 153
+	t.Run("testSplit_GSM7BIT_306chars", func(t *testing.T) {
+		splitter, _ := GSM7BIT.(Splitter)
+		segments, err := splitter.EncodeSplit(strings.Repeat("a", 306), 134)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(segments))
+		require.Equal(t, 153, len(segments[0]))
+		require.Equal(t, 153, len(segments[1]))
 	})
 }
 
