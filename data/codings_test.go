@@ -85,7 +85,10 @@ func TestShouldSplit(t *testing.T) {
 			"":  false,
 			"1": false,
 			"12312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311234121212":  false,
+			"1231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123412121{":  true,
 			"123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112312312311231231231123123123112342212121": true,
+			"{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}1234":                                                                      false,
+			"{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}{[]}123]":                                                                      true,
 		}
 
 		splitter, _ := GSM7BIT.(Splitter)
@@ -186,6 +189,77 @@ func TestSplit(t *testing.T) {
 			[]string{
 				"biggest gift của Christmas là có nhiều big/challengin",
 				"g",
+			})
+	})
+}
+
+func TestSplit_GSM7BIT(t *testing.T) {
+	require.EqualValues(t, 0o0, GSM7BIT.DataCoding())
+
+	/*
+		Total char count = 150,
+		Esc char count = 2,
+		Regular char count = 148,
+		Seg1 => 132-> ....{
+		Seg2 => 18-> ....{
+		Expected behaviour: Should not split in the middle of ESC chars
+	*/
+	t.Run("testSplit_EscEndOfSeg1_GSM7BIT", func(t *testing.T) {
+		testEncodingSplit(t, GSM7BIT,
+			134,
+			"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk[{eeeeeeeeeeeeeeeee",
+			[]string{
+				"6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b1b3c",
+				"1b286565656565656565656565656565656565",
+			},
+			[]string{
+				"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk[",
+				"{eeeeeeeeeeeeeeeee",
+			})
+	})
+
+	/*
+		Total char count = 150,
+		Esc char count = 2,
+		Regular char count = 148,
+		Seg1 => 133-> ....{
+		Seg2 => 17-> ....{
+		Expected behaviour: Should not split in the middle of ESC chars
+	*/
+	t.Run("testSplit_EscBegOfSeg2_GSM7BIT", func(t *testing.T) {
+		testEncodingSplit(t, GSM7BIT,
+			134,
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa{{aaaaaaaaaaaaaaa",
+			[]string{
+				"61616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161",
+				"1b281b28616161616161616161616161616161",
+			},
+			[]string{
+				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"{{aaaaaaaaaaaaaaa",
+			})
+	})
+
+	/*
+		Total char count = 193,
+		Esc char count = 75,
+		Regular char count = 118,
+		Seg1 => 119-> ....{
+		Seg2 => 74-> ....{
+		Expected behaviour: Should not split in the middle of ESC chars,
+		all segments are fully loaded
+	*/
+	t.Run("testSplit_FullyLoadedSegments_GSM7BIT", func(t *testing.T) {
+		testEncodingSplit(t, GSM7BIT,
+			134,
+			"\\{[~€€€€~]}\\|^kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\f{[~\\€|^\f\\~]}{[~\\€|^\f\\~]}{[~\\€|^\f\\~]}{[~\\€|^\f\\~]}{[~\\€|^\f\\~]}llllllllllllll",
+			[]string{
+				"1b2f1b281b3c1b3d1b651b651b651b651b3d1b3e1b291b2f1b401b146b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b1b0a",
+				"1b281b3c1b3d1b2f1b651b401b141b0a1b2f1b3d1b3e1b291b281b3c1b3d1b2f1b651b401b141b0a1b2f1b3d1b3e1b291b281b3c1b3d1b2f1b651b401b141b0a1b2f1b3d1b3e1b291b281b3c1b3d1b2f1b651b401b141b0a1b2f1b3d1b3e1b291b281b3c1b3d1b2f1b651b401b141b0a1b2f1b3d1b3e1b296c6c6c6c6c6c6c6c6c6c6c6c6c6c",
+			},
+			[]string{
+				"\\{[~€€€€~]}\\|^kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\f",
+				"{[~\\€|^\f\\~]}{[~\\€|^\f\\~]}{[~\\€|^\f\\~]}{[~\\€|^\f\\~]}{[~\\€|^\f\\~]}llllllllllllll",
 			})
 	})
 }
