@@ -95,9 +95,11 @@ func (c *gsm7bit) DataCoding() byte { return GSM7BITCoding }
 func (c *gsm7bit) ShouldSplit(text string, octetLimit uint) (shouldSplit bool) {
 	if c.packed {
 		return uint((len(text)*7+7)/8) > octetLimit
-	} else {
-		return uint(len(text)) > octetLimit
 	}
+	runeSlice := []rune(text)
+	escCharsLen := len(GetEscapeChars(runeSlice))
+	regCharsLen := len(runeSlice) - escCharsLen
+	return uint(regCharsLen+escCharsLen*2) > octetLimit
 }
 
 func (c *gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, err error) {
