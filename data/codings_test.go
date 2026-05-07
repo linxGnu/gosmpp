@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/hex"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -131,6 +132,48 @@ func TestShouldSplit(t *testing.T) {
 		}
 	})
 }
+func TestShouldSplit_GSM7BIT_EscapeChars(t *testing.T) {
+	splitter, _ := GSM7BIT.(Splitter)
+
+	cases := []struct {
+		name        string
+		text        string
+		octetLimit  uint
+		shouldSplit bool
+	}{
+		{
+			name:        "159 regular + 1 escape → 161 encoded bytes exceeds limit 160",
+			text:        strings.Repeat("a", 159) + `\`,
+			octetLimit:  160,
+			shouldSplit: true,
+		},
+		{
+			name:        "153 regular + 1 escape → 155 encoded bytes exceeds multipart limit 154",
+			text:        strings.Repeat("a", 153) + `\`,
+			octetLimit:  154,
+			shouldSplit: true,
+		},
+		{
+			name:        "78 escape chars → 156 encoded bytes exceeds limit 154",
+			text:        strings.Repeat(`\`, 78),
+			octetLimit:  154,
+			shouldSplit: true,
+		},
+		{
+			name:        "77 escape chars → 154 encoded bytes fits within limit 154",
+			text:        strings.Repeat(`\`, 77),
+			octetLimit:  154,
+			shouldSplit: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.shouldSplit, splitter.ShouldSplit(tc.text, tc.octetLimit))
+		})
+	}
+}
+
 func TestSplit(t *testing.T) {
 	require.EqualValues(t, 0o0, GSM7BITPACKED.DataCoding())
 
