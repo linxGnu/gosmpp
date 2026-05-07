@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/hex"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -188,6 +189,101 @@ func TestSplit(t *testing.T) {
 				"g",
 			})
 	})
+}
+
+func TestShouldSplit_GSM7BIT_EscapeChars(t *testing.T) {
+	splitter, _ := GSM7BIT.(Splitter)
+
+	cases := []struct {
+		name        string
+		text        string
+		octetLimit  uint
+		shouldSplit bool
+	}{
+		{
+			name:        "159 regular + 1 escape → 161 encoded bytes exceeds limit 160",
+			text:        strings.Repeat("a", 159) + `\`,
+			octetLimit:  160,
+			shouldSplit: true,
+		},
+		{
+			name:        "153 regular + 1 escape → 155 encoded bytes exceeds multipart limit 154",
+			text:        strings.Repeat("a", 153) + `\`,
+			octetLimit:  154,
+			shouldSplit: true,
+		},
+		{
+			name:        "78 escape chars → 156 encoded bytes exceeds limit 154",
+			text:        strings.Repeat(`\`, 78),
+			octetLimit:  154,
+			shouldSplit: true,
+		},
+		{
+			name:        "77 escape chars → 154 encoded bytes fits within limit 154",
+			text:        strings.Repeat(`\`, 77),
+			octetLimit:  154,
+			shouldSplit: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.shouldSplit, splitter.ShouldSplit(tc.text, tc.octetLimit))
+		})
+	}
+}
+
+func TestEncodeSplit_GSM7BIT_EscapeChars(t *testing.T) {
+	splitter, _ := GSM7BIT.(Splitter)
+
+	cases := []struct {
+		name       string
+		text       string
+		octetLimit uint
+		wantSegs   int
+		wantMaxLen int
+	}{
+		{
+			name:       "153 regular + 1 escape → 155 encoded bytes splits into 2 segments within limit 154",
+			text:       strings.Repeat("a", 153) + `\`,
+			octetLimit: 154,
+			wantSegs:   2,
+			wantMaxLen: 154,
+		},
+		{
+			name:       "77 escape chars → 154 encoded bytes fits in 1 segment within limit 154",
+			text:       strings.Repeat(`\`, 77),
+			octetLimit: 154,
+			wantSegs:   1,
+			wantMaxLen: 154,
+		},
+		{
+			name:       "78 escape chars → 156 encoded bytes splits into 2 segments within limit 154",
+			text:       strings.Repeat(`\`, 78),
+			octetLimit: 154,
+			wantSegs:   2,
+			wantMaxLen: 154,
+		},
+		{
+			name:       "159 regular + 1 escape → 161 encoded bytes splits into 2 segments within limit 160",
+			text:       strings.Repeat("a", 159) + `\`,
+			octetLimit: 160,
+			wantSegs:   2,
+			wantMaxLen: 160,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			segs, err := splitter.EncodeSplit(tc.text, tc.octetLimit)
+			require.NoError(t, err)
+			require.Len(t, segs, tc.wantSegs)
+			for i, s := range segs {
+				require.LessOrEqualf(t, len(s), tc.wantMaxLen,
+					"segment %d length %d exceeds limit %d", i, len(s), tc.wantMaxLen)
+			}
+		})
+	}
 }
 
 func TestSplit_GSM7BITPACKED(t *testing.T) {
