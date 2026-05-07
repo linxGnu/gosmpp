@@ -108,17 +108,28 @@ func (c *gsm7bit) EncodeSplit(text string, octetLimit uint) (allSeg [][]byte, er
 	allSeg = [][]byte{}
 	runeSlice := []rune(text)
 
-	fr, to := 0, int(octetLimit)
-	for fr < len(runeSlice) {
-		if to > len(runeSlice) {
-			to = len(runeSlice)
+	fr, byteCount := 0, 0
+	for i, r := range runeSlice {
+		charLen := 1
+		if IsEscapeChar(r) {
+			charLen = 2
 		}
-		seg, err := c.Encode(string(runeSlice[fr:to]))
-		if err != nil {
-			return nil, err
+		if byteCount > 0 && uint(byteCount+charLen) > octetLimit {
+			seg, encErr := c.Encode(string(runeSlice[fr:i]))
+			if encErr != nil {
+				return nil, encErr
+			}
+			allSeg = append(allSeg, seg)
+			fr, byteCount = i, 0
+		}
+		byteCount += charLen
+	}
+	if fr < len(runeSlice) {
+		seg, encErr := c.Encode(string(runeSlice[fr:]))
+		if encErr != nil {
+			return nil, encErr
 		}
 		allSeg = append(allSeg, seg)
-		fr, to = to, to+int(octetLimit)
 	}
 
 	return
