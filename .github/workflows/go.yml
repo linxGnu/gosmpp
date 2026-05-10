@@ -21,7 +21,7 @@ jobs:
       #     version: latest
       - name: Start SMSC
         run: |
-          g++ example/smsc_simulator/smsc.cpp -o smsc
+          g++ -std=c++11 example/smsc_simulator/smsc.cpp -o smsc
           ./smsc &
         shell: bash
       - name: Test Coverage
