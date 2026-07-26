@@ -248,6 +248,29 @@ func (*ascii) Decode(data []byte) (string, error) {
 
 func (*ascii) DataCoding() byte { return ASCIICoding }
 
+func (*ascii) ShouldSplit(text string, octetLimit uint) bool {
+	return uint(len(text)) > octetLimit
+}
+
+func (c *ascii) EncodeSplit(text string, octetLimit uint) ([][]byte, error) {
+	var segments [][]byte
+	limit := int(octetLimit)
+
+	for i := 0; i < len(text); {
+		end := min(i+limit, len(text))
+
+		segment, err := c.Encode(text[i:end])
+		if err != nil {
+			return nil, err
+		}
+
+		segments = append(segments, segment)
+		i = end
+	}
+
+	return segments, nil
+}
+
 type iso88591 struct{}
 
 func (*iso88591) Encode(str string) ([]byte, error) {
@@ -296,6 +319,39 @@ func (*iso88595) Decode(data []byte) (string, error) {
 
 func (*iso88595) DataCoding() byte { return CYRILLICCoding }
 
+func (*iso88595) ShouldSplit(text string, octetLimit uint) bool {
+	return uint(len([]rune(text))) > octetLimit
+}
+
+func (c *iso88595) EncodeSplit(text string, octetLimit uint) ([][]byte, error) {
+	var segments [][]byte
+	runeSlice := []rune(text)
+	limit := int(octetLimit)
+
+	for i := 0; i < len(runeSlice); {
+		end := min(i+limit, len(runeSlice))
+
+		segment, err := c.Encode(string(runeSlice[i:end]))
+		if err != nil {
+			return nil, err
+		}
+
+		// If encoded segment exceeds limit, reduce character count
+		for len(segment) > limit && end > i+1 {
+			end--
+			segment, err = c.Encode(string(runeSlice[i:end]))
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		segments = append(segments, segment)
+		i = end
+	}
+
+	return segments, nil
+}
+
 type iso88598 struct{}
 
 func (*iso88598) Encode(str string) ([]byte, error) {
@@ -307,6 +363,39 @@ func (*iso88598) Decode(data []byte) (string, error) {
 }
 
 func (*iso88598) DataCoding() byte { return HEBREWCoding }
+
+func (*iso88598) ShouldSplit(text string, octetLimit uint) bool {
+	return uint(len([]rune(text))) > octetLimit
+}
+
+func (c *iso88598) EncodeSplit(text string, octetLimit uint) ([][]byte, error) {
+	var segments [][]byte
+	runeSlice := []rune(text)
+	limit := int(octetLimit)
+
+	for i := 0; i < len(runeSlice); {
+		end := min(i+limit, len(runeSlice))
+
+		segment, err := c.Encode(string(runeSlice[i:end]))
+		if err != nil {
+			return nil, err
+		}
+
+		// If encoded segment exceeds limit, reduce character count
+		for len(segment) > limit && end > i+1 {
+			end--
+			segment, err = c.Encode(string(runeSlice[i:end]))
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		segments = append(segments, segment)
+		i = end
+	}
+
+	return segments, nil
+}
 
 type ucs2 struct{}
 

@@ -79,6 +79,51 @@ func TestGSM7Bit(t *testing.T) {
 }
 
 func TestShouldSplit(t *testing.T) {
+	t.Run("testShouldSplit_ASCII", func(t *testing.T) {
+		octetLim := uint(140)
+		expect := map[string]bool{
+			"":  false,
+			"1": false,
+			"12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890":  false, // exactly 140 chars
+			"123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901": true,  // 141 chars
+		}
+
+		splitter, ok := ASCII.(Splitter)
+		require.True(t, ok, "ASCII must implement Splitter interface")
+		for k, v := range expect {
+			ok := splitter.ShouldSplit(k, octetLim)
+			require.Equalf(t, v, ok, "Test case len=%d", len(k))
+		}
+	})
+
+	t.Run("testShouldSplit_CYRILLIC", func(t *testing.T) {
+		octetLim := uint(140)
+		splitter, ok := CYRILLIC.(Splitter)
+		require.True(t, ok, "CYRILLIC must implement Splitter interface")
+
+		// 140 Cyrillic chars
+		msg140 := "аааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааа"
+		require.False(t, splitter.ShouldSplit(msg140, octetLim), "140 chars should not split")
+
+		// 141 Cyrillic chars
+		msg141 := "ааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааа"
+		require.True(t, splitter.ShouldSplit(msg141, octetLim), "141 chars should split")
+	})
+
+	t.Run("testShouldSplit_HEBREW", func(t *testing.T) {
+		octetLim := uint(140)
+		splitter, ok := HEBREW.(Splitter)
+		require.True(t, ok, "HEBREW must implement Splitter interface")
+
+		// 140 Hebrew chars
+		msg140 := "אאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאא"
+		require.False(t, splitter.ShouldSplit(msg140, octetLim), "140 chars should not split")
+
+		// 141 Hebrew chars
+		msg141 := "אאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאא"
+		require.True(t, splitter.ShouldSplit(msg141, octetLim), "141 chars should split")
+	})
+
 	t.Run("testShouldSplit_GSM7BIT", func(t *testing.T) {
 		octetLim := uint(140)
 		expect := map[string]bool{
@@ -133,6 +178,66 @@ func TestShouldSplit(t *testing.T) {
 }
 func TestSplit(t *testing.T) {
 	require.EqualValues(t, 0o0, GSM7BITPACKED.DataCoding())
+
+	t.Run("testSplitASCII", func(t *testing.T) {
+		// 212 ASCII chars - should split into 2 segments: 134 + 78
+		msg := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		splitter, ok := ASCII.(Splitter)
+		require.True(t, ok)
+
+		segments, err := splitter.EncodeSplit(msg, 134)
+		require.Nil(t, err)
+		require.Equal(t, 2, len(segments))
+		require.Equal(t, 134, len(segments[0]))
+		require.Equal(t, 78, len(segments[1]))
+
+		// Verify decoded content
+		decoded1, err := ASCII.Decode(segments[0])
+		require.Nil(t, err)
+		decoded2, err := ASCII.Decode(segments[1])
+		require.Nil(t, err)
+		require.Equal(t, msg, decoded1+decoded2)
+	})
+
+	t.Run("testSplitCYRILLIC", func(t *testing.T) {
+		// 200 Cyrillic chars - should split into 2 segments
+		msg := "аааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааа"
+		splitter, ok := CYRILLIC.(Splitter)
+		require.True(t, ok)
+
+		segments, err := splitter.EncodeSplit(msg, 134)
+		require.Nil(t, err)
+		require.Equal(t, 2, len(segments))
+		require.LessOrEqual(t, len(segments[0]), 134)
+		require.LessOrEqual(t, len(segments[1]), 134)
+
+		// Verify decoded content
+		decoded1, err := CYRILLIC.Decode(segments[0])
+		require.Nil(t, err)
+		decoded2, err := CYRILLIC.Decode(segments[1])
+		require.Nil(t, err)
+		require.Equal(t, msg, decoded1+decoded2)
+	})
+
+	t.Run("testSplitHEBREW", func(t *testing.T) {
+		// 200 Hebrew chars - should split into 2 segments
+		msg := "אאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאאא"
+		splitter, ok := HEBREW.(Splitter)
+		require.True(t, ok)
+
+		segments, err := splitter.EncodeSplit(msg, 134)
+		require.Nil(t, err)
+		require.Equal(t, 2, len(segments))
+		require.LessOrEqual(t, len(segments[0]), 134)
+		require.LessOrEqual(t, len(segments[1]), 134)
+
+		// Verify decoded content
+		decoded1, err := HEBREW.Decode(segments[0])
+		require.Nil(t, err)
+		decoded2, err := HEBREW.Decode(segments[1])
+		require.Nil(t, err)
+		require.Equal(t, msg, decoded1+decoded2)
+	})
 
 	t.Run("testSplitGSM7Empty", func(t *testing.T) {
 		testEncodingSplit(t, GSM7BIT,
