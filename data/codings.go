@@ -260,6 +260,39 @@ func (*iso88591) Decode(data []byte) (string, error) {
 
 func (*iso88591) DataCoding() byte { return LATIN1Coding }
 
+func (*iso88591) ShouldSplit(text string, octetLimit uint) bool {
+	return uint(len([]rune(text))) > octetLimit
+}
+
+func (c *iso88591) EncodeSplit(text string, octetLimit uint) ([][]byte, error) {
+	var segments [][]byte
+	runeSlice := []rune(text)
+	limit := int(octetLimit)
+
+	for i := 0; i < len(runeSlice); {
+		end := min(i+limit, len(runeSlice))
+
+		segment, err := c.Encode(string(runeSlice[i:end]))
+		if err != nil {
+			return nil, err
+		}
+
+		// If encoded segment exceeds limit, reduce character count
+		for len(segment) > limit && end > i+1 {
+			end--
+			segment, err = c.Encode(string(runeSlice[i:end]))
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		segments = append(segments, segment)
+		i = end
+	}
+
+	return segments, nil
+}
+
 type binary8bit1 struct{}
 
 func (*binary8bit1) Encode(_ string) ([]byte, error) {

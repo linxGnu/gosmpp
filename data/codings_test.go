@@ -64,7 +64,7 @@ func shiftBitsOneRight(input []byte) []byte {
 }
 
 func TestCoding(t *testing.T) {
-	require.Nil(t, FromDataCoding(12))
+	require.Equal(t, NewCustomEncoding(12, GSM7BIT), FromDataCoding(12)) // GSM7BIT is default when encoding is reserved
 	require.Equal(t, GSM7BIT, FromDataCoding(0))
 	require.Equal(t, ASCII, FromDataCoding(1))
 	require.Equal(t, UCS2, FromDataCoding(8))
@@ -79,6 +79,23 @@ func TestGSM7Bit(t *testing.T) {
 }
 
 func TestShouldSplit(t *testing.T) {
+	t.Run("testShouldSplit_LATIN1", func(t *testing.T) {
+		octetLim := uint(140)
+		expect := map[string]bool{
+			"":  false,
+			"1": false,
+			"12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890":  false, // exactly 140 chars
+			"123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901": true,  // 141 chars
+		}
+
+		splitter, ok := LATIN1.(Splitter)
+		require.True(t, ok, "LATIN1 must implement Splitter interface")
+		for k, v := range expect {
+			ok := splitter.ShouldSplit(k, octetLim)
+			require.Equalf(t, v, ok, "Test case len=%d", len(k))
+		}
+	})
+
 	t.Run("testShouldSplit_GSM7BIT", func(t *testing.T) {
 		octetLim := uint(140)
 		expect := map[string]bool{
@@ -133,6 +150,71 @@ func TestShouldSplit(t *testing.T) {
 }
 func TestSplit(t *testing.T) {
 	require.EqualValues(t, 0o0, GSM7BITPACKED.DataCoding())
+
+	t.Run("testSplitLATIN1Empty", func(t *testing.T) {
+		testEncodingSplit(t, LATIN1,
+			134,
+			"",
+			[]string{
+				"",
+			},
+			[]string{
+				"",
+			})
+	})
+
+	t.Run("testSplitLATIN1", func(t *testing.T) {
+		// 213 'a' characters - should split into 2 segments: 134 + 79
+		msg := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		splitter, ok := LATIN1.(Splitter)
+		require.True(t, ok)
+
+		segments, err := splitter.EncodeSplit(msg, 134)
+		require.Nil(t, err)
+		require.Equal(t, 2, len(segments))
+		require.Equal(t, 134, len(segments[0]))
+		require.Equal(t, 79, len(segments[1]))
+
+		// Verify decoded content
+		decoded1, err := LATIN1.Decode(segments[0])
+		require.Nil(t, err)
+		decoded2, err := LATIN1.Decode(segments[1])
+		require.Nil(t, err)
+		require.Equal(t, msg, decoded1+decoded2)
+	})
+
+	t.Run("testSplitLATIN1WithSpecialChars", func(t *testing.T) {
+		// Test with LATIN1 special characters (é, ñ, ü, etc.)
+		// 150 chars total - should split into 2 segments: 134 + 16
+		msg := "Héllo Wörld! Thís ís á tëst mëssägé wíth spëcíäl chäräctërs. Lét's sëé höw ít splíts. Möré téxt tö réäch thé límít. Änd ëvén möré tëxt tö mäké ít längér."
+		splitter, ok := LATIN1.(Splitter)
+		require.True(t, ok)
+
+		segments, err := splitter.EncodeSplit(msg, 134)
+		require.Nil(t, err)
+		require.Equal(t, 2, len(segments))
+		require.LessOrEqual(t, len(segments[0]), 134)
+		require.LessOrEqual(t, len(segments[1]), 134)
+
+		// Verify we can decode each segment
+		decoded1, err := LATIN1.Decode(segments[0])
+		require.Nil(t, err)
+		decoded2, err := LATIN1.Decode(segments[1])
+		require.Nil(t, err)
+		require.Equal(t, msg, decoded1+decoded2)
+	})
+
+	t.Run("testSplitLATIN1NoSplitNeeded", func(t *testing.T) {
+		// 100 chars - no split needed
+		msg := "This is a short message that does not need to be split because it is under the 134 octet limit here."
+		splitter, ok := LATIN1.(Splitter)
+		require.True(t, ok)
+
+		segments, err := splitter.EncodeSplit(msg, 134)
+		require.Nil(t, err)
+		require.Equal(t, 1, len(segments))
+		require.Equal(t, len(msg), len(segments[0]))
+	})
 
 	t.Run("testSplitGSM7Empty", func(t *testing.T) {
 		testEncodingSplit(t, GSM7BIT,
