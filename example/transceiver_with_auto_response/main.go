@@ -73,7 +73,7 @@ func sendingAndReceiveSMS(wg *sync.WaitGroup) {
 }
 
 func handlePDU() func(pdu.PDU, bool) {
-	concatenated := map[uint8][]string{}
+	concatenated := map[uint16][]string{}
 	return func(p pdu.PDU, _ bool) {
 		switch pd := p.(type) {
 		case *pdu.SubmitSMResp:
